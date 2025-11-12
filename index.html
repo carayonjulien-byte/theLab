@@ -51,7 +51,8 @@
       display:block;
     }
     input[type=text],
-    input[type=number] {
+    input[type=number],
+    select {
       width:100%;
       padding:12px 14px;
       border:1px solid #26303b;
@@ -338,6 +339,23 @@
           </div>
         </div>
 
+        <div class="grid-2">
+          <div class="row">
+            <label for="radarType">Type de radar</label>
+            <select id="radarType">
+              <option value="">Sélectionner</option>
+              <option value="rond">Rond</option>
+              <option value="triangle">Triangle</option>
+              <option value="carre">Carré</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="radarScale">Échelle du radar (m)</label>
+            <input id="radarScale" type="number" step="1" min="0" placeholder="ex : 10" />
+            <div class="hint">ex : 10 m par anneau / division</div>
+          </div>
+        </div>
+
         <div class="row">
           <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
             🧠 Analyser l’image
@@ -368,6 +386,11 @@
       <div class="kv">
         <div>Distance cible</div>
         <div id="rTarget">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Radar</div>
+        <div id="rRadar">—</div>
       </div>
 
       <div class="kv">
@@ -409,11 +432,14 @@
     const rDate   = $("rDate");
     const rClub   = $("rClub");
     const rTarget = $("rTarget");
+    const rRadar  = $("rRadar");
 
     const csvBtn    = $("csvBtn");
     const dateText  = $("dateText");
     const club      = $("club");
     const targetDist= $("targetDist");
+    const radarType = $("radarType");
+    const radarScale= $("radarScale");
 
     const loaderBox = $("loaderBox");
     const loaderText= $("loaderText");
@@ -434,7 +460,7 @@
       if (!box) return;
 
       box.textContent = msg;
-      box.className = "";  // reset classes
+      box.className = "";
       box.classList.add(type === "error" ? "status--error" : "status--info");
       box.style.display = "block";
 
@@ -455,7 +481,6 @@
     function refreshSteps(){
       if(!step1El || !step2El) return;
 
-      // Onglet 2 désactivé tant que la photo n'est pas validée
       if (!maskValidated) {
         step2El.classList.add('step--disabled');
       } else {
@@ -477,13 +502,20 @@
         return;
       }
       activeTab = n;
+
       if (tab1El && tab2El) {
         if (activeTab === 1) {
           tab1El.classList.remove('hidden');
           tab2El.classList.add('hidden');
+          // sur l’onglet Photo, on cache le résultat
+          resultCard.classList.add("hidden");
         } else {
           tab1El.classList.add('hidden');
           tab2El.classList.remove('hidden');
+          // sur Analyse, on n'affiche le résultat que si une analyse a été faite
+          if (lastJson) {
+            resultCard.classList.remove("hidden");
+          }
         }
       }
       refreshSteps();
@@ -532,7 +564,7 @@
     // Convertit toute image en File JPEG (compat backend)
     async function ensureJpegFile(fileOrBlob){
       if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-        return fileOrBlob; // déjà un File jpeg
+        return fileOrBlob;
       }
       try{
         const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
@@ -577,14 +609,18 @@
         'date_text',
         'club',
         'distance_cible_m',
+        'radar_type',
+        'radar_scale_m',
         'distance_totale_m',
         'ecart_lateral_m',
         'ecart_profondeur_m'
       ].join(','));
 
-      const dateVal  = dateText?.value||'';
-      const clubVal  = safe(json.club);
-      const cibleVal = safe(json.centre_distance);
+      const dateVal   = dateText?.value||'';
+      const clubVal   = safe(club?.value || '');
+      const cibleVal  = safe(targetDist?.value || '');
+      const radarTypeVal  = safe(radarType?.value || '');
+      const radarScaleVal = safe(radarScale?.value || '');
 
       coups.forEach((c,i)=>{
         rows.push([
@@ -592,6 +628,8 @@
           safe(dateVal),
           clubVal,
           cibleVal,
+          radarTypeVal,
+          radarScaleVal,
           safe(c.distance_totale_m),
           safe(c.ecart_lateral_m),
           safe(c.ecart_profondeur_m)
@@ -624,7 +662,9 @@
         currentBlob = f;
         setStatus('Image prête : '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
         showPreview(currentBlob);
-        resultCard.classList.add("hidden");
+        if (activeTab === 2) {
+          resultCard.classList.add("hidden");
+        }
         lastJson = null;
         maskValidated = false;
         analyzeBtn.disabled = true;
@@ -655,13 +695,14 @@
       const fd  = new FormData();
       const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
 
-      // multi-alias pour compat serveur
       fd.append('image', imgFile, imgFile.name);
       fd.append('file', imgFile, imgFile.name);
       fd.append('image_file', imgFile, imgFile.name);
       fd.append('date_text', dateText.value);
       fd.append('club', club.value);
       fd.append('centre_distance', targetDist.value);
+      fd.append('radar_type', radarType.value || '');
+      fd.append('radar_scale', radarScale.value || '');
 
       try{
         setLoading(true, "Analyse en cours…");
@@ -689,6 +730,17 @@
         rDate.textContent   = dateText.value;
         rClub.textContent   = club.value;
         rTarget.textContent = targetDist.value + ' m';
+
+        // Radar dans le résultat
+        let radarLabel = '—';
+        if (radarType.value) {
+          const typeMap = {rond: 'Rond', triangle: 'Triangle', carre: 'Carré'};
+          radarLabel = typeMap[radarType.value] || radarType.value;
+          if (radarScale.value) {
+            radarLabel += ' – ' + radarScale.value + ' m';
+          }
+        }
+        rRadar.textContent = radarLabel;
 
         resultCard.classList.remove("hidden");
         setStatus('Analyse terminée ✅', "info");
@@ -725,11 +777,10 @@
           throw new Error('HTTP '+res.status+(t?' – '+t:''));
         }
         const blob = await res.blob();
-        showPreview(blob);          // on affiche le masque
+        showPreview(blob);
         maskValidated = true;
         setMaskLoading(false);
         setStatus("Masque généré ✅ Vérifiez la photo. Si tout est correct, allez à l'étape 2 pour analyser le coup. Sinon, rechargez une nouvelle photo.", "info");
-        // On reste sur l'onglet 1, mais l'onglet 2 devient cliquable + bouton Analyse activable
         refreshSteps();
       }catch(err){
         maskValidated = false;
