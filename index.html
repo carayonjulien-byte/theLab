@@ -51,8 +51,7 @@
       display:block;
     }
     input[type=text],
-    input[type=number],
-    select {
+    input[type=number] {
       width:100%;
       padding:12px 14px;
       border:1px solid #26303b;
@@ -126,6 +125,34 @@
       font-size:14px;
     }
     .result .kv:first-of-type { border-top: none; }
+
+    .result-subtitle {
+      margin-top: 10px;
+      font-size: 13px;
+      color:#9aa5b1;
+    }
+
+    .shots-list {
+      margin-top: 8px;
+      border-top:1px dashed #26303b;
+      padding-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:13px;
+    }
+    .shot-row {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .shot-left {
+      font-weight:600;
+    }
+    .shot-right {
+      opacity:0.9;
+    }
 
     .hidden{ display:none !important; }
 
@@ -286,7 +313,7 @@
         </div>
       </div>
 
-      <!-- Loader global (visible pour mask + analyse) -->
+      <!-- Loader global -->
       <div class="row hidden" id="loaderBox">
         <div class="loader">
           <div class="spinner"></div>
@@ -299,7 +326,6 @@
 
       <!-- Onglet 1 : Valider la photo -->
       <div id="tab1" class="tab-content">
-        <!-- Boutons photo côte à côte -->
         <div class="row btn-row-2">
           <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
           <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
@@ -339,23 +365,6 @@
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="row">
-            <label for="radarType">Type de radar</label>
-            <select id="radarType">
-              <option value="">Sélectionner</option>
-              <option value="rond">Rond</option>
-              <option value="triangle">Triangle</option>
-              <option value="carre">Carré</option>
-            </select>
-          </div>
-          <div class="row">
-            <label for="radarScale">Échelle du radar (m)</label>
-            <input id="radarScale" type="number" step="1" min="0" placeholder="ex : 10" />
-            <div class="hint">ex : 10 m par anneau / division</div>
-          </div>
-        </div>
-
         <div class="row">
           <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
             🧠 Analyser l’image
@@ -364,18 +373,13 @@
       </div>
     </div>
 
-    <!-- Bloc résultat avec Date tout en haut -->
+    <!-- Bloc résultat (onglet Analyse uniquement) -->
     <div class="row result hidden" id="resultCard">
       <h3>Distances</h3>
 
       <div class="kv">
         <div>Date</div>
         <div id="rDate">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Coup</div>
-        <div id="rCoup">—</div>
       </div>
 
       <div class="kv">
@@ -393,22 +397,10 @@
         <div id="rRadar">—</div>
       </div>
 
-      <div class="kv">
-        <div>Distance totale</div>
-        <div id="rDist">—</div>
-      </div>
+      <div class="result-subtitle">Détail des coups</div>
+      <div id="shotsList" class="shots-list"></div>
 
-      <div class="kv">
-        <div>Écart latéral</div>
-        <div id="rLat">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Écart profondeur</div>
-        <div id="rProf">—</div>
-      </div>
-
-      <div class="row">
+      <div class="row" style="margin-top:10px;">
         <button id="csvBtn" class="ghost" type="button">⬇️ Télécharger CSV</button>
       </div>
     </div>
@@ -418,41 +410,39 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const $ = (id)=> document.getElementById(id);
 
-    const fileCam  = $("fileCam");
-    const fileGal  = $("fileGal");
-    const preview  = $("preview");
+    const fileCam    = $("fileCam");
+    const fileGal    = $("fileGal");
+    const preview    = $("preview");
     const analyzeBtn = $("analyzeBtn");
-    const maskBtn  = $("maskBtn");
+    const maskBtn    = $("maskBtn");
     const resultCard = $("resultCard");
+    const shotsList  = $("shotsList");
 
-    const rCoup   = $("rCoup");
-    const rDist   = $("rDist");
-    const rLat    = $("rLat");
-    const rProf   = $("rProf");
+    const rDist   = null; // plus utilisé en solo
+    const rLat    = null;
+    const rProf   = null;
     const rDate   = $("rDate");
     const rClub   = $("rClub");
     const rTarget = $("rTarget");
     const rRadar  = $("rRadar");
 
-    const csvBtn    = $("csvBtn");
-    const dateText  = $("dateText");
-    const club      = $("club");
-    const targetDist= $("targetDist");
-    const radarType = $("radarType");
-    const radarScale= $("radarScale");
+    const csvBtn     = $("csvBtn");
+    const dateText   = $("dateText");
+    const club       = $("club");
+    const targetDist = $("targetDist");
 
-    const loaderBox = $("loaderBox");
-    const loaderText= $("loaderText");
+    const loaderBox  = $("loaderBox");
+    const loaderText = $("loaderText");
 
-    const step1El   = $("step1");
-    const step2El   = $("step2");
-    const tab1El    = $("tab1");
-    const tab2El    = $("tab2");
+    const step1El    = $("step1");
+    const step2El    = $("step2");
+    const tab1El     = $("tab1");
+    const tab2El     = $("tab2");
 
-    let currentBlob = null;
-    let lastJson    = null;
-    let maskValidated = false; // la photo doit être validée avant analyse
-    let activeTab   = 1;
+    let currentBlob   = null;
+    let lastJson      = null;
+    let maskValidated = false;
+    let activeTab     = 1;
     let statusTimeoutId = null;
 
     function setStatus(msg, type = "info") {
@@ -468,7 +458,7 @@
       statusTimeoutId = setTimeout(() => {
         box.className = "";
         box.style.display = "none";
-      }, 10000); // 10 secondes
+      }, 10000);
     }
 
     function clampSize(w,h,max=1600){
@@ -477,7 +467,6 @@
       return [Math.round(w*s), Math.round(h*s)];
     }
 
-    // Gestion visuelle des onglets
     function refreshSteps(){
       if(!step1El || !step2El) return;
 
@@ -507,12 +496,10 @@
         if (activeTab === 1) {
           tab1El.classList.remove('hidden');
           tab2El.classList.add('hidden');
-          // sur l’onglet Photo, on cache le résultat
           resultCard.classList.add("hidden");
         } else {
           tab1El.classList.add('hidden');
           tab2El.classList.remove('hidden');
-          // sur Analyse, on n'affiche le résultat que si une analyse a été faite
           if (lastJson) {
             resultCard.classList.remove("hidden");
           }
@@ -521,7 +508,6 @@
       refreshSteps();
     }
 
-    // Loader global
     function setLoading(isLoading, text) {
       if (!loaderBox) return;
       if (isLoading) {
@@ -532,7 +518,6 @@
       }
     }
 
-    // Date auto JJ/MM/AAAA + autoformat
     function todayStr(){
       const d = new Date();
       const dd = String(d.getDate()).padStart(2,'0');
@@ -561,7 +546,6 @@
       preview.classList.remove("hidden");
     }
 
-    // Convertit toute image en File JPEG (compat backend)
     async function ensureJpegFile(fileOrBlob){
       if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
         return fileOrBlob;
@@ -600,7 +584,33 @@
       return String(v).replace(/[\n\r,]/g,' ');
     }
 
-    // CSV (1 ligne par coup)
+    function getRadarInfoFromJson(json){
+      const dbg = json && json.debug ? json.debug : {};
+      const ringReason = (dbg.ring_reason || '').toLowerCase();
+      const circleReason = (dbg.circle_reason || '').toLowerCase();
+      const step = dbg.ring_step_m;
+
+      let usage = null;
+
+      if (ringReason.includes('triangle')) {
+        usage = 'Putting';
+      } else if (ringReason.includes('carre') || ringReason.includes('square')) {
+        usage = 'Petit jeu';
+      } else if (circleReason) {
+        usage = 'Long jeu';
+      }
+
+      if (!usage && (step === undefined || step === null || step === '')) {
+        return '—';
+      }
+
+      if (usage && (step !== undefined && step !== null && step !== '')) {
+        return usage + ' – ' + step + ' m';
+      }
+      if (usage) return usage;
+      return step + ' m';
+    }
+
     function toCsv(json){
       const coups=json?.coups||[];
       const rows=[];
@@ -609,8 +619,7 @@
         'date_text',
         'club',
         'distance_cible_m',
-        'radar_type',
-        'radar_scale_m',
+        'radar_info',
         'distance_totale_m',
         'ecart_lateral_m',
         'ecart_profondeur_m'
@@ -619,8 +628,7 @@
       const dateVal   = dateText?.value||'';
       const clubVal   = safe(club?.value || '');
       const cibleVal  = safe(targetDist?.value || '');
-      const radarTypeVal  = safe(radarType?.value || '');
-      const radarScaleVal = safe(radarScale?.value || '');
+      const radarInfo = safe(getRadarInfoFromJson(json));
 
       coups.forEach((c,i)=>{
         rows.push([
@@ -628,8 +636,7 @@
           safe(dateVal),
           clubVal,
           cibleVal,
-          radarTypeVal,
-          radarScaleVal,
+          radarInfo,
           safe(c.distance_totale_m),
           safe(c.ecart_lateral_m),
           safe(c.ecart_profondeur_m)
@@ -638,7 +645,6 @@
       return rows.join('\n');
     }
 
-    // Pendant validation (mask)
     function setMaskLoading(isLoading) {
       if (isLoading) {
         maskBtn.disabled = true;
@@ -654,7 +660,6 @@
       refreshSteps();
     }
 
-    // Quand on choisit une image (cam ou galerie)
     function onPick(e){
       const file=e.target.files && e.target.files[0];
       if(!file) return;
@@ -675,7 +680,6 @@
     fileCam.addEventListener('change', onPick);
     fileGal.addEventListener('change', onPick);
 
-    // Analyse (onglet 2)
     async function analyze(){
       if(!maskValidated){
         setStatus('Validez d\'abord la photo avant de lancer l’analyse.', "error");
@@ -701,8 +705,6 @@
       fd.append('date_text', dateText.value);
       fd.append('club', club.value);
       fd.append('centre_distance', targetDist.value);
-      fd.append('radar_type', radarType.value || '');
-      fd.append('radar_scale', radarScale.value || '');
 
       try{
         setLoading(true, "Analyse en cours…");
@@ -717,33 +719,51 @@
         lastJson = data;
 
         const coups = Array.isArray(data.coups) ? data.coups : [];
-        const c0 = coups[0] || {};
 
-        const distTotale = c0.distance_totale_m  ?? data.distance_totale_m  ?? '';
-        const ecartLat   = c0.ecart_lateral_m    ?? data.ecart_lateral_m    ?? '';
-        const ecartProf  = c0.ecart_profondeur_m ?? data.ecart_profondeur_m ?? '';
-
-        rCoup.textContent   = coups.length ? 'Coup 1' : '—';
-        rDist.textContent   = distTotale !== '' ? safe(distTotale) + ' m' : '—';
-        rLat.textContent    = ecartLat   !== '' ? safe(ecartLat)   + ' m' : '—';
-        rProf.textContent   = ecartProf  !== '' ? safe(ecartProf)  + ' m' : '—';
         rDate.textContent   = dateText.value;
         rClub.textContent   = club.value;
         rTarget.textContent = targetDist.value + ' m';
 
-        // Radar dans le résultat
-        let radarLabel = '—';
-        if (radarType.value) {
-          const typeMap = {rond: 'Rond', triangle: 'Triangle', carre: 'Carré'};
-          radarLabel = typeMap[radarType.value] || radarType.value;
-          if (radarScale.value) {
-            radarLabel += ' – ' + radarScale.value + ' m';
-          }
+        const radarInfo = getRadarInfoFromJson(data);
+        rRadar.textContent = radarInfo;
+
+        // liste des coups
+        shotsList.innerHTML = '';
+        if (coups.length === 0) {
+          const line = document.createElement('div');
+          line.textContent = 'Aucun coup détecté.';
+          shotsList.appendChild(line);
+        } else {
+          coups.forEach((c, idx)=>{
+            const row = document.createElement('div');
+            row.className = 'shot-row';
+
+            const left = document.createElement('div');
+            left.className = 'shot-left';
+            left.textContent = 'Coup ' + (idx+1);
+
+            const right = document.createElement('div');
+            right.className = 'shot-right';
+            const dist = c.distance_totale_m;
+            const lat  = c.ecart_lateral_m;
+            const prof = c.ecart_profondeur_m;
+
+            const parts = [];
+            if (dist !== undefined && dist !== null) parts.push('Dist. ' + dist + ' m');
+            if (lat  !== undefined && lat  !== null) parts.push('Lat. ' + lat + ' m');
+            if (prof !== undefined && prof !== null) parts.push('Prof. ' + prof + ' m');
+
+            right.textContent = parts.join(' · ') || '—';
+
+            row.appendChild(left);
+            row.appendChild(right);
+            shotsList.appendChild(row);
+          });
         }
-        rRadar.textContent = radarLabel;
 
         resultCard.classList.remove("hidden");
         setStatus('Analyse terminée ✅', "info");
+        setActiveTab(2);
       }catch(err){
         setStatus('Analyse impossible : '+err.message, "error");
       } finally {
@@ -752,7 +772,6 @@
     }
     analyzeBtn.addEventListener('click', analyze);
 
-    // Validation de la photo (mask – onglet 1)
     async function showMask(){
       const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
       if(!file){
@@ -792,7 +811,6 @@
     }
     maskBtn.addEventListener('click', showMask);
 
-    // CSV
     function downloadCsv(name,content){
       const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
       const url=URL.createObjectURL(blob);
@@ -820,11 +838,9 @@
       setStatus('CSV téléchargé ✅', "info");
     });
 
-    // Clic sur les onglets
     step1El.addEventListener('click', ()=> setActiveTab(1));
     step2El.addEventListener('click', ()=> setActiveTab(2));
 
-    // Init onglet 1 actif
     setActiveTab(1);
   </script>
 </body>
