@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -26,225 +25,306 @@
     .result .kv { display:flex; justify-content:space-between; padding:8px 0; border-top:1px dashed #26303b; }
     .result .kv:first-of-type { border-top: none; }
     .error { color:#ff6b6b; }
-    .hidden{ display:none !important; }@media (max-width: 720px){
-  .grid-2{grid-template-columns:1fr}
-  .wrap{margin:16px auto}
-  img{max-height:50vh}
-  .row > button, .row > label[role="button"], .primary, .ghost{width:100%}
-}
+    .hidden{ display:none !important; }
 
+    @media (max-width: 720px){
+      .grid-2{grid-template-columns:1fr}
+      .wrap{margin:16px auto}
+      img{max-height:50vh}
+      .row > button, .row > label[role="button"], .primary, .ghost{width:100%}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Lab2DoGolf – Capture & Analyse</h1><div class="card">
-  <div class="grid-2">
-    <div class="row">
-      <label for="dateText">Date (JJ/MM/AAAA)</label>
-      <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
-      <div class="hint">Préremplie à aujourd'hui</div>
+    <h1>Lab2DoGolf – Capture & Analyse</h1>
+
+    <div class="card">
+      <div class="grid-2">
+        <div class="row">
+          <label for="dateText">Date (JJ/MM/AAAA)</label>
+          <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
+          <div class="hint">Préremplie à aujourd'hui</div>
+        </div>
+        <div class="row">
+          <label for="club">Club</label>
+          <input id="club" type="text" placeholder="ex: Fer7" required />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="row">
+          <label for="targetDist">Distance cible (m)</label>
+          <input id="targetDist" type="number" step="1" min="0" value="100" required />
+        </div>
+      </div>
+
+      <!-- Bouton 1 : Ouvrir l'appareil photo (picker natif) -->
+      <div class="row">
+        <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
+        <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
+      </div>
+
+      <!-- Bouton 2 : Ouvrir la galerie (picker natif) -->
+      <div class="row">
+        <label role="button" for="fileGal" class="ghost">🖼️ Choisir depuis la galerie</label>
+        <input id="fileGal" type="file" accept="image/*" style="display:none;" />
+      </div>
+
+      <div class="row">
+        <img id="preview" class="hidden" alt="aperçu image" />
+      </div>
+
+      <div class="grid-2 row">
+        <!-- Analyse désactivée tant que le masque n'est pas validé -->
+        <button id="analyzeBtn" class="primary" type="button" disabled>🧠 Analyser l’image</button>
+        <button id="maskBtn" class="ghost" type="button">🟦 Voir le masque</button>
+      </div>
+
+      <div class="row error" id="errorBox" hidden></div>
     </div>
-    <div class="row">
-      <label for="club">Club</label>
-      <input id="club" type="text" placeholder="ex: Fer7" required />
+
+    <div class="row result hidden" id="resultCard">
+      <h3>Résultat d’analyse</h3>
+      <div class="kv"><div>Coup</div><div id="rCoup">—</div></div>
+      <div class="kv"><div>Distance totale</div><div id="rDist">—</div></div>
+      <div class="kv"><div>Écart latéral</div><div id="rLat">—</div></div>
+      <div class="kv"><div>Écart profondeur</div><div id="rProf">—</div></div>
+      <div class="kv"><div>Date</div><div id="rDate">—</div></div>
+      <div class="kv"><div>Club</div><div id="rClub">—</div></div>
+      <div class="kv"><div>Distance cible</div><div id="rTarget">—</div></div>
+      <div class="row"><button id="csvBtn" class="ghost" type="button">⬇️ Télécharger CSV</button></div>
     </div>
+
   </div>
 
-  <div class="grid-2">
-    <div class="row">
-      <label for="targetDist">Distance cible (m)</label>
-      <input id="targetDist" type="number" step="1" min="0" value="100" required />
-    </div>
-  </div>
+  <script>
+    const API_BASE = "https://todogolf-analyse.onrender.com";
+    const $ = (id)=> document.getElementById(id);
+    const fileCam=$("fileCam"), fileGal=$("fileGal"),
+          preview=$("preview"), analyzeBtn=$("analyzeBtn"), maskBtn=$("maskBtn"),
+          errorBox=$("errorBox"), resultCard=$("resultCard"),
+          rCoup=$("rCoup"), rDist=$("rDist"), rLat=$("rLat"), rProf=$("rProf"),
+          rDate=$("rDate"), rClub=$("rClub"), rTarget=$("rTarget"),
+          csvBtn=$("csvBtn"), dateText=$("dateText"), club=$("club"), targetDist=$("targetDist");
 
-  <!-- Bouton 1 : Ouvrir l'appareil photo (picker natif) -->
-  <div class="row">
-    <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
-    <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
-  </div>
+    let currentBlob=null, lastJson=null;
+    let maskValidated = false; // <- nouvelle étape obligatoire
 
-  <!-- Bouton 2 : Ouvrir la galerie (picker natif) -->
-  <div class="row">
-    <label role="button" for="fileGal" class="ghost">🖼️ Choisir depuis la galerie</label>
-    <input id="fileGal" type="file" accept="image/*" style="display:none;" />
-  </div>
-
-  <div class="row">
-    <img id="preview" class="hidden" alt="aperçu image" />
-  </div>
-
-  <div class="grid-2 row">
-    <button id="analyzeBtn" class="primary" type="button">🧠 Analyser l’image</button>
-    <button id="maskBtn" class="ghost" type="button">🟦 Voir le masque</button>
-  </div>
-
-  <div class="row error" id="errorBox" hidden></div>
-</div>
-
-<div class="row result hidden" id="resultCard">
-  <h3>Résultat d’analyse</h3>
-  <div class="kv"><div>Coup</div><div id="rCoup">—</div></div>
-  <div class="kv"><div>Distance totale</div><div id="rDist">—</div></div>
-  <div class="kv"><div>Écart latéral</div><div id="rLat">—</div></div>
-  <div class="kv"><div>Écart profondeur</div><div id="rProf">—</div></div>
-  <div class="kv"><div>Date</div><div id="rDate">—</div></div>
-  <div class="kv"><div>Club</div><div id="rClub">—</div></div>
-  <div class="kv"><div>Distance cible</div><div id="rTarget">—</div></div>
-  <div class="row"><button id="csvBtn" class="ghost" type="button">⬇️ Télécharger CSV</button></div>
-</div>
-
-  </div>  <script>
-  const API_BASE = "https://todogolf-analyse.onrender.com";
-  const $ = (id)=> document.getElementById(id);
-  const fileCam=$("fileCam"), fileGal=$("fileGal"),
-        preview=$("preview"), analyzeBtn=$("analyzeBtn"), maskBtn=$("maskBtn"),
-        errorBox=$("errorBox"), resultCard=$("resultCard"),
-        rCoup=$("rCoup"), rDist=$("rDist"), rLat=$("rLat"), rProf=$("rProf"),
-        rDate=$("rDate"), rClub=$("rClub"), rTarget=$("rTarget"),
-        csvBtn=$("csvBtn"), dateText=$("dateText"), club=$("club"), targetDist=$("targetDist");
-
-  let currentBlob=null, lastJson=null;
-
-  function setStatus(msg){ if(!errorBox) return; errorBox.textContent=msg; errorBox.hidden=false; setTimeout(()=> errorBox.hidden = true, 4000); }
-  function show(el,on=true){ el.classList[on?'remove':'add']('hidden'); }
-  function clampSize(w,h,max=1600){ if(Math.max(w,h)<=max) return [w,h]; const s=max/Math.max(w,h); return [Math.round(w*s), Math.round(h*s)]; }
-
-  // Date auto JJ/MM/AAAA + autoformat
-  function todayStr(){ const d=new Date(); const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const yyyy=d.getFullYear(); return `${dd}/${mm}/${yyyy}`; }
-  if(dateText && !dateText.value) dateText.value = todayStr();
-  dateText?.addEventListener('input', e=>{ let v=e.target.value.replace(/\D/g,'').slice(0,8); if(v.length>=5) v=v.replace(/^(\d{2})(\d{2})(\d{1,4})$/,'$1/$2/$3'); else if(v.length>=3) v=v.replace(/^(\d{2})(\d{1,2})$/,'$1/$2'); e.target.value=v; });
-
-  function showPreview(fileOrBlob){
-    if(!fileOrBlob){ preview.classList.add("hidden"); return; }
-    const url = URL.createObjectURL(fileOrBlob);
-    preview.src = url;
-    preview.onload = ()=> URL.revokeObjectURL(url);
-    preview.classList.remove("hidden");
-  }
-
-  // Convertit toute image en File JPEG (compat backend)
-  async function ensureJpegFile(fileOrBlob){
-    if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-      return fileOrBlob; // déjà un File jpeg
+    function setStatus(msg){
+      if(!errorBox) return;
+      errorBox.textContent=msg;
+      errorBox.hidden=false;
+      setTimeout(()=> errorBox.hidden = true, 4000);
     }
-    try{
-      const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
-      const [tw,th] = clampSize(bmp.width,bmp.height,1600);
-      const canvas=document.createElement('canvas'); canvas.width=tw; canvas.height=th;
-      const ctx=canvas.getContext('2d'); ctx.drawImage(bmp,0,0,tw,th);
-      const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
-      return new File([blob], 'capture.jpg', {type:'image/jpeg'});
-    }catch{
-      return await new Promise(async (resolve)=>{
-        const img=new Image(); img.src=URL.createObjectURL(fileOrBlob); await img.decode();
-        const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
-        const canvas=document.createElement('canvas'); canvas.width=tw; canvas.height=th;
-        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,tw,th);
-        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
-        URL.revokeObjectURL(img.src);
-        resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
-      });
+
+    function show(el,on=true){ el.classList[on?'remove':'add']('hidden'); }
+
+    function clampSize(w,h,max=1600){
+      if(Math.max(w,h)<=max) return [w,h];
+      const s=max/Math.max(w,h);
+      return [Math.round(w*s), Math.round(h*s)];
     }
-  }
 
-  function safe(v){ if(v==null) return ''; if(typeof v==='number' && !Number.isFinite(v)) return ''; return String(v).replace(/[\n\r,]/g,' '); }
-
-  // CSV (1 ligne par coup)
-  function toCsv(json){
-    const coups=json?.coups||[];
-    const rows=[];
-    rows.push(['index','date_text','club','centre_distance','distance_totale_m','ecart_lateral_m','ecart_profondeur_m'].join(','));
-    const dateVal=dateText?.value||'';
-    const clubVal=safe(json.club);
-    const centreVal=safe(json.centre_distance);
-    coups.forEach((c,i)=>{
-      rows.push([i+1,safe(dateVal),clubVal,centreVal,safe(c.distance_totale_m),safe(c.ecart_lateral_m),safe(c.ecart_profondeur_m)].join(','));
+    // Date auto JJ/MM/AAAA + autoformat
+    function todayStr(){
+      const d=new Date();
+      const dd=String(d.getDate()).padStart(2,'0');
+      const mm=String(d.getMonth()+1).padStart(2,'0');
+      const yyyy=d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    if(dateText && !dateText.value) dateText.value = todayStr();
+    dateText?.addEventListener('input', e=>{
+      let v=e.target.value.replace(/\D/g,'').slice(0,8);
+      if(v.length>=5) v=v.replace(/^(\d{2})(\d{2})(\d{1,4})$/,'$1/$2/$3');
+      else if(v.length>=3) v=v.replace(/^(\d{2})(\d{1,2})$/,'$1/$2');
+      e.target.value=v;
     });
-    return rows.join('\n');
-  }
 
-  // Pickers
-  function onPick(e){
-    const file=e.target.files&&e.target.files[0];
-    if(!file) return;
-    ensureJpegFile(file).then(f=>{
-      currentBlob=f;
-      setStatus('Image prête: '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
-      showPreview(currentBlob);
-      show(resultCard,false);
-    }).catch(err=> setStatus('Erreur image: '+err.message));
-  }
-  fileCam.addEventListener('change', onPick);
-  fileGal.addEventListener('change', onPick);
-
-  // Analyse
-  async function analyze(){
-    if(!dateText.value||!club.value||!targetDist.value){
-      setStatus('Remplissez la date, le club et la distance cible.');
-      return;
+    function showPreview(fileOrBlob){
+      if(!fileOrBlob){
+        preview.classList.add("hidden");
+        return;
+      }
+      const url = URL.createObjectURL(fileOrBlob);
+      preview.src = url;
+      preview.onload = ()=> URL.revokeObjectURL(url);
+      preview.classList.remove("hidden");
     }
-    const file=currentBlob||fileCam.files?.[0]||fileGal.files?.[0];
-    if(!file){ setStatus("Ajoute ou choisis une photo d'abord."); return; }
 
-    const url=API_BASE+'/analyze';
-    const fd=new FormData();
-    const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
-    // multi-alias pour compat serveur
-    fd.append('image', imgFile, imgFile.name);
-    fd.append('file', imgFile, imgFile.name);
-    fd.append('image_file', imgFile, imgFile.name);
-    fd.append('date_text', dateText.value);
-    fd.append('club', club.value);
-    fd.append('centre_distance', targetDist.value);
+    // Convertit toute image en File JPEG (compat backend)
+    async function ensureJpegFile(fileOrBlob){
+      if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
+        return fileOrBlob; // déjà un File jpeg
+      }
+      try{
+        const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
+        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
+        const canvas=document.createElement('canvas'); canvas.width=tw; canvas.height=th;
+        const ctx=canvas.getContext('2d'); ctx.drawImage(bmp,0,0,tw,th);
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        return new File([blob], 'capture.jpg', {type:'image/jpeg'});
+      }catch{
+        return await new Promise(async (resolve)=>{
+          const img=new Image();
+          img.src=URL.createObjectURL(fileOrBlob);
+          await img.decode();
+          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
+          const canvas=document.createElement('canvas'); canvas.width=tw; canvas.height=th;
+          const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,tw,th);
+          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+          URL.revokeObjectURL(img.src);
+          resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
+        });
+      }
+    }
 
-    try{
-      const res=await fetch(url,{method:'POST',body:fd});
-      if(!res.ok){ let t=''; try{t=await res.text();}catch(_){} throw new Error('HTTP '+res.status+(t?' – '+t:'')); }
-      const data=await res.json();
-      lastJson=data;
-      rCoup.textContent=safe(data.coup);
-      rDist.textContent=safe(data.distance_totale_m)+' m';
-      rLat.textContent=safe(data.ecart_lateral_m)+' m';
-      rProf.textContent=safe(data.ecart_profondeur_m)+' m';
-      rDate.textContent=dateText.value;
-      rClub.textContent=club.value;
-      rTarget.textContent=targetDist.value+' m';
-      show(resultCard,true);
-    }catch(err){ setStatus('Analyse impossible : '+err.message); }
-  }
-  analyzeBtn.addEventListener('click', analyze);
+    function safe(v){
+      if(v==null) return '';
+      if(typeof v==='number' && !Number.isFinite(v)) return '';
+      return String(v).replace(/[\n\r,]/g,' ');
+    }
 
-  // Masque
-  async function showMask(){
-    const file=currentBlob||fileCam.files?.[0]||fileGal.files?.[0];
-    if(!file){ setStatus("Ajoute ou choisis une photo d'abord."); return; }
-    const url=API_BASE+'/mask';
-    const fd=new FormData();
-    const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
-    fd.append('image', imgFile, imgFile.name);
-    fd.append('file', imgFile, imgFile.name);
-    fd.append('image_file', imgFile, imgFile.name);
-    try{
-      const res=await fetch(url,{method:'POST',body:fd});
-      if(!res.ok){ let t=''; try{t=await res.text();}catch(_){} throw new Error('HTTP '+res.status+(t?' – '+t:'')); }
-      const blob=await res.blob();
-      showPreview(blob);
-    }catch(err){ setStatus('Masque indisponible : '+err.message); }
-  }
-  maskBtn.addEventListener('click', showMask);
+    // CSV (1 ligne par coup)
+    function toCsv(json){
+      const coups=json?.coups||[];
+      const rows=[];
+      rows.push(['index','date_text','club','centre_distance','distance_totale_m','ecart_lateral_m','ecart_profondeur_m'].join(','));
+      const dateVal=dateText?.value||'';
+      const clubVal=safe(json.club);
+      const centreVal=safe(json.centre_distance);
+      coups.forEach((c,i)=>{
+        rows.push([i+1,safe(dateVal),clubVal,centreVal,safe(c.distance_totale_m),safe(c.ecart_lateral_m),safe(c.ecart_profondeur_m)].join(','));
+      });
+      return rows.join('\n');
+    }
 
-  // CSV
-  function downloadCsv(name,content){
-    const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-  csvBtn.addEventListener('click', ()=>{
-    if(!lastJson){ setStatus('Fais une analyse d\'abord.'); return; }
-    const csv=toCsv(lastJson);
-    const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0');
-    const name=`todogolf-analyse-${yyyy}-${mm}-${dd}.csv`;
-    downloadCsv(name,csv);
-  });
-  </script></body>
-  </html>
+    // Quand on choisit une image (cam ou galerie)
+    function onPick(e){
+      const file=e.target.files&&e.target.files[0];
+      if(!file) return;
+      ensureJpegFile(file).then(f=>{
+        currentBlob=f;
+        setStatus('Image prête: '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
+        showPreview(currentBlob);
+        show(resultCard,false);      // on cache l'ancien résultat
+        lastJson = null;            // reset dernier JSON
+        maskValidated = false;      // il faudra refaire un mask
+        analyzeBtn.disabled = true; // analyse bloquée tant que pas de nouveau mask
+      }).catch(err=> setStatus('Erreur image: '+err.message));
+    }
+    fileCam.addEventListener('change', onPick);
+    fileGal.addEventListener('change', onPick);
+
+    // Analyse
+    async function analyze(){
+      if(!maskValidated){
+        setStatus('Faites d\'abord "Voir le masque" pour valider la détection.');
+        return;
+      }
+      if(!dateText.value||!club.value||!targetDist.value){
+        setStatus('Remplissez la date, le club et la distance cible.');
+        return;
+      }
+      const file=currentBlob||fileCam.files?.[0]||fileGal.files?.[0];
+      if(!file){
+        setStatus("Ajoute ou choisis une photo d'abord.");
+        return;
+      }
+
+      const url=API_BASE+'/analyze';
+      const fd=new FormData();
+      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
+      // multi-alias pour compat serveur
+      fd.append('image', imgFile, imgFile.name);
+      fd.append('file', imgFile, imgFile.name);
+      fd.append('image_file', imgFile, imgFile.name);
+      fd.append('date_text', dateText.value);
+      fd.append('club', club.value);
+      fd.append('centre_distance', targetDist.value);
+
+      try{
+        const res=await fetch(url,{method:'POST',body:fd});
+        if(!res.ok){
+          let t='';
+          try{t=await res.text();}catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+        }
+        const data=await res.json();
+        lastJson=data;
+        rCoup.textContent=safe(data.coup);
+        rDist.textContent=safe(data.distance_totale_m)+' m';
+        rLat.textContent=safe(data.ecart_lateral_m)+' m';
+        rProf.textContent=safe(data.ecart_profondeur_m)+' m';
+        rDate.textContent=dateText.value;
+        rClub.textContent=club.value;
+        rTarget.textContent=targetDist.value+' m';
+        show(resultCard,true);
+      }catch(err){
+        setStatus('Analyse impossible : '+err.message);
+      }
+    }
+    analyzeBtn.addEventListener('click', analyze);
+
+    // Masque
+    async function showMask(){
+      const file=currentBlob||fileCam.files?.[0]||fileGal.files?.[0];
+      if(!file){
+        setStatus("Ajoute ou choisis une photo d'abord.");
+        return;
+      }
+      const url=API_BASE+'/mask';
+      const fd=new FormData();
+      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
+      fd.append('image', imgFile, imgFile.name);
+      fd.append('file', imgFile, imgFile.name);
+      fd.append('image_file', imgFile, imgFile.name);
+      try{
+        const res=await fetch(url,{method:'POST',body:fd});
+        if(!res.ok){
+          let t='';
+          try{t=await res.text();}catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+        }
+        const blob=await res.blob();
+        showPreview(blob);          // on montre le masque
+        maskValidated = true;       // détection validée
+        analyzeBtn.disabled = false;
+        setStatus("Masque généré. Tu peux lancer l’analyse.");
+      }catch(err){
+        setStatus('Masque indisponible : '+err.message);
+        maskValidated = false;
+        analyzeBtn.disabled = true;
+      }
+    }
+    maskBtn.addEventListener('click', showMask);
+
+    // CSV
+    function downloadCsv(name,content){
+      const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    csvBtn.addEventListener('click', ()=>{
+      if(!lastJson){
+        setStatus('Fais une analyse d\'abord.');
+        return;
+      }
+      const csv=toCsv(lastJson);
+      const d=new Date();
+      const yyyy=d.getFullYear();
+      const mm=String(d.getMonth()+1).padStart(2,'0');
+      const dd=String(d.getDate()).padStart(2,'0');
+      const name=`todogolf-analyse-${yyyy}-${mm}-${dd}.csv`;
+      downloadCsv(name,csv);
+    });
+  </script>
+</body>
+</html>
