@@ -19,7 +19,8 @@
       font-family: system-ui, sans-serif;
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      /* même fond que index */
+      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
       color: var(--text);
     }
     .hidden { display:none !important; }
@@ -35,6 +36,7 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
+      backdrop-filter: blur(14px);
     }
     .top-left {
       display:flex;
@@ -75,13 +77,39 @@
       padding-bottom: 40px;
     }
 
+    /* CARD principale : alignée avec index */
     .card {
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+      position:relative;
+      background:
+        radial-gradient(circle at top left, rgba(0,80,58,0.18), transparent 55%),
+        linear-gradient(to bottom right, #05070b, #05070b);
+      border-radius:20px;
+      border:1px solid rgba(24,32,40,0.9);
+      padding:18px 16px 16px;
+      box-shadow:0 24px 40px rgba(0,0,0,0.45);
+      overflow:hidden;
+      transition:
+        background 0.16s ease-out,
+        border-color 0.16s ease-out,
+        box-shadow 0.16s ease-out,
+        transform 0.12s ease-out;
     }
+    .card::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .card:hover {
+      border-color: var(--primary);
+      background:
+        radial-gradient(circle at top left, rgba(0,80,58,0.3), transparent 60%),
+        linear-gradient(to bottom right, #080b11, #05070b);
+      box-shadow:0 28px 50px rgba(0,0,0,0.65);
+    }
+
     .row { margin-top: var(--gap); }
     .grid-2 {
       display:grid;
@@ -160,6 +188,7 @@
       padding:16px;
       line-height:1.45;
       box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+      margin-top: 18px;
     }
     .result h3 { margin: 0 0 8px 0; font-size: 18px; }
     .result .kv {
@@ -281,7 +310,7 @@
       margin-top: 14px;
       line-height: 1.5;
       display: none;
-      white-space: pre-line; /* support \n dans le texte */
+      white-space: pre-line;
     }
     .status--info {
       display:block;
@@ -519,7 +548,6 @@
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
       if (!box) return;
-      // permet les messages multi-lignes
       box.innerHTML = msg.replace(/\n/g, "<br>");
       box.className = "";
       box.classList.add(type === "error" ? "status--error" : "status--info");
@@ -672,7 +700,6 @@
       const file=e.target.files && e.target.files[0];
       if(!file) return;
 
-      // reset état
       lastJson = null;
       maskValidated = false;
       analyzeBtn.disabled = true;
@@ -715,8 +742,7 @@
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:''));
-        }
+          throw new Error('HTTP '+res.status+(t?' – '+t:''));}
         const blob = await res.blob();
         showPreview(blob);
         maskValidated = true;
@@ -905,21 +931,17 @@
   </script>
 
   <script>
-  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
-  // Fonction ping Render
-  function pingRender() {
-    fetch(RENDER_URL, {
-      method: "HEAD",
-      mode: "no-cors"
-    }).catch(() => {});
-  }
+    function pingRender() {
+      fetch(RENDER_URL, {
+        method: "HEAD",
+        mode: "no-cors"
+      }).catch(() => {});
+    }
 
-  // 🔸 Ping au chargement de la page
-  pingRender();
-
-  // 🔸 Ping toutes les 5 minutes
-  setInterval(pingRender, 5 * 60 * 1000);
-</script>
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
 </body>
 </html>
