@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Lab by ToDoGolf – Lecture Radar</title>
+  <title>ToDoGolf Lab – Lecture Radar</title>
   <style>
     :root {
       --gap: 14px;
@@ -16,10 +16,9 @@
     }
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
       padding: 0;
-      /* même fond que index */
       background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
       color: var(--text);
     }
@@ -77,7 +76,28 @@
       padding-bottom: 40px;
     }
 
-    /* CARD principale : alignée avec index */
+    /* Titre & intro (alignés sur index) */
+    .page-eyebrow {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      color:#6b7280;
+      margin-bottom:4px;
+    }
+    .page-title {
+      font-size:22px;
+      font-weight:600;
+      margin:0 0 6px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      max-width:520px;
+      line-height:1.5;
+      margin:0 0 16px;
+    }
+
+    /* Carte principale */
     .card {
       position:relative;
       background:
@@ -89,9 +109,7 @@
       box-shadow:0 24px 40px rgba(0,0,0,0.45);
       overflow:hidden;
       transition:
-        background 0.16s ease-out,
         border-color 0.16s ease-out,
-        box-shadow 0.16s ease-out,
         transform 0.12s ease-out;
     }
     .card::before {
@@ -104,10 +122,7 @@
     }
     .card:hover {
       border-color: var(--primary);
-      background:
-        radial-gradient(circle at top left, rgba(0,80,58,0.3), transparent 60%),
-        linear-gradient(to bottom right, #080b11, #05070b);
-      box-shadow:0 28px 50px rgba(0,0,0,0.65);
+      transform: translateY(-1px);
     }
 
     .row { margin-top: var(--gap); }
@@ -222,25 +237,33 @@
     .shot-left { font-weight:600; }
     .shot-right { opacity:0.9; }
 
-    /* Stepper */
+    /* Stepper – nouveau design */
     .stepper {
       display:flex;
-      gap: 8px;
+      gap:8px;
       margin-bottom: 10px;
-      font-size: 12px;
+      font-size:12px;
+      background:#05070b;
+      border-radius:999px;
+      border:1px solid #1a2530;
+      padding:4px;
     }
     .step {
       flex:1;
       display:flex;
       align-items:center;
       gap:8px;
-      padding:8px 12px;
+      padding:8px 10px;
       border-radius:999px;
-      background:#0a0f13;
+      background:transparent;
       color:#8b9aaa;
-      border:1px solid #1a2530;
+      border:none;
       cursor:pointer;
       user-select:none;
+      transition:background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease;
+    }
+    .step:hover {
+      background:#0c131a;
     }
     .step-index {
       width:22px;
@@ -255,18 +278,21 @@
     }
     .step-texts { display:flex; flex-direction:column; gap:2px; }
     .step-label {
-      font-size:11px;
+      font-size:10px;
       text-transform:uppercase;
-      letter-spacing:0.06em;
+      letter-spacing:0.08em;
     }
     .step-sub { font-size:12px; opacity:0.9; }
+
     .step--active {
-      background:var(--primary);
-      color: #ffffff;
-      border-color:var(--primary);
+      background:linear-gradient(to right, #00503a, #059669);
+      color:#f9fafb;
+      box-shadow:0 0 0 1px rgba(15,118,110,0.8), 0 10px 20px rgba(0,0,0,0.55);
+      transform:translateY(-1px);
     }
-    .step--disabled {
-      opacity:0.5;
+    .step--active .step-index {
+      background:rgba(15,23,42,0.35);
+      border-color:rgba(226,232,240,0.9);
     }
 
     .tab-content { margin-top: var(--gap); }
@@ -302,7 +328,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Status bar (amélioré) */
+    /* Status bar */
     #statusBox {
       font-size: 14px;
       padding: 14px 16px;
@@ -335,17 +361,6 @@
       .btn-row-2{grid-template-columns:1fr}
     }
 
-    .page-title {
-      font-size:22px;
-      font-weight:600;
-      margin:10px 0 10px;
-    }
-    .page-subtitle {
-      font-size:13px;
-      color:#9aa5b1;
-      margin-bottom:10px;
-    }
-
     /* Popup sauvegarde */
     .save-popup {
       position: fixed;
@@ -368,8 +383,8 @@
     <div class="top-left">
       <div class="brand-dot"></div>
       <div>
-        <div class="top-title">Lab by ToDoGolf</div>
-        <div class="top-sub">Lecture radar – Masque & analyse</div>
+        <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
+        <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
     </div>
     <div>
@@ -378,8 +393,12 @@
   </div>
 
   <div class="wrap">
-    <div class="page-title">Lecture Radar</div>
-    <div class="page-subtitle">Étape 1 : photo • Étape 2 : analyse du coup</div>
+    <div class="page-eyebrow">Lecture radar</div>
+    <h1 class="page-title">Analyser une nouvelle photo</h1>
+    <p class="page-subtitle">
+      Importez la photo de votre feuille Lab by ToDoGolf, laissez le système détecter le radar,
+      vérifiez le masque puis renseignez votre coup avant de l’ajouter à votre historique de performance.
+    </p>
 
     <div class="card">
       <!-- Stepper -->
@@ -388,14 +407,14 @@
           <div class="step-index">1</div>
           <div class="step-texts">
             <div class="step-label">Étape 1</div>
-            <div class="step-sub">Photo</div>
+            <div class="step-sub">Photo & masque</div>
           </div>
         </div>
         <div id="step2" class="step">
           <div class="step-index">2</div>
           <div class="step-texts">
             <div class="step-label">Étape 2</div>
-            <div class="step-sub">Analyse</div>
+            <div class="step-sub">Analyse du coup</div>
           </div>
         </div>
       </div>
