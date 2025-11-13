@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ToDoGolf Lab – Lecture Radar</title>
+  <title>Lab by ToDoGolf – Lecture Radar</title>
   <style>
     :root {
       --gap: 14px;
@@ -24,12 +24,12 @@
     }
     .hidden { display:none !important; }
 
-    /* Topbar – identique à index.html (avec bouton à droite) */
+    /* Topbar alignée avec index */
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 40;
-      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
+      z-index: 50;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.9));
       border-bottom: 1px solid #10151e;
       padding: 10px 16px;
       display:flex;
@@ -76,7 +76,6 @@
       padding: 18px 16px 40px;
     }
 
-    /* Titres – mêmes styles que index */
     .page-eyebrow {
       font-size:11px;
       text-transform:uppercase;
@@ -94,10 +93,9 @@
       color:#9aa5b1;
       max-width:520px;
       line-height:1.5;
-      margin-bottom:22px;
+      margin-bottom:14px;
     }
 
-    /* Carte principale – scroll interne */
     .card {
       background:
         radial-gradient(circle at top left, rgba(0,80,58,0.18), transparent 55%),
@@ -105,13 +103,8 @@
       border:1px solid var(--border);
       border-radius:18px;
       padding:16px;
-      box-shadow:none;
-      overflow:hidden;
-      max-height: calc(100vh - 180px); /* la carte scrolle, pas la page */
-      overflow-y: auto;
-      overscroll-behavior: contain;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
     }
-
     .row { margin-top: var(--gap); }
     .grid-2 {
       display:grid;
@@ -169,14 +162,29 @@
     .ghost {
       background:#0b1016;
     }
+
+    /* Image générique */
     img {
-      width: 100%;
-      max-height: 60vh;
-      object-fit: contain;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Zone scrollable pour l’aperçu du radar */
+    .preview-box {
+      max-height: 60vh;          /* hauteur max visible */
+      overflow-y: auto;          /* 👉 scroll uniquement ici */
       background:#000;
       border-radius: 16px;
       border:1px solid #1b232c;
     }
+    .preview-box img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 16px;
+    }
+
     .hint {
       font-size: 12px;
       color:#9aa5b1;
@@ -235,8 +243,8 @@
       display:flex;
       align-items:center;
       gap:8px;
-      padding:9px 12px;
-      border-radius:12px;
+      padding:8px 12px;
+      border-radius:999px;
       background:#0a0f13;
       color:#8b9aaa;
       border:1px solid #1a2530;
@@ -303,7 +311,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Status bar */
+    /* Status bar (amélioré) */
     #statusBox {
       font-size: 14px;
       padding: 14px 16px;
@@ -311,7 +319,7 @@
       margin-top: 14px;
       line-height: 1.5;
       display: none;
-      white-space: pre-line;
+      white-space: pre-line; /* support \n dans le texte */
     }
     .status--info {
       display:block;
@@ -328,13 +336,11 @@
 
     @media (max-width:720px){
       .grid-2{grid-template-columns:1fr}
-      img{max-height:50vh}
       .row > button,
       .row > label[role=button],
       .primary,
       .ghost{width:100%}
       .btn-row-2{grid-template-columns:1fr}
-      .card { max-height:none; } /* sur mobile on laisse la page défiler */
     }
 
     /* Popup sauvegarde */
@@ -368,12 +374,12 @@
     </div>
   </div>
 
-  <main class="wrap">
+  <div class="wrap">
     <div class="page-eyebrow">Lecture radar</div>
-    <h1 class="page-title">ToDoGolf Lab – Analyse & Performance</h1>
+    <h1 class="page-title">Lecture Radar</h1>
     <p class="page-subtitle">
-      Importez la photo de votre feuille Lab by ToDoGolf, laissez le système détecter le radar,
-      vérifiez le masque, puis renseignez votre coup avant de l’ajouter à votre historique.
+      Étape 1&nbsp;: chargez une photo de votre radar Lab by ToDoGolf et vérifiez le masque.<br>
+      Étape 2&nbsp;: renseignez vos paramètres et lancez l’analyse des coups.
     </p>
 
     <div class="card">
@@ -383,14 +389,14 @@
           <div class="step-index">1</div>
           <div class="step-texts">
             <div class="step-label">Étape 1</div>
-            <div class="step-sub">Photo</div>
+            <div class="step-sub">Photo & masque</div>
           </div>
         </div>
         <div id="step2" class="step">
           <div class="step-index">2</div>
           <div class="step-texts">
             <div class="step-label">Étape 2</div>
-            <div class="step-sub">Analyse</div>
+            <div class="step-sub">Analyse du coup</div>
           </div>
         </div>
       </div>
@@ -416,7 +422,9 @@
         </div>
 
         <div class="row">
-          <img id="preview" class="hidden" alt="aperçu image" />
+          <div class="preview-box hidden" id="previewBox">
+            <img id="preview" alt="aperçu image" />
+          </div>
         </div>
 
         <div class="row">
@@ -436,43 +444,7 @@
           </div>
           <div class="row">
             <label for="club">Club</label>
-            <input
-              id="club"
-              type="text"
-              list="clubList"
-              placeholder="Commencez à taper (ex. Fer 7, Wedge 56°)"
-              required
-            />
-            <datalist id="clubList">
-              <option value="Driver">
-              <option value="Bois 3">
-              <option value="Bois 5">
-              <option value="Bois 7">
-              <option value="Bois 9">
-              <option value="Hybride 2">
-              <option value="Hybride 3">
-              <option value="Hybride 4">
-              <option value="Hybride 5">
-              <option value="Fer 2">
-              <option value="Fer 3">
-              <option value="Fer 4">
-              <option value="Fer 5">
-              <option value="Fer 6">
-              <option value="Fer 7">
-              <option value="Fer 8">
-              <option value="Fer 9">
-              <option value="Wedge 50°">
-              <option value="Wedge 52°">
-              <option value="Wedge 54°">
-              <option value="Wedge 56°">
-              <option value="Wedge 58°">
-              <option value="Wedge 60°">
-              <option value="Wedge 62°">
-              <option value="Wedge 64°">
-              <option value="Putter">
-              <option value="Chipper">
-            </datalist>
-            <div class="hint">Sélectionnez un club dans la liste proposée.</div>
+            <input id="club" type="text" placeholder="ex: Fer7" required />
           </div>
         </div>
 
@@ -529,7 +501,7 @@
         </button>
       </div>
     </div>
-  </main>
+  </div>
 
   <!-- Popup -->
   <div id="savePopup" class="save-popup hidden">
@@ -540,41 +512,12 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const HISTORY_KEY = "todogolf_lab_history";
 
-    const CLUB_OPTIONS = [
-      "Driver",
-      "Bois 3",
-      "Bois 5",
-      "Bois 7",
-      "Bois 9",
-      "Hybride 2",
-      "Hybride 3",
-      "Hybride 4",
-      "Hybride 5",
-      "Fer 2",
-      "Fer 3",
-      "Fer 4",
-      "Fer 5",
-      "Fer 6",
-      "Fer 7",
-      "Fer 8",
-      "Fer 9",
-      "Wedge 50°",
-      "Wedge 52°",
-      "Wedge 54°",
-      "Wedge 56°",
-      "Wedge 58°",
-      "Wedge 60°",
-      "Wedge 62°",
-      "Wedge 64°",
-      "Putter",
-      "Chipper"
-    ];
-
     const $ = id => document.getElementById(id);
 
     const fileCam    = $("fileCam");
     const fileGal    = $("fileGal");
     const preview    = $("preview");
+    const previewBox = $("previewBox");
     const analyzeBtn = $("analyzeBtn");
     const resultCard = $("resultCard");
     const shotsList  = $("shotsList");
@@ -605,12 +548,6 @@
     let maskValidated = false;
     let activeTab     = 1;
     let statusTimeoutId = null;
-
-    function isValidClub(value) {
-      const norm = (value || "").trim().toLowerCase();
-      if (!norm) return false;
-      return CLUB_OPTIONS.some(c => c.toLowerCase() === norm);
-    }
 
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
@@ -691,13 +628,13 @@
 
     function showPreview(fileOrBlob){
       if(!fileOrBlob){
-        preview.classList.add("hidden");
+        if (previewBox) previewBox.classList.add("hidden");
         return;
       }
       const url = URL.createObjectURL(fileOrBlob);
       preview.src = url;
       preview.onload = ()=> URL.revokeObjectURL(url);
-      preview.classList.remove("hidden");
+      if (previewBox) previewBox.classList.remove("hidden");
     }
 
     async function ensureJpegFile(fileOrBlob){
@@ -810,20 +747,18 @@
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:''));
-        }
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); }
         const blob = await res.blob();
         showPreview(blob);
         maskValidated = true;
         analyzeBtn.disabled = false;
         toStep2Btn.classList.remove("hidden");
         setStatus(
-          "Masque généré avec succès ✅\n\n" +
-          "Merci de vérifier que la détection correspond bien à votre feuille :\n" +
-          "• le grand cercle rouge passe précisément par les trois repères du radar\n" +
-          "• les repères rouges sont correctement identifiés avec une icône au centre\n\n" +
-          "Si tout est correct, passez à l’étape 2 pour analyser les coups.\n" +
-          "Sinon, rechargez une nouvelle photo.",
+          "Masque généré ✅\n\n" +
+          "Vérifiez bien la détection :\n" +
+          "• le cercle extérieur rouge passe bien par les 3 repères\n" +
+          "• chaque repère est marqué par une icône au centre\n\n" +
+          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
           "info"
         );
       }catch(err){
@@ -845,11 +780,6 @@
         setStatus('Remplissez la date, le club et la distance cible.', "error");
         return;
       }
-      if (!isValidClub(club.value)) {
-        setStatus('Veuillez choisir un club dans la liste proposée (ex. "Fer 7", "Wedge 56°", "Driver").', "error");
-        return;
-      }
-
       const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
       if(!file){
         setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
@@ -873,8 +803,7 @@
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:''));
-        }
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); }
         const data = await res.json();
         lastJson = data;
 
@@ -944,10 +873,6 @@
         setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
         return;
       }
-      if (!isValidClub(club.value)) {
-        setStatus('Club invalide. Choisissez un club dans la liste proposée.', "error");
-        return;
-      }
 
       let history = [];
       try {
@@ -1008,6 +933,7 @@
     refreshSteps();
   </script>
 
+  <!-- Script keep-alive Render -->
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
