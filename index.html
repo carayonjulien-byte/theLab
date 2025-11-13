@@ -1,142 +1,926 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LAB by ToDoGolf</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lab by ToDoGolf – Lecture Radar</title>
+  <style>
+    :root {
+      --gap: 14px;
+      --primary: #00503a;
+      --bg: #050608;
+      --card: #0f1419;
+      --border: #182028;
+      --text: #e7e8ea;
+      --muted: #b8c0cc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .hidden { display:none !important; }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f7f7f7;
-        }
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(to bottom, #050608, rgba(5,6,8,0.9));
+      border-bottom: 1px solid #121822;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .top-left {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .brand-dot {
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      background:var(--primary);
+      box-shadow:0 0 12px rgba(0,80,58,0.7);
+    }
+    .top-title {
+      font-weight:600;
+      font-size:15px;
+    }
+    .top-sub {
+      font-size:11px;
+      color:#8b9aaa;
+    }
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      cursor:pointer;
+      text-decoration:none;
+    }
+    .btn-top:hover { background:#101822; }
 
-        /* HEADER */
-        .topbar {
-            background: #00503A;
-            color: white;
-            padding: 16px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: left;
-        }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
 
-        /* CONTAINER PRINCIPAL */
-        .container {
-            max-width: 900px;
-            margin: auto;
-            padding: 20px;
-        }
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    }
+    .row { margin-top: var(--gap); }
+    .grid-2 {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:var(--gap);
+    }
+    label {
+      font-size: 13px;
+      color:#b8c0cc;
+      margin-bottom:6px;
+      display:block;
+    }
+    input[type=text],
+    input[type=number] {
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #26303b;
+      border-radius:12px;
+      font-size:16px;
+      background:#05080c;
+      color:var(--text);
+    }
+    button,
+    label[role=button] {
+      display:inline-block;
+      text-align:center;
+      padding:12px 14px;
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#11171e;
+      color:var(--text);
+      font-weight:600;
+      cursor:pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
+    }
+    button:active,
+    label[role=button]:active {
+      transform: scale(0.97);
+      box-shadow:none;
+    }
+    button:disabled {
+      opacity:0.55;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .primary {
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+      box-shadow:0 6px 16px rgba(0,80,58,0.5);
+    }
+    .primary:hover:not(:disabled) {
+      background:#046046;
+    }
+    .ghost {
+      background:#0b1016;
+    }
+    img {
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      background:#000;
+      border-radius: 16px;
+      border:1px solid #1b232c;
+    }
+    .hint {
+      font-size: 12px;
+      color:#9aa5b1;
+      margin-top: 6px;
+    }
 
-        /* MODULES (nouvelle version : 2 blocs cliquables) */
-        .modules-container {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            margin-top: 30px;
-        }
+    .result {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      line-height:1.45;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+    }
+    .result h3 { margin: 0 0 8px 0; font-size: 18px; }
+    .result .kv {
+      display:flex;
+      justify-content:space-between;
+      padding:8px 0;
+      border-top:1px dashed #26303b;
+      font-size:14px;
+    }
+    .result .kv:first-of-type { border-top: none; }
+    .result-subtitle {
+      margin-top: 10px;
+      font-size: 13px;
+      color:#9aa5b1;
+    }
+    .shots-list {
+      margin-top: 8px;
+      border-top:1px dashed #26303b;
+      padding-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:13px;
+    }
+    .shot-row {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .shot-left { font-weight:600; }
+    .shot-right { opacity:0.9; }
 
-        .module-card {
-            flex: 1;
-            background: #ffffff;
-            border: 2px solid #00503A;
-            border-radius: 12px;
-            padding: 35px 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
+    /* Stepper */
+    .stepper {
+      display:flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .step {
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#0a0f13;
+      color:#8b9aaa;
+      border:1px solid #1a2530;
+      cursor:pointer;
+      user-select:none;
+    }
+    .step-index {
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid currentColor;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:700;
+    }
+    .step-texts { display:flex; flex-direction:column; gap:2px; }
+    .step-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+    }
+    .step-sub { font-size:12px; opacity:0.9; }
+    .step--active {
+      background:var(--primary);
+      color: #ffffff;
+      border-color:var(--primary);
+    }
+    .step--disabled {
+      opacity:0.5;
+    }
 
-        .module-card:hover {
-            background: #e8f4f1;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.12);
-        }
+    .tab-content { margin-top: var(--gap); }
 
-        .module-card h2 {
-            margin: 0;
-            color: #00503A;
-            font-size: 22px;
-            font-weight: bold;
-        }
+    .btn-row-2 {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
 
-        .module-card p {
-            margin-top: 8px;
-            color: #333;
-            font-size: 14px;
-        }
+    /* Loader */
+    #loaderBox {
+      font-size:13px;
+      color:#cbd5f5;
+    }
+    .loader {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      background:#0b1016;
+      border-radius:999px;
+      border:1px solid #1b242f;
+      width: fit-content;
+    }
+    .spinner {
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      border:2px solid rgba(148,163,184,0.35);
+      border-top-color:#f9fafb;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* BLOC IMPORTANT EN BAS */
-        .info-block {
-            margin-top: 40px;
-            padding: 20px;
-            background: #ffffff;
-            border-left: 4px solid #00503A;
-            border-radius: 6px;
-        }
+    /* Status bar (amélioré) */
+    #statusBox {
+      font-size: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+      line-height: 1.5;
+      display: none;
+      white-space: pre-line; /* support \n dans le texte */
+    }
+    .status--info {
+      display:block;
+      background: rgba(0, 80, 58, 0.15);
+      border: 1px solid #00503a;
+      color: #b6f7d2;
+    }
+    .status--error {
+      display:block;
+      background: rgba(255, 80, 80, 0.12);
+      border: 1px solid #ff6b6b;
+      color: #ff9b9b;
+    }
 
-        .info-block h3 {
-            margin: 0 0 10px 0;
-            color: #00503A;
-        }
+    @media (max-width:720px){
+      .grid-2{grid-template-columns:1fr}
+      img{max-height:50vh}
+      .row > button,
+      .row > label[role=button],
+      .primary,
+      .ghost{width:100%}
+      .btn-row-2{grid-template-columns:1fr}
+    }
 
-        /* Responsive */
-        @media (max-width: 720px) {
-            .modules-container {
-                flex-direction: column;
-            }
-        }
-    </style>
+    .page-title {
+      font-size:22px;
+      font-weight:600;
+      margin:10px 0 10px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      margin-bottom:10px;
+    }
 
-    <!-- PING RENDER AU CHARGEMENT + toutes les 5 minutes -->
-    <script>
-        function wakeRender() {
-            fetch("https://todogolf-analyse.onrender.com/", { method: "HEAD" })
-                .catch(() => {});
-        }
-
-        document.addEventListener("DOMContentLoaded", wakeRender);
-        setInterval(wakeRender, 5 * 60 * 1000); // toutes les 5 minutes
-    </script>
+    /* Popup sauvegarde */
+    .save-popup {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+      z-index: 200;
+    }
+  </style>
 </head>
-
 <body>
-    <!-- HEADER -->
-    <div class="topbar">LAB by ToDoGolf</div>
+  <div class="topbar">
+    <div class="top-left">
+      <div class="brand-dot"></div>
+      <div>
+        <div class="top-title">Lab by ToDoGolf</div>
+        <div class="top-sub">Lecture radar – Masque & analyse</div>
+      </div>
+    </div>
+    <div>
+      <a href="index.html" class="btn-top">← Accueil</a>
+    </div>
+  </div>
 
-    <div class="container">
+  <div class="wrap">
+    <div class="page-title">Lecture Radar</div>
+    <div class="page-subtitle">Étape 1 : photo • Étape 2 : analyse du coup</div>
 
-        <h1>Outils d’analyse</h1>
+    <div class="card">
+      <!-- Stepper -->
+      <div class="stepper">
+        <div id="step1" class="step">
+          <div class="step-index">1</div>
+          <div class="step-texts">
+            <div class="step-label">Étape 1</div>
+            <div class="step-sub">Photo</div>
+          </div>
+        </div>
+        <div id="step2" class="step">
+          <div class="step-index">2</div>
+          <div class="step-texts">
+            <div class="step-label">Étape 2</div>
+            <div class="step-sub">Analyse</div>
+          </div>
+        </div>
+      </div>
 
-        <!-- MODULES (2 Blocs cliquables) -->
-        <div class="modules-container">
+      <!-- Loader -->
+      <div class="row hidden" id="loaderBox">
+        <div class="loader">
+          <div class="spinner"></div>
+          <span id="loaderText">Chargement…</span>
+        </div>
+      </div>
 
-            <!-- Module lecture radar -->
-            <div class="module-card" onclick="window.location.href='lecture.html'">
-                <h2>Analyser une photo</h2>
-                <p>Importer un radar et extraire automatiquement les données.</p>
-            </div>
+      <!-- Status -->
+      <div id="statusBox"></div>
 
-            <!-- Module historique -->
-            <div class="module-card" onclick="window.location.href='historique.html'">
-                <h2>Historique des coups</h2>
-                <p>Consulter, filtrer et analyser vos données enregistrées.</p>
-            </div>
-
+      <!-- Onglet 1 -->
+      <div id="tab1" class="tab-content">
+        <div class="row btn-row-2">
+          <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
+          <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
+          <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
+          <input id="fileGal" type="file" accept="image/*" style="display:none;" />
         </div>
 
-        <!-- BLOC IMPORTANT -->
-        <div class="info-block">
-            <h3>Important</h3>
-            <p>
-                Toutes les données analysées restent stockées uniquement dans votre navigateur (Local Storage).
-                Elles ne sont jamais envoyées vers un serveur. Vous pouvez importer ou exporter vos données
-                à tout moment. Une documentation et une section d’aide seront bientôt disponibles ici.
-            </p>
+        <div class="row">
+          <img id="preview" class="hidden" alt="aperçu image" />
         </div>
 
+        <div class="row">
+          <button id="toStep2Btn" class="primary hidden" type="button" style="width:100%;">
+            ➡️ Analyser les coups (Étape 2)
+          </button>
+        </div>
+      </div>
+
+      <!-- Onglet 2 -->
+      <div id="tab2" class="tab-content hidden">
+        <div class="grid-2">
+          <div class="row">
+            <label for="dateText">Date (JJ/MM/AAAA)</label>
+            <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
+            <div class="hint">Préremplie à aujourd'hui</div>
+          </div>
+          <div class="row">
+            <label for="club">Club</label>
+            <input id="club" type="text" placeholder="ex: Fer7" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="row">
+            <label for="targetDist">Distance cible (m)</label>
+            <input id="targetDist" type="number" step="1" min="0" value="100" required />
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
+            🧠 Analyser l’image
+          </button>
+        </div>
+      </div>
     </div>
 
+    <!-- Résultat -->
+    <div class="row result hidden" id="resultCard">
+      <h3>Distances</h3>
+
+      <div class="kv">
+        <div>Date</div>
+        <div id="rDate">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Club</div>
+        <div id="rClub">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Distance cible</div>
+        <div id="rTarget">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Radar</div>
+        <div id="rRadar">—</div>
+      </div>
+
+      <div class="result-subtitle">Détail des coups</div>
+      <div id="shotsList" class="shots-list"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
+          📊 Ajouter à mon historique
+        </button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
+          🧹 Effacer ce résultat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup -->
+  <div id="savePopup" class="save-popup hidden">
+    Données enregistrées ✔️
+  </div>
+
+  <script>
+    const API_BASE = "https://todogolf-analyse.onrender.com";
+    const HISTORY_KEY = "todogolf_lab_history";
+
+    const $ = id => document.getElementById(id);
+
+    const fileCam    = $("fileCam");
+    const fileGal    = $("fileGal");
+    const preview    = $("preview");
+    const analyzeBtn = $("analyzeBtn");
+    const resultCard = $("resultCard");
+    const shotsList  = $("shotsList");
+
+    const rDate   = $("rDate");
+    const rClub   = $("rClub");
+    const rTarget = $("rTarget");
+    const rRadar  = $("rRadar");
+
+    const dateText   = $("dateText");
+    const club       = $("club");
+    const targetDist = $("targetDist");
+
+    const loaderBox  = $("loaderBox");
+    const loaderText = $("loaderText");
+
+    const step1El    = $("step1");
+    const step2El    = $("step2");
+    const tab1El     = $("tab1");
+    const tab2El     = $("tab2");
+
+    const saveToHistoryBtn = $("saveToHistoryBtn");
+    const clearResultBtn   = $("clearResultBtn");
+    const toStep2Btn       = $("toStep2Btn");
+
+    let currentBlob   = null;
+    let lastJson      = null;
+    let maskValidated = false;
+    let activeTab     = 1;
+    let statusTimeoutId = null;
+
+    function setStatus(msg, type = "info") {
+      const box = $("statusBox");
+      if (!box) return;
+      // permet les messages multi-lignes
+      box.innerHTML = msg.replace(/\n/g, "<br>");
+      box.className = "";
+      box.classList.add(type === "error" ? "status--error" : "status--info");
+      box.style.display = "block";
+      if (statusTimeoutId) clearTimeout(statusTimeoutId);
+      statusTimeoutId = setTimeout(() => {
+        box.className = "";
+        box.style.display = "none";
+      }, 10000);
+    }
+
+    function clampSize(w,h,max=1600){
+      if(Math.max(w,h) <= max) return [w,h];
+      const s = max / Math.max(w,h);
+      return [Math.round(w*s), Math.round(h*s)];
+    }
+
+    function refreshSteps(){
+      if (!step1El || !step2El) return;
+      if (activeTab === 1) {
+        step1El.classList.add('step--active');
+        step2El.classList.remove('step--active');
+      } else {
+        step2El.classList.add('step--active');
+        step1El.classList.remove('step--active');
+      }
+    }
+
+    function setActiveTab(n){
+      if (n === 2 && !maskValidated) {
+        setStatus("Validez d'abord une photo (masque) avant de passer à l’étape 2.", "error");
+        return;
+      }
+      activeTab = n;
+      if (activeTab === 1) {
+        tab1El.classList.remove('hidden');
+        tab2El.classList.add('hidden');
+        resultCard.classList.add("hidden");
+      } else {
+        tab1El.classList.add('hidden');
+        tab2El.classList.remove('hidden');
+        if (lastJson) {
+          resultCard.classList.remove("hidden");
+        }
+      }
+      refreshSteps();
+    }
+
+    function setLoading(isLoading, text) {
+      if (!loaderBox) return;
+      if (isLoading) {
+        if (loaderText && text) loaderText.textContent = text;
+        loaderBox.classList.remove("hidden");
+      } else {
+        loaderBox.classList.add("hidden");
+      }
+    }
+
+    function todayStr(){
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    if(dateText && !dateText.value) dateText.value = todayStr();
+
+    dateText?.addEventListener('input', e=>{
+      let v = e.target.value.replace(/\D/g,'').slice(0,8);
+      if(v.length>=5) v=v.replace(/^(\d{2})(\d{2})(\d{1,4})$/,'$1/$2/$3');
+      else if(v.length>=3) v=v.replace(/^(\d{2})(\d{1,2})$/,'$1/$2');
+      e.target.value=v;
+    });
+
+    function showPreview(fileOrBlob){
+      if(!fileOrBlob){
+        preview.classList.add("hidden");
+        return;
+      }
+      const url = URL.createObjectURL(fileOrBlob);
+      preview.src = url;
+      preview.onload = ()=> URL.revokeObjectURL(url);
+      preview.classList.remove("hidden");
+    }
+
+    async function ensureJpegFile(fileOrBlob){
+      if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
+        return fileOrBlob;
+      }
+      try{
+        const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
+        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
+        const canvas = document.createElement('canvas');
+        canvas.width = tw;
+        canvas.height = th;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bmp,0,0,tw,th);
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        return new File([blob], 'capture.jpg', {type:'image/jpeg'});
+      }catch{
+        return await new Promise(async (resolve)=>{
+          const img = new Image();
+          img.src = URL.createObjectURL(fileOrBlob);
+          await img.decode();
+          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
+          const canvas=document.createElement('canvas');
+          canvas.width = tw;
+          canvas.height= th;
+          const ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,tw,th);
+          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+          URL.revokeObjectURL(img.src);
+          resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
+        });
+      }
+    }
+
+    function safe(v){
+      if(v==null) return '';
+      if(typeof v==='number' && !Number.isFinite(v)) return '';
+      return String(v).replace(/[\n\r,]/g,' ');
+    }
+
+    function getRadarInfoFromJson(json){
+      const dbg = json && json.debug ? json.debug : {};
+      const ringReason   = (dbg.ring_reason || '').toLowerCase();
+      const circleReason = (dbg.circle_reason || '').toLowerCase();
+      const step         = dbg.ring_step_m;
+
+      let usage = null;
+      if (ringReason.includes('triangle')) {
+        usage = 'Putting';
+      } else if (ringReason.includes('carre') || ringReason.includes('square')) {
+        usage = 'Petit jeu';
+      } else if (circleReason) {
+        usage = 'Long jeu';
+      }
+
+      if (!usage && (step === undefined || step === null || step === '')) {
+        return '—';
+      }
+      if (usage && (step !== undefined && step !== null && step !== '')) {
+        return usage + ' – ' + step + ' m';
+      }
+      if (usage) return usage;
+      return step + ' m';
+    }
+
+    function onPick(e){
+      const file=e.target.files && e.target.files[0];
+      if(!file) return;
+
+      // reset état
+      lastJson = null;
+      maskValidated = false;
+      analyzeBtn.disabled = true;
+      resultCard.classList.add("hidden");
+      shotsList.innerHTML = "";
+      rDate.textContent   = "—";
+      rClub.textContent   = "—";
+      rTarget.textContent = "—";
+      rRadar.textContent  = "—";
+      toStep2Btn.classList.add("hidden");
+
+      ensureJpegFile(file).then(f=>{
+        currentBlob = f;
+        setStatus('Image prête : '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
+        showPreview(currentBlob);
+        setActiveTab(1);
+        generateMask();
+      }).catch(err=> setStatus('Erreur image : '+err.message, "error"));
+    }
+
+    fileCam.addEventListener('change', onPick);
+    fileGal.addEventListener('change', onPick);
+
+    async function generateMask(){
+      const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
+      if(!file){
+        setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
+        return;
+      }
+      const url = API_BASE + '/mask';
+      const fd  = new FormData();
+      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
+      fd.append('image', imgFile, imgFile.name);
+      fd.append('file', imgFile, imgFile.name);
+      fd.append('image_file', imgFile, imgFile.name);
+
+      try{
+        setLoading(true, "Génération du masque…");
+        const res = await fetch(url,{method:'POST',body:fd});
+        if(!res.ok){
+          let t='';
+          try{ t = await res.text(); }catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+        }
+        const blob = await res.blob();
+        showPreview(blob);
+        maskValidated = true;
+        analyzeBtn.disabled = false;
+        toStep2Btn.classList.remove("hidden");
+        setStatus(
+          "Masque généré ✅\n\n" +
+          "Vérifiez bien la détection :\n" +
+          "• les trois repères sont entourés\n" +
+          "• les impacts sont alignés sur les arcs rouges\n" +
+          "• les cercles de distance suivent correctement le radar\n\n" +
+          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
+          "info"
+        );
+      }catch(err){
+        maskValidated = false;
+        analyzeBtn.disabled = true;
+        toStep2Btn.classList.add("hidden");
+        setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    async function analyze(){
+      if(!maskValidated){
+        setStatus('Validez d\'abord une photo avant de lancer l’analyse.', "error");
+        return;
+      }
+      if(!dateText.value || !club.value || !targetDist.value){
+        setStatus('Remplissez la date, le club et la distance cible.', "error");
+        return;
+      }
+      const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
+      if(!file){
+        setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
+        return;
+      }
+
+      const url = API_BASE + '/analyze';
+      const fd  = new FormData();
+      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
+
+      fd.append('image', imgFile, imgFile.name);
+      fd.append('file', imgFile, imgFile.name);
+      fd.append('image_file', imgFile, imgFile.name);
+      fd.append('date_text', dateText.value);
+      fd.append('club', club.value);
+      fd.append('centre_distance', targetDist.value);
+
+      try{
+        setLoading(true, "Analyse en cours…");
+        const res = await fetch(url,{method:'POST',body:fd});
+        if(!res.ok){
+          let t='';
+          try{ t = await res.text(); }catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+        }
+        const data = await res.json();
+        lastJson = data;
+
+        const coups = Array.isArray(data.coups) ? data.coups : [];
+
+        rDate.textContent   = dateText.value;
+        rClub.textContent   = club.value;
+        rTarget.textContent = targetDist.value + ' m';
+
+        const radarInfo = getRadarInfoFromJson(data);
+        rRadar.textContent = radarInfo;
+
+        shotsList.innerHTML = '';
+        if (coups.length === 0) {
+          const line = document.createElement('div');
+          line.textContent = 'Aucun coup détecté.';
+          shotsList.appendChild(line);
+        } else {
+          coups.forEach((c, idx)=>{
+            const row = document.createElement('div');
+            row.className = 'shot-row';
+
+            const left = document.createElement('div');
+            left.className = 'shot-left';
+            left.textContent = 'Coup ' + (idx+1);
+
+            const right = document.createElement('div');
+            right.className = 'shot-right';
+
+            const parts = [];
+            if (c.distance_totale_m !== undefined && c.distance_totale_m !== null) parts.push('Dist. ' + c.distance_totale_m + ' m');
+            if (c.ecart_lateral_m  !== undefined && c.ecart_lateral_m  !== null)   parts.push('Lat. '  + c.ecart_lateral_m  + ' m');
+            if (c.ecart_profondeur_m !== undefined && c.ecart_profondeur_m !== null) parts.push('Prof. ' + c.ecart_profondeur_m + ' m');
+
+            right.textContent = parts.join(' · ') || '—';
+            row.appendChild(left);
+            row.appendChild(right);
+            shotsList.appendChild(row);
+          });
+        }
+
+        resultCard.classList.remove("hidden");
+        setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
+        setActiveTab(2);
+      }catch(err){
+        setStatus('Analyse impossible : '+err.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    analyzeBtn.addEventListener('click', analyze);
+
+    function showSavePopup(){
+      const pop = $("savePopup");
+      if(!pop) return;
+      pop.classList.remove("hidden");
+      setTimeout(()=>{ pop.classList.add("hidden"); }, 1200);
+    }
+
+    function addCurrentResultToHistory() {
+      if (!lastJson) {
+        setStatus("Aucun résultat à enregistrer. Faites d’abord une analyse.", "error");
+        return;
+      }
+      const coups = Array.isArray(lastJson.coups) ? lastJson.coups : [];
+      if (coups.length === 0) {
+        setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
+        return;
+      }
+
+      let history = [];
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (raw) history = JSON.parse(raw) || [];
+      } catch (e) {
+        history = [];
+      }
+
+      const radarInfo = getRadarInfoFromJson(lastJson);
+      const dateVal   = dateText.value;
+      const clubVal   = club.value;
+      const cibleVal  = Number(targetDist.value);
+
+      coups.forEach(c => {
+        history.push({
+          date_text: dateVal,
+          club: clubVal,
+          distance_cible_m: cibleVal,
+          radar_info: radarInfo,
+          distance_totale_m: c.distance_totale_m,
+          ecart_lateral_m: c.ecart_lateral_m,
+          ecart_profondeur_m: c.ecart_profondeur_m
+        });
+      });
+
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        showSavePopup();
+        setTimeout(()=> {
+          window.location.href = "index.html";
+        }, 1300);
+      } catch (e) {
+        setStatus("Impossible d’enregistrer dans l’historique (quota navigateur atteint ?).", "error");
+      }
+    }
+
+    function clearCurrentResult() {
+      lastJson = null;
+      resultCard.classList.add("hidden");
+      shotsList.innerHTML = "";
+      rDate.textContent   = "—";
+      rClub.textContent   = "—";
+      rTarget.textContent = "—";
+      rRadar.textContent  = "—";
+      setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
+    }
+
+    saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
+    clearResultBtn.addEventListener('click', clearCurrentResult);
+
+    step1El.addEventListener('click', ()=> setActiveTab(1));
+    step2El.addEventListener('click', ()=> setActiveTab(2));
+    toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
+
+    // Init
+    setActiveTab(1);
+    refreshSteps();
+  </script>
+
+  <script>
+  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+
+  // Fonction ping Render
+  function pingRender() {
+    fetch(RENDER_URL, {
+      method: "HEAD",
+      mode: "no-cors"
+    }).catch(() => {});
+  }
+
+  // 🔸 Ping au chargement de la page
+  pingRender();
+
+  // 🔸 Ping toutes les 5 minutes
+  setInterval(pingRender, 5 * 60 * 1000);
+</script>
 </body>
 </html>
