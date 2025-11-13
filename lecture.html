@@ -163,26 +163,15 @@
       background:#0b1016;
     }
 
-    /* Image générique */
+    /* Image simple (comportement d’origine) */
     img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    /* Zone scrollable pour l’aperçu du radar */
-    .preview-box {
-      max-height: 60vh;          /* hauteur max visible */
-      overflow-y: auto;          /* 👉 scroll uniquement ici */
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
       background:#000;
       border-radius: 16px;
       border:1px solid #1b232c;
-    }
-    .preview-box img {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      border-radius: 16px;
+      display:block;
     }
 
     .hint {
@@ -336,6 +325,7 @@
 
     @media (max-width:720px){
       .grid-2{grid-template-columns:1fr}
+      img{max-height:50vh}
       .row > button,
       .row > label[role=button],
       .primary,
@@ -379,7 +369,7 @@
     <h1 class="page-title">Lecture Radar</h1>
     <p class="page-subtitle">
       Étape 1&nbsp;: chargez une photo de votre radar Lab by ToDoGolf et vérifiez le masque.<br>
-      Étape 2&nbsp;: renseignez vos paramètres et lancez l’analyse des coups.
+      Étape 2&nbsp;: renseignez vos paramètres et lancez l’analyse des coups, puis ajoutez-les à votre historique.
     </p>
 
     <div class="card">
@@ -422,9 +412,7 @@
         </div>
 
         <div class="row">
-          <div class="preview-box hidden" id="previewBox">
-            <img id="preview" alt="aperçu image" />
-          </div>
+          <img id="preview" class="hidden" alt="aperçu image" />
         </div>
 
         <div class="row">
@@ -444,7 +432,37 @@
           </div>
           <div class="row">
             <label for="club">Club</label>
-            <input id="club" type="text" placeholder="ex: Fer7" required />
+            <!-- Champ avec liste des clubs + recherche -->
+            <input id="club" list="clubList" type="text" placeholder="Sélectionnez un club" required />
+            <datalist id="clubList">
+              <option value="Driver"></option>
+              <option value="Bois 3"></option>
+              <option value="Bois 5"></option>
+              <option value="Bois 7"></option>
+              <option value="Bois 9"></option>
+              <option value="Hybride 2"></option>
+              <option value="Hybride 3"></option>
+              <option value="Hybride 4"></option>
+              <option value="Hybride 5"></option>
+              <option value="Fer 2"></option>
+              <option value="Fer 3"></option>
+              <option value="Fer 4"></option>
+              <option value="Fer 5"></option>
+              <option value="Fer 6"></option>
+              <option value="Fer 7"></option>
+              <option value="Fer 8"></option>
+              <option value="Fer 9"></option>
+              <option value="Wedge 50°"></option>
+              <option value="Wedge 52°"></option>
+              <option value="Wedge 54°"></option>
+              <option value="Wedge 56°"></option>
+              <option value="Wedge 58°"></option>
+              <option value="Wedge 60°"></option>
+              <option value="Wedge 62°"></option>
+              <option value="Wedge 64°"></option>
+              <option value="Putter"></option>
+              <option value="Chipper"></option>
+            </datalist>
           </div>
         </div>
 
@@ -517,7 +535,6 @@
     const fileCam    = $("fileCam");
     const fileGal    = $("fileGal");
     const preview    = $("preview");
-    const previewBox = $("previewBox");
     const analyzeBtn = $("analyzeBtn");
     const resultCard = $("resultCard");
     const shotsList  = $("shotsList");
@@ -628,13 +645,13 @@
 
     function showPreview(fileOrBlob){
       if(!fileOrBlob){
-        if (previewBox) previewBox.classList.add("hidden");
+        preview.classList.add("hidden");
         return;
       }
       const url = URL.createObjectURL(fileOrBlob);
       preview.src = url;
       preview.onload = ()=> URL.revokeObjectURL(url);
-      if (previewBox) previewBox.classList.remove("hidden");
+      preview.classList.remove("hidden");
     }
 
     async function ensureJpegFile(fileOrBlob){
