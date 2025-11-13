@@ -24,7 +24,7 @@
     }
     .hidden { display:none !important; }
 
-    /* Topbar — mêmes styles que index.html */
+    /* Topbar – identique à index.html (avec bouton à droite) */
     .topbar {
       position: sticky;
       top: 0;
@@ -34,7 +34,7 @@
       padding: 10px 16px;
       display:flex;
       align-items:center;
-      justify-content:space-between; /* on ajoute juste le bouton à droite */
+      justify-content:space-between;
       backdrop-filter: blur(14px);
       gap:10px;
     }
@@ -76,7 +76,7 @@
       padding: 18px 16px 40px;
     }
 
-    /* mêmes styles que sur index */
+    /* Titres – mêmes styles que index */
     .page-eyebrow {
       font-size:11px;
       text-transform:uppercase;
@@ -97,7 +97,7 @@
       margin-bottom:22px;
     }
 
-    /* CARD — sans halo */
+    /* Carte principale – scroll interne */
     .card {
       background:
         radial-gradient(circle at top left, rgba(0,80,58,0.18), transparent 55%),
@@ -107,6 +107,9 @@
       padding:16px;
       box-shadow:none;
       overflow:hidden;
+      max-height: calc(100vh - 180px); /* la carte scrolle, pas la page */
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .row { margin-top: var(--gap); }
@@ -331,6 +334,7 @@
       .primary,
       .ghost{width:100%}
       .btn-row-2{grid-template-columns:1fr}
+      .card { max-height:none; } /* sur mobile on laisse la page défiler */
     }
 
     /* Popup sauvegarde */
@@ -432,7 +436,43 @@
           </div>
           <div class="row">
             <label for="club">Club</label>
-            <input id="club" type="text" placeholder="ex: Fer7" required />
+            <input
+              id="club"
+              type="text"
+              list="clubList"
+              placeholder="Commencez à taper (ex. Fer 7, Wedge 56°)"
+              required
+            />
+            <datalist id="clubList">
+              <option value="Driver">
+              <option value="Bois 3">
+              <option value="Bois 5">
+              <option value="Bois 7">
+              <option value="Bois 9">
+              <option value="Hybride 2">
+              <option value="Hybride 3">
+              <option value="Hybride 4">
+              <option value="Hybride 5">
+              <option value="Fer 2">
+              <option value="Fer 3">
+              <option value="Fer 4">
+              <option value="Fer 5">
+              <option value="Fer 6">
+              <option value="Fer 7">
+              <option value="Fer 8">
+              <option value="Fer 9">
+              <option value="Wedge 50°">
+              <option value="Wedge 52°">
+              <option value="Wedge 54°">
+              <option value="Wedge 56°">
+              <option value="Wedge 58°">
+              <option value="Wedge 60°">
+              <option value="Wedge 62°">
+              <option value="Wedge 64°">
+              <option value="Putter">
+              <option value="Chipper">
+            </datalist>
+            <div class="hint">Sélectionnez un club dans la liste proposée.</div>
           </div>
         </div>
 
@@ -500,6 +540,36 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const HISTORY_KEY = "todogolf_lab_history";
 
+    const CLUB_OPTIONS = [
+      "Driver",
+      "Bois 3",
+      "Bois 5",
+      "Bois 7",
+      "Bois 9",
+      "Hybride 2",
+      "Hybride 3",
+      "Hybride 4",
+      "Hybride 5",
+      "Fer 2",
+      "Fer 3",
+      "Fer 4",
+      "Fer 5",
+      "Fer 6",
+      "Fer 7",
+      "Fer 8",
+      "Fer 9",
+      "Wedge 50°",
+      "Wedge 52°",
+      "Wedge 54°",
+      "Wedge 56°",
+      "Wedge 58°",
+      "Wedge 60°",
+      "Wedge 62°",
+      "Wedge 64°",
+      "Putter",
+      "Chipper"
+    ];
+
     const $ = id => document.getElementById(id);
 
     const fileCam    = $("fileCam");
@@ -535,6 +605,12 @@
     let maskValidated = false;
     let activeTab     = 1;
     let statusTimeoutId = null;
+
+    function isValidClub(value) {
+      const norm = (value || "").trim().toLowerCase();
+      if (!norm) return false;
+      return CLUB_OPTIONS.some(c => c.toLowerCase() === norm);
+    }
 
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
@@ -742,12 +818,12 @@
         analyzeBtn.disabled = false;
         toStep2Btn.classList.remove("hidden");
         setStatus(
-          "Masque généré ✅\n\n" +
-          "Vérifiez bien la détection :\n" +
-          "• les trois repères sont entourés\n" +
-          "• les impacts sont alignés sur les arcs rouges\n" +
-          "• les cercles de distance suivent correctement le radar\n\n" +
-          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
+          "Masque généré avec succès ✅\n\n" +
+          "Merci de vérifier que la détection correspond bien à votre feuille :\n" +
+          "• le grand cercle rouge passe précisément par les trois repères du radar\n" +
+          "• les repères rouges sont correctement identifiés avec une icône au centre\n\n" +
+          "Si tout est correct, passez à l’étape 2 pour analyser les coups.\n" +
+          "Sinon, rechargez une nouvelle photo.",
           "info"
         );
       }catch(err){
@@ -769,6 +845,11 @@
         setStatus('Remplissez la date, le club et la distance cible.', "error");
         return;
       }
+      if (!isValidClub(club.value)) {
+        setStatus('Veuillez choisir un club dans la liste proposée (ex. "Fer 7", "Wedge 56°", "Driver").', "error");
+        return;
+      }
+
       const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
       if(!file){
         setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
@@ -861,6 +942,10 @@
       const coups = Array.isArray(lastJson.coups) ? lastJson.coups : [];
       if (coups.length === 0) {
         setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
+        return;
+      }
+      if (!isValidClub(club.value)) {
+        setStatus('Club invalide. Choisissez un club dans la liste proposée.', "error");
         return;
       }
 
