@@ -646,7 +646,7 @@
         topSub.textContent   = "CSV local, filtres et statistiques (bientôt)";
       }
     }
-
+    window.showScreen = showScreen;
     $("mod-lecture").addEventListener("click", ()=> showScreen("lecture"));
     $("mod-histo").addEventListener("click",   ()=> showScreen("histo"));
     btnBackHome.addEventListener("click",      ()=> showScreen("home"));
