@@ -233,7 +233,7 @@
     .step-sub { font-size:12px; opacity:0.9; }
     .step--active {
       background:var(--primary);
-      color:#ffffff;
+      color: #ffffff;
       border-color:var(--primary);
     }
     .step--disabled {
@@ -273,13 +273,15 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Status bar */
+    /* Status bar (amélioré) */
     #statusBox {
-      font-size: 13px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      margin-top: 10px;
+      font-size: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+      line-height: 1.5;
       display: none;
+      white-space: pre-line; /* support \n dans le texte */
     }
     .status--info {
       display:block;
@@ -517,7 +519,8 @@
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
       if (!box) return;
-      box.textContent = msg;
+      // permet les messages multi-lignes
+      box.innerHTML = msg.replace(/\n/g, "<br>");
       box.className = "";
       box.classList.add(type === "error" ? "status--error" : "status--info");
       box.style.display = "block";
@@ -720,10 +723,11 @@
         analyzeBtn.disabled = false;
         toStep2Btn.classList.remove("hidden");
         setStatus(
-          "Masque généré ✅ Vérifiez bien la détection : " +
-          "• les trois repères sont entourés, " +
-          "• les impacts sont marqués sur les arcs rouges, " +
-          "• les cercles de distance suivent correctement le radar. " +
+          "Masque généré ✅\n\n" +
+          "Vérifiez bien la détection :\n" +
+          "• les trois repères sont entourés\n" +
+          "• les impacts sont alignés sur les arcs rouges\n" +
+          "• les cercles de distance suivent correctement le radar\n\n" +
           "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
           "info"
         );
@@ -813,7 +817,7 @@
         }
 
         resultCard.classList.remove("hidden");
-        setStatus('Analyse terminée ✅ Vérifiez les coups avant de les ajouter à votre historique.', "info");
+        setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
         setActiveTab(2);
       }catch(err){
         setStatus('Analyse impossible : '+err.message, "error");
@@ -885,7 +889,7 @@
       rClub.textContent   = "—";
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
-      setStatus("Résultat effacé. Vous pouvez refaire une analyse avec une nouvelle photo.", "info");
+      setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
     }
 
     saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
