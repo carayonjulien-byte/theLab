@@ -24,18 +24,19 @@
     }
     .hidden { display:none !important; }
 
-    /* Topbar */
+    /* Topbar — mêmes styles que index.html */
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 40;
       background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
       border-bottom: 1px solid #10151e;
       padding: 10px 16px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:space-between; /* on ajoute juste le bouton à droite */
       backdrop-filter: blur(14px);
+      gap:10px;
     }
     .top-left {
       display:flex;
@@ -43,11 +44,11 @@
       gap:10px;
     }
     .brand-dot {
-      width:20px;
-      height:20px;
+      width:22px;
+      height:22px;
       border-radius:999px;
       background:var(--primary);
-      box-shadow:0 0 12px rgba(0,80,58,0.7);
+      box-shadow:0 0 16px rgba(0,80,58,0.85);
     }
     .top-title {
       font-weight:600;
@@ -72,29 +73,28 @@
     .wrap {
       max-width: 960px;
       margin: 0 auto;
-      padding: 16px;
-      padding-bottom: 40px;
+      padding: 18px 16px 40px;
     }
 
+    /* mêmes styles que sur index */
     .page-eyebrow {
       font-size:11px;
       text-transform:uppercase;
       letter-spacing:0.16em;
       color:#6b7280;
       margin-bottom:4px;
-      margin-top:8px;
     }
     .page-title {
-      font-size:22px;
-      font-weight:600;
-      margin:4px 0 6px;
+      font-size:24px;
+      font-weight:650;
+      margin:0 0 6px;
     }
     .page-subtitle {
       font-size:13px;
       color:#9aa5b1;
-      max-width:600px;
+      max-width:520px;
       line-height:1.5;
-      margin-bottom:16px;
+      margin-bottom:22px;
     }
 
     /* CARD — sans halo */
@@ -105,7 +105,7 @@
       border:1px solid var(--border);
       border-radius:18px;
       padding:16px;
-      box-shadow:none;         /* ⬅️ plus d’ombre */
+      box-shadow:none;
       overflow:hidden;
     }
 
@@ -220,7 +220,7 @@
     .shot-left { font-weight:600; }
     .shot-right { opacity:0.9; }
 
-    /* Stepper — version un peu plus soignée */
+    /* Stepper */
     .stepper {
       display:flex;
       gap: 8px;
@@ -300,7 +300,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Status bar (amélioré) */
+    /* Status bar */
     #statusBox {
       font-size: 14px;
       padding: 14px 16px;
@@ -308,7 +308,7 @@
       margin-top: 14px;
       line-height: 1.5;
       display: none;
-      white-space: pre-line; /* support \n dans le texte */
+      white-space: pre-line;
     }
     .status--info {
       display:block;
@@ -364,13 +364,13 @@
     </div>
   </div>
 
-  <div class="wrap">
+  <main class="wrap">
     <div class="page-eyebrow">Lecture radar</div>
-    <div class="page-title">Analyser une nouvelle photo</div>
-    <div class="page-subtitle">
+    <h1 class="page-title">ToDoGolf Lab – Analyse & Performance</h1>
+    <p class="page-subtitle">
       Importez la photo de votre feuille Lab by ToDoGolf, laissez le système détecter le radar,
-      vérifiez le masque puis renseignez votre coup avant de l’ajouter à votre historique.
-    </div>
+      vérifiez le masque, puis renseignez votre coup avant de l’ajouter à votre historique.
+    </p>
 
     <div class="card">
       <!-- Stepper -->
@@ -489,7 +489,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- Popup -->
   <div id="savePopup" class="save-popup hidden">
@@ -539,7 +539,6 @@
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
       if (!box) return;
-      // permet les messages multi-lignes
       box.innerHTML = msg.replace(/\n/g, "<br>");
       box.className = "";
       box.classList.add(type === "error" ? "status--error" : "status--info");
@@ -925,22 +924,17 @@
   </script>
 
   <script>
-  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
-  // Fonction ping Render
-  function pingRender() {
-    fetch(RENDER_URL, {
-      method: "HEAD",
-      mode: "no-cors"
-    }).catch(() => {});
-  }
+    function pingRender() {
+      fetch(RENDER_URL, {
+        method: "HEAD",
+        mode: "no-cors"
+      }).catch(() => {});
+    }
 
-  // 🔸 Ping au chargement de la page
-  pingRender();
-
-  // 🔸 Ping toutes les 5 minutes
-  setInterval(pingRender, 5 * 60 * 1000);
-</script>
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
 </body>
 </html>
-
