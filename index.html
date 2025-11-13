@@ -34,9 +34,8 @@
       padding: 10px 16px;
       display:flex;
       align-items:center;
-      justify-content:flex-start;
+      justify-content:space-between;
       backdrop-filter: blur(14px);
-      gap:10px;
     }
     .top-left {
       display:flex;
@@ -57,6 +56,11 @@
     .top-sub {
       font-size:11px;
       color:#8b9aaa;
+    }
+    .top-right {
+      font-size:11px;
+      color:#9ca3af;
+      text-align:right;
     }
 
     .wrap {
@@ -101,12 +105,6 @@
       padding:18px 16px 16px;
       box-shadow:0 24px 40px rgba(0,0,0,0.45);
       overflow:hidden;
-      cursor:pointer;                 /* -> carte cliquable */
-      transition:
-        background 0.16s ease-out,
-        border-color 0.16s ease-out,
-        transform 0.12s ease-out,
-        box-shadow 0.16s ease-out;
     }
     .card::before {
       content:"";
@@ -115,14 +113,6 @@
       pointer-events:none;
       border-radius:20px;
       border:1px solid rgba(255,255,255,0.02);
-    }
-    .card:hover {
-      border-color: var(--primary);
-      background:
-        radial-gradient(circle at top left, rgba(0,80,58,0.28), transparent 60%),
-        linear-gradient(to bottom right, #080b11, #05070b);
-      box-shadow:0 26px 46px rgba(0,0,0,0.6);
-      transform: translateY(-1px);
     }
 
     .card-label {
@@ -154,7 +144,7 @@
     .card-meta {
       font-size:11px;
       color:#6b7280;
-      margin-bottom:4px;
+      margin-bottom:12px;
     }
     .card-meta span {
       display:inline-flex;
@@ -164,29 +154,54 @@
       margin-bottom:4px;
     }
 
-    /* bloc info plein largeur */
-    .info-card {
-      margin-top:20px;
-      background:#05070b;
-      border-radius:16px;
-      border:1px solid #182028;
-      padding:14px 16px;
-      font-size:12px;
-      color:#cbd5e1;
+    .card-footer {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top:14px;
+      flex-wrap:wrap;
     }
-    .info-title {
+
+    .btn-main {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      border-radius:999px;
+      padding:9px 14px;
       font-size:13px;
       font-weight:600;
-      margin-bottom:6px;
+      border:1px solid var(--primary);
+      background:var(--primary);
+      color:#ffffff;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:0 10px 30px rgba(0,80,58,0.65);
+      white-space:nowrap;
     }
-    .info-text {
-      margin:0;
-      line-height:1.5;
+    .btn-main span.icon {
+      font-size:14px;
     }
-    .info-sub {
-      margin-top:6px;
+    .btn-main:hover {
+      background:#046046;
+    }
+
+    .btn-ghost {
       font-size:11px;
       color:#9ca3af;
+    }
+
+    .small-note {
+      margin-top:22px;
+      font-size:11px;
+      color:#6b7280;
+      line-height:1.5;
+    }
+
+    .small-note strong {
+      color:#e5e7eb;
+      font-weight:500;
     }
 
     @media (max-width: 780px) {
@@ -209,6 +224,10 @@
         <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
     </div>
+    <div class="top-right">
+      Version beta – données stockées dans votre navigateur<br>
+      Aucune création de compte, aucune donnée envoyée vers un profil joueur.
+    </div>
   </header>
 
   <main class="wrap">
@@ -220,8 +239,8 @@
     </p>
 
     <section class="modules">
-      <!-- Module 1 : Lecture radar (carte entière cliquable) -->
-      <article class="card" onclick="window.location.href='lecture.html'">
+      <!-- Module 1 : Lecture radar -->
+      <article class="card">
         <div class="card-label">
           <span class="label-icon">🟢</span>
           Analyse disponible
@@ -236,11 +255,19 @@
         <div class="card-meta">
           <span>📷 Photo ou image existante</span>
           <span>🧠 Détection automatique des points</span>
+          <span>⬇️ Export CSV possible</span>
+        </div>
+
+        <div class="card-footer">
+          <a href="lecture.html" class="btn-main">
+            <span class="icon">🎯</span>
+            <span>Ouvrir la lecture radar</span>
+          </a>
         </div>
       </article>
 
-      <!-- Module 2 : Historique (carte entière cliquable) -->
-      <article class="card" onclick="window.location.href='historique.html'">
+      <!-- Module 2 : Historique -->
+      <article class="card">
         <div class="card-label">
           <span class="label-icon">🔵</span>
           Tableau de bord
@@ -257,21 +284,21 @@
           <span>🔥 Heatmap dispersion</span>
           <span>↕️ Import / export CSV</span>
         </div>
+
+        <div class="card-footer">
+          <a href="historique.html" class="btn-main">
+            <span class="icon">📈</span>
+            <span>Ouvrir mes statistiques</span>
+          </a>
+        </div>
       </article>
     </section>
 
-    <!-- Bloc info plein largeur -->
-    <section class="info-card">
-      <div class="info-title">Informations & centre d’aide</div>
-      <p class="info-text">
-        <strong>Important :</strong> toutes les données sont stockées dans le <strong>localStorage</strong> de votre navigateur.
-        Si vous changez d’appareil ou videz vos données de navigation, pensez à
-        <strong>exporter votre historique au format CSV</strong> depuis le module «&nbsp;Mes statistiques&nbsp;».
-      </p>
-      <p class="info-sub">
-        Prochainement : documentation détaillée, astuces d’utilisation et lien de contact directement depuis cet espace.
-      </p>
-    </section>
+    <p class="small-note">
+      <strong>Important :</strong> toutes les données sont stockées dans le <strong>localStorage</strong> de votre navigateur.
+      Si vous changez d’appareil ou videz vos données de navigation, pensez à
+      <strong>exporter votre historique au format CSV</strong> depuis le module «&nbsp;Mes statistiques&nbsp;».
+    </p>
   </main>
 
   <!-- Script keep-alive Render -->
