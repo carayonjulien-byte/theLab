@@ -34,8 +34,9 @@
       padding: 10px 16px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:flex-start;
       backdrop-filter: blur(14px);
+      gap:10px;
     }
     .top-left {
       display:flex;
@@ -56,11 +57,6 @@
     .top-sub {
       font-size:11px;
       color:#8b9aaa;
-    }
-    .top-right {
-      font-size:11px;
-      color:#9ca3af;
-      text-align:right;
     }
 
     .wrap {
@@ -177,8 +173,8 @@
       color:#ffffff;
       cursor:pointer;
       text-decoration:none;
-      box-shadow:0 10px 30px rgba(0,80,58,0.65);
       white-space:nowrap;
+      box-shadow:none; /* halo retiré */
     }
     .btn-main span.icon {
       font-size:14px;
@@ -187,21 +183,28 @@
       background:#046046;
     }
 
-    .btn-ghost {
-      font-size:11px;
-      color:#9ca3af;
+    .info-card {
+      margin-top:20px;
+      background:#05070b;
+      border-radius:16px;
+      border:1px solid #182028;
+      padding:14px 16px;
+      font-size:12px;
+      color:#cbd5e1;
     }
-
-    .small-note {
-      margin-top:22px;
-      font-size:11px;
-      color:#6b7280;
+    .info-title {
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+    .info-text {
+      margin:0;
       line-height:1.5;
     }
-
-    .small-note strong {
-      color:#e5e7eb;
-      font-weight:500;
+    .info-sub {
+      margin-top:6px;
+      font-size:11px;
+      color:#9ca3af;
     }
 
     @media (max-width: 780px) {
@@ -223,10 +226,6 @@
         <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
         <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
-    </div>
-    <div class="top-right">
-      Version beta – données stockées dans votre navigateur<br>
-      Aucune création de compte, aucune donnée envoyée vers un profil joueur.
     </div>
   </header>
 
@@ -255,7 +254,6 @@
         <div class="card-meta">
           <span>📷 Photo ou image existante</span>
           <span>🧠 Détection automatique des points</span>
-          <span>⬇️ Export CSV possible</span>
         </div>
 
         <div class="card-footer">
@@ -294,11 +292,18 @@
       </article>
     </section>
 
-    <p class="small-note">
-      <strong>Important :</strong> toutes les données sont stockées dans le <strong>localStorage</strong> de votre navigateur.
-      Si vous changez d’appareil ou videz vos données de navigation, pensez à
-      <strong>exporter votre historique au format CSV</strong> depuis le module «&nbsp;Mes statistiques&nbsp;».
-    </p>
+    <!-- Bloc info plein largeur -->
+    <section class="info-card">
+      <div class="info-title">Informations & centre d’aide</div>
+      <p class="info-text">
+        <strong>Important :</strong> toutes les données sont stockées dans le <strong>localStorage</strong> de votre navigateur.
+        Si vous changez d’appareil ou videz vos données de navigation, pensez à
+        <strong>exporter votre historique au format CSV</strong> depuis le module «&nbsp;Mes statistiques&nbsp;».
+      </p>
+      <p class="info-sub">
+        Prochainement : documentation détaillée, astuces d’utilisation et lien de contact directement depuis cet espace.
+      </p>
+    </section>
   </main>
 
   <!-- Script keep-alive Render -->
