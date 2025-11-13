@@ -101,6 +101,12 @@
       padding:18px 16px 16px;
       box-shadow:0 24px 40px rgba(0,0,0,0.45);
       overflow:hidden;
+      cursor:pointer; /* bloc cliquable */
+      transition:
+        background 0.16s ease-out,
+        border-color 0.16s ease-out,
+        box-shadow 0.16s ease-out,
+        transform 0.12s ease-out;
     }
     .card::before {
       content:"";
@@ -109,6 +115,14 @@
       pointer-events:none;
       border-radius:20px;
       border:1px solid rgba(255,255,255,0.02);
+    }
+    .card:hover {
+      border-color: var(--primary);
+      background:
+        radial-gradient(circle at top left, rgba(0,80,58,0.3), transparent 60%),
+        linear-gradient(to bottom right, #080b11, #05070b);
+      box-shadow:0 28px 50px rgba(0,0,0,0.65);
+      transform: translateY(-1px);
     }
 
     .card-label {
@@ -150,6 +164,7 @@
       margin-bottom:4px;
     }
 
+    /* on garde card-footer si besoin plus tard, mais vide ici */
     .card-footer {
       display:flex;
       justify-content:space-between;
@@ -239,7 +254,7 @@
 
     <section class="modules">
       <!-- Module 1 : Lecture radar -->
-      <article class="card">
+      <article class="card" onclick="location.href='lecture.html'">
         <div class="card-label">
           <span class="label-icon">🟢</span>
           Analyse disponible
@@ -255,17 +270,10 @@
           <span>📷 Photo ou image existante</span>
           <span>🧠 Détection automatique des points</span>
         </div>
-
-        <div class="card-footer">
-          <a href="lecture.html" class="btn-main">
-            <span class="icon">🎯</span>
-            <span>Ouvrir la lecture radar</span>
-          </a>
-        </div>
       </article>
 
       <!-- Module 2 : Historique -->
-      <article class="card">
+      <article class="card" onclick="location.href='historique.html'">
         <div class="card-label">
           <span class="label-icon">🔵</span>
           Tableau de bord
@@ -281,13 +289,6 @@
           <span>📊 Tableau des coups</span>
           <span>🔥 Heatmap dispersion</span>
           <span>↕️ Import / export CSV</span>
-        </div>
-
-        <div class="card-footer">
-          <a href="historique.html" class="btn-main">
-            <span class="icon">📈</span>
-            <span>Ouvrir mes statistiques</span>
-          </a>
         </div>
       </article>
     </section>
