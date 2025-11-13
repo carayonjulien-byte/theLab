@@ -194,20 +194,22 @@
     </section>
   </div>
 
-  <!-- Ping Render pour réveiller l'API -->
   <script>
-    (function() {
-      try {
-        fetch("https://todogolf-analyse.onrender.com/", {
-          method: "HEAD",
-          mode: "no-cors"
-        }).catch(function() {
-          // On ignore les erreurs
-        });
-      } catch (e) {
-        // Silence
-      }
-    })();
-  </script>
+  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+
+  // Fonction ping Render
+  function pingRender() {
+    fetch(RENDER_URL, {
+      method: "HEAD",
+      mode: "no-cors"
+    }).catch(() => {});
+  }
+
+  // 🔸 Ping au chargement de la page
+  pingRender();
+
+  // 🔸 Ping toutes les 5 minutes
+  setInterval(pingRender, 5 * 60 * 1000);
+</script>
 </body>
 </html>
