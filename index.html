@@ -1,1 +1,741 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ToDoGolf Lab – Lecture Radar & Historique</title>
+  <style>
+    :root {
+      --gap: 14px;
+      --primary: #00503a;
+      --bg: #050608;
+      --card: #0f1419;
+      --border: #182028;
+      --text: #e7e8ea;
+      --muted: #b8c0cc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .hidden { display:none !important; }
 
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(to bottom, #050608, rgba(5,6,8,0.9));
+      border-bottom: 1px solid #121822;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .top-left {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .top-title {
+      font-weight:600;
+      font-size:15px;
+    }
+    .top-sub {
+      font-size:11px;
+      color:#8b9aaa;
+    }
+    .brand-dot {
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      background:var(--primary);
+      box-shadow:0 0 12px rgba(0,80,58,0.7);
+    }
+    .top-right {
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      cursor:pointer;
+    }
+    .btn-top:hover {
+      background:#101822;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+
+    /* HOME */
+    #home {
+      text-align:center;
+      margin-top:10px;
+    }
+    #home h1 {
+      font-size:26px;
+      margin-bottom:6px;
+    }
+    #home .subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+    }
+    .modules {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      margin-top:30px;
+    }
+    .module-card {
+      background:var(--card);
+      border:2px solid #1e242c;
+      border-radius:20px;
+      padding:26px 20px;
+      cursor:pointer;
+      text-align:left;
+      box-shadow:0 14px 30px rgba(0,0,0,0.45);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .module-card::after {
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:radial-gradient(circle at top right, rgba(0,80,58,0.35), transparent 65%);
+      opacity:0;
+      transition:opacity 0.2s ease;
+      pointer-events:none;
+    }
+    .module-card:hover {
+      transform:translateY(-4px);
+      box-shadow:0 18px 40px rgba(0,0,0,0.6);
+      border-color:var(--primary);
+      background:#121821;
+    }
+    .module-card:hover::after {
+      opacity:1;
+    }
+    .module-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+      color:#7c8aa0;
+      margin-bottom:6px;
+    }
+    .module-title {
+      font-size:20px;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+    .module-desc {
+      font-size:14px;
+      color:#9aa5b1;
+      max-width:260px;
+    }
+    .module-tag {
+      margin-top:14px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.07);
+      background:rgba(10,15,20,0.9);
+      color:#cbd5f5;
+    }
+    .module-tag-dot {
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:var(--primary);
+    }
+
+    @media (max-width:720px){
+      .modules{grid-template-columns:1fr}
+      .wrap{padding-inline:14px;}
+    }
+
+    /* Shared card styles for pages */
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    }
+    .row { margin-top: var(--gap); }
+    .grid-2 {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:var(--gap);
+    }
+    label {
+      font-size: 13px;
+      color:#b8c0cc;
+      margin-bottom:6px;
+      display:block;
+    }
+    input[type=text],
+    input[type=number] {
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #26303b;
+      border-radius:12px;
+      font-size:16px;
+      background:#05080c;
+      color:var(--text);
+    }
+    button,
+    label[role=button] {
+      display:inline-block;
+      text-align:center;
+      padding:12px 14px;
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#11171e;
+      color:var(--text);
+      font-weight:600;
+      cursor:pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
+    }
+    button:active,
+    label[role=button]:active {
+      transform: scale(0.97);
+      box-shadow:none;
+    }
+    button:disabled {
+      opacity:0.55;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .primary {
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+      box-shadow:0 6px 16px rgba(0,80,58,0.5);
+    }
+    .primary:hover:not(:disabled) {
+      background:#046046;
+    }
+    .ghost {
+      background:#0b1016;
+    }
+    img {
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      background:#000;
+      border-radius: 16px;
+      border:1px solid #1b232c;
+    }
+    .hint {
+      font-size: 12px;
+      color:#9aa5b1;
+      margin-top: 6px;
+    }
+    .result {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      line-height:1.45;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+    }
+    .result h3 { margin: 0 0 8px 0; font-size: 18px; }
+    .result .kv {
+      display:flex;
+      justify-content:space-between;
+      padding:8px 0;
+      border-top:1px dashed #26303b;
+      font-size:14px;
+    }
+    .result .kv:first-of-type { border-top: none; }
+    .result-subtitle {
+      margin-top: 10px;
+      font-size: 13px;
+      color:#9aa5b1;
+    }
+    .shots-list {
+      margin-top: 8px;
+      border-top:1px dashed #26303b;
+      padding-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:13px;
+    }
+    .shot-row {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .shot-left { font-weight:600; }
+    .shot-right { opacity:0.9; }
+
+    /* Stepper / onglets Étape 1 / Étape 2 */
+    .stepper {
+      display:flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .step {
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#0a0f13;
+      color:#8b9aaa;
+      border:1px solid #1a2530;
+      cursor:pointer;
+      user-select:none;
+    }
+    .step-index {
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid currentColor;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:700;
+    }
+    .step-texts {
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .step-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+    }
+    .step-sub {
+      font-size:12px;
+      opacity:0.9;
+    }
+    .step--active {
+      background:var(--primary);
+      color:#ffffff;
+      border-color:var(--primary);
+    }
+    .step--disabled {
+      opacity:0.5;
+      cursor:not-allowed;
+    }
+
+    .tab-content { margin-top: var(--gap); }
+
+    .btn-row-2 {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
+
+    /* Loader */
+    #loaderBox {
+      font-size:13px;
+      color:#cbd5f5;
+    }
+    .loader {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      background:#0b1016;
+      border-radius:999px;
+      border:1px solid #1b242f;
+      width: fit-content;
+    }
+    .spinner {
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      border:2px solid rgba(148,163,184,0.35);
+      border-top-color:#f9fafb;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Status bar */
+    #statusBox {
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+    .status--info {
+      display:block;
+      background: rgba(0, 80, 58, 0.15);
+      border: 1px solid #00503a;
+      color: #b6f7d2;
+    }
+    .status--error {
+      display:block;
+      background: rgba(255, 80, 80, 0.12);
+      border: 1px solid #ff6b6b;
+      color: #ff9b9b;
+    }
+
+    @media (max-width:720px){
+      .grid-2{grid-template-columns:1fr}
+      img{max-height:50vh}
+      .row > button,
+      .row > label[role="button"],
+      .primary,
+      .ghost{width:100%}
+      .btn-row-2{grid-template-columns:1fr}
+    }
+
+    .page-title {
+      font-size:22px;
+      font-weight:600;
+      margin:10px 0 10px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      margin-bottom:10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="top-left">
+      <div class="brand-dot"></div>
+      <div>
+        <div class="top-title" id="topTitle">ToDoGolf Lab</div>
+        <div class="top-sub" id="topSub">Outils d'analyse personnelle</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <button id="btnBackHome" class="btn-top hidden" type="button">← Accueil</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- ACCUEIL -->
+    <section id="screen-home">
+      <div id="home">
+        <h1>ToDoGolf Lab</h1>
+        <div class="subtitle">Choisissez un module pour commencer</div>
+
+        <div class="modules">
+
+          <!-- Module Lecture Radar -->
+          <div id="mod-lecture" class="module-card" onclick="showScreen('lecture')">
+            <div class="module-label">Module 1</div>
+            <div class="module-title">Lecture Radar</div>
+            <div class="module-desc">
+              Importez une photo de radar, validez le masque et analysez vos coups (distance, latéral, profondeur).
+            </div>
+            <div class="module-tag">
+              <span class="module-tag-dot"></span>
+              <span>Analyse instantanée</span>
+            </div>
+          </div>
+
+          <!-- Module Historique -->
+          <div id="mod-histo" class="module-card" onclick="showScreen('histo')">
+            <div class="module-label">Module 2</div>
+            <div class="module-title">Mon Historique</div>
+            <div class="module-desc">
+              À venir : charger vos CSV, filtrer par club et distance, visualiser vos stats et radars.
+            </div>
+            <div class="module-tag">
+              <span class="module-tag-dot"></span>
+              <span>Bientôt disponible</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE LECTURE RADAR -->
+    <section id="screen-lecture" class="hidden">
+      <div class="page-title">Lecture Radar</div>
+      <div class="page-subtitle">Étape 1 : photo • Étape 2 : analyse du coup</div>
+
+      <div class="card">
+        <div class="stepper">
+          <div id="step1" class="step">
+            <div class="step-index">1</div>
+            <div class="step-texts">
+              <div class="step-label">Étape 1</div>
+              <div class="step-sub">Photo</div>
+            </div>
+          </div>
+          <div id="step2" class="step step--disabled">
+            <div class="step-index">2</div>
+            <div class="step-texts">
+              <div class="step-label">Étape 2</div>
+              <div class="step-sub">Analyse</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row hidden" id="loaderBox">
+          <div class="loader">
+            <div class="spinner"></div>
+            <span id="loaderText">Chargement…</span>
+          </div>
+        </div>
+
+        <div id="statusBox"></div>
+
+        <!-- Onglet 1 -->
+        <div id="tab1" class="tab-content">
+          <div class="row btn-row-2">
+            <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
+            <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
+            <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
+            <input id="fileGal" type="file" accept="image/*" style="display:none;" />
+          </div>
+
+          <div class="row">
+            <img id="preview" class="hidden" alt="aperçu image" />
+          </div>
+
+          <div class="row">
+            <button id="maskBtn" class="ghost" type="button" style="width:100%;">
+              ✔️ Valider la photo
+            </button>
+          </div>
+        </div>
+
+        <!-- Onglet 2 -->
+        <div id="tab2" class="tab-content hidden">
+          <div class="grid-2">
+            <div class="row">
+              <label for="dateText">Date (JJ/MM/AAAA)</label>
+              <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
+              <div class="hint">Préremplie à aujourd'hui</div>
+            </div>
+            <div class="row">
+              <label for="club">Club</label>
+              <input id="club" type="text" placeholder="ex: Fer7" required />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="row">
+              <label for="targetDist">Distance cible (m)</label>
+              <input id="targetDist" type="number" step="1" min="0" value="100" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
+              🧠 Analyser l’image
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row result hidden" id="resultCard">
+        <h3>Distances</h3>
+
+        <div class="kv">
+          <div>Date</div>
+          <div id="rDate">—</div>
+        </div>
+
+        <div class="kv">
+          <div>Club</div>
+          <div id="rClub">—</div>
+        </div>
+
+        <div class="kv">
+          <div>Distance cible</div>
+          <div id="rTarget">—</div>
+        </div>
+
+        <div class="kv">
+          <div>Radar</div>
+          <div id="rRadar">—</div>
+        </div>
+
+        <div class="result-subtitle">Détail des coups</div>
+        <div id="shotsList" class="shots-list"></div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="csvBtn" class="ghost" type="button">⬇️ Télécharger CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE HISTORIQUE (placeholder) -->
+    <section id="screen-histo" class="hidden">
+      <div class="page-title">Mon Historique</div>
+      <div class="page-subtitle">
+        Bientôt : import CSV, filtres par club/distance et radars personnalisés.
+      </div>
+      <div class="card">
+        <p>
+          Cette section sera dédiée à l'analyse de votre historique complet de coups
+          à partir d'un fichier CSV (local, non stocké sur nos serveurs).
+        </p>
+        <p style="font-size:13px;color:#9aa5b1;">
+          Pour l'instant, utilisez le module <strong>Lecture Radar</strong> pour générer vos premiers fichiers CSV.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = "https://todogolf-analyse.onrender.com";
+    const $ = (id)=> document.getElementById(id);
+
+    // Navigation
+    const screenHome   = $("screen-home");
+    const screenLecture= $("screen-lecture");
+    const screenHisto  = $("screen-histo");
+    const btnBackHome  = $("btnBackHome");
+    const topTitle     = $("topTitle");
+    const topSub       = $("topSub");
+
+    function showScreen(name){
+      screenHome.classList.add("hidden");
+      screenLecture.classList.add("hidden");
+      screenHisto.classList.add("hidden");
+
+      if (name === "home") {
+        screenHome.classList.remove("hidden");
+        btnBackHome.classList.add("hidden");
+        topTitle.textContent = "ToDoGolf Lab";
+        topSub.textContent   = "Outils d'analyse personnelle";
+      } else if (name === "lecture") {
+        screenLecture.classList.remove("hidden");
+        btnBackHome.classList.remove("hidden");
+        topTitle.textContent = "Lecture Radar";
+        topSub.textContent   = "Photo, masque et analyse des coups";
+      } else if (name === "histo") {
+        screenHisto.classList.remove("hidden");
+        btnBackHome.classList.remove("hidden");
+        topTitle.textContent = "Mon Historique";
+        topSub.textContent   = "CSV local, filtres et statistiques (bientôt)";
+      }
+    }
+    // >>> important : rendre globale pour les onclick HTML
+    window.showScreen = showScreen;
+
+    btnBackHome.addEventListener("click", () => showScreen("home"));
+
+    // --- Lecture Radar code identique à avant ---
+    const fileCam    = $("fileCam");
+    const fileGal    = $("fileGal");
+    const preview    = $("preview");
+    const analyzeBtn = $("analyzeBtn");
+    const maskBtn    = $("maskBtn");
+    const resultCard = $("resultCard");
+    const shotsList  = $("shotsList");
+
+    const rDate   = $("rDate");
+    const rClub   = $("rClub");
+    const rTarget = $("rTarget");
+    const rRadar  = $("rRadar");
+
+    const csvBtn     = $("csvBtn");
+    const dateText   = $("dateText");
+    const club       = $("club");
+    const targetDist = $("targetDist");
+
+    const loaderBox  = $("loaderBox");
+    const loaderText = $("loaderText");
+
+    const step1El    = $("step1");
+    const step2El    = $("step2");
+    const tab1El     = $("tab1");
+    const tab2El     = $("tab2");
+
+    let currentBlob   = null;
+    let lastJson      = null;
+    let maskValidated = false;
+    let activeTab     = 1;
+    let statusTimeoutId = null;
+
+    function setStatus(msg, type = "info") {
+      const box = document.getElementById("statusBox");
+      if (!box) return;
+      box.textContent = msg;
+      box.className = "";
+      box.classList.add(type === "error" ? "status--error" : "status--info");
+      box.style.display = "block";
+      if (statusTimeoutId) clearTimeout(statusTimeoutId);
+      statusTimeoutId = setTimeout(() => {
+        box.className = "";
+        box.style.display = "none";
+      }, 10000);
+    }
+
+    function clampSize(w,h,max=1600){
+      if(Math.max(w,h) <= max) return [w,h];
+      const s = max / Math.max(w,h);
+      return [Math.round(w*s), Math.round(h*s)];
+    }
+
+    function refreshSteps(){
+      if(!step1El || !step2El) return;
+      if (!maskValidated) {
+        step2El.classList.add('step--disabled');
+      } else {
+        step2El.classList.remove('step--disabled');
+      }
+      if (activeTab === 1) {
+        step1El.classList.add('step--active');
+        step2El.classList.remove('step--active');
+      } else {
+        step2El.classList.add('step--active');
+        step1El.classList.remove('step--active');
+      }
+    }
+
+    function setActiveTab(n){
+      if (n === 2 && !maskValidated) {
+        setStatus("Validez d'abord la photo avant de passer à l'étape 2.", "error");
+        return;
+      }
+      activeTab = n;
+      if (tab1El && tab2El) {
+        if (activeTab === 1) {
+          tab1El.classList.remove('hidden');
+          tab2El.classList.add('hidden');
+          resultCard.classList.add("hidden");
+        } else {
+          tab1El.classList.add('hidden');
+          tab2El.classList.remove('hidden');
+          if (lastJson) {
+            resultCard.classList.remove("hidden");
+          }
+        }
+      }
+      refreshSteps();
+    }
+
+    function setLoading(isLoading, text) {
+      if (!loaderBox) return;
+      if (isLoading) {
+        if (loaderText && text) loaderText.textContent = text;
+        loaderBox.classList.remove("hid
