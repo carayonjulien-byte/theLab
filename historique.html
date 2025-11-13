@@ -1,1 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ToDoGolf Lab – Mon Historique</title>
+  <style>
+    :root {
+      --primary: #00503a;
+      --bg: #050608;
+      --card: #0f1419;
+      --border: #182028;
+      --text: #e7e8ea;
+      --muted: #b8c0cc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(to bottom, #050608, rgba(5,6,8,0.9));
+      border-bottom: 1px solid #121822;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .top-left {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .brand-dot {
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      background:var(--primary);
+      box-shadow:0 0 12px rgba(0,80,58,0.7);
+    }
+    .top-title { font-weight:600; font-size:15px; }
+    .top-sub   { font-size:11px; color:#8b9aaa; }
 
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      cursor:pointer;
+      text-decoration:none;
+    }
+    .btn-top:hover { background:#101822; }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+      margin-top:16px;
+    }
+    .page-title {
+      font-size:22px;
+      font-weight:600;
+      margin:10px 0 10px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      margin-bottom:10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="top-left">
+      <div class="brand-dot"></div>
+      <div>
+        <div class="top-title">Mon Historique</div>
+        <div class="top-sub">CSV local, filtres et stats (à venir)</div>
+      </div>
+    </div>
+    <div>
+      <a href="index.html" class="btn-top">← Accueil</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-title">Mon Historique</div>
+    <div class="page-subtitle">
+      Cette page affichera vos statistiques à partir d’un fichier CSV global.
+    </div>
+
+    <div class="card">
+      <p>
+        Pour le moment, cette section est vide. Vous pourrez bientôt :
+      </p>
+      <ul>
+        <li>Charger un fichier CSV cumulé</li>
+        <li>Filtrer par club, distance, type de radar</li>
+        <li>Afficher des radars, cartes de chaleur, etc.</li>
+      </ul>
+      <p style="font-size:13px;color:#9aa5b1;">
+        Utilisez d'abord le module <strong>Lecture Radar</strong> pour générer vos données.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
