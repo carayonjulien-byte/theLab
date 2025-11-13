@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ToDoGolf Lab – Lecture Radar</title>
+  <title>Lab by ToDoGolf – Lecture Radar</title>
   <style>
     :root {
       --gap: 14px;
@@ -299,7 +299,7 @@
       .grid-2{grid-template-columns:1fr}
       img{max-height:50vh}
       .row > button,
-      .row > label[role="button"],
+      .row > label[role=button],
       .primary,
       .ghost{width:100%}
       .btn-row-2{grid-template-columns:1fr}
@@ -322,8 +322,8 @@
     <div class="top-left">
       <div class="brand-dot"></div>
       <div>
-        <div class="top-title">Lecture Radar</div>
-        <div class="top-sub">Photo, masque et analyse des coups</div>
+        <div class="top-title">Lab by ToDoGolf</div>
+        <div class="top-sub">Lecture radar – Masque & analyse</div>
       </div>
     </div>
     <div>
@@ -441,14 +441,23 @@
       <div class="result-subtitle">Détail des coups</div>
       <div id="shotsList" class="shots-list"></div>
 
-      <div class="row" style="margin-top:10px;">
-        <button id="csvBtn" class="ghost" type="button">⬇️ Télécharger CSV</button>
+      <div class="row" style="margin-top:12px;">
+        <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
+          📊 Ajouter à mon historique
+        </button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
+          🧹 Effacer ce résultat
+        </button>
       </div>
     </div>
   </div>
 
   <script>
     const API_BASE = "https://todogolf-analyse.onrender.com";
+    const HISTORY_KEY = "todogolf_lab_history";
+
     const $ = id => document.getElementById(id);
 
     const fileCam    = $("fileCam");
@@ -464,7 +473,6 @@
     const rTarget = $("rTarget");
     const rRadar  = $("rRadar");
 
-    const csvBtn     = $("csvBtn");
     const dateText   = $("dateText");
     const club       = $("club");
     const targetDist = $("targetDist");
@@ -476,6 +484,9 @@
     const step2El    = $("step2");
     const tab1El     = $("tab1");
     const tab2El     = $("tab2");
+
+    const saveToHistoryBtn = $("saveToHistoryBtn");
+    const clearResultBtn   = $("clearResultBtn");
 
     let currentBlob   = null;
     let lastJson      = null;
@@ -639,40 +650,6 @@
       return step + ' m';
     }
 
-    function toCsv(json){
-      const coups=json?.coups||[];
-      const rows=[];
-      rows.push([
-        'index',
-        'date_text',
-        'club',
-        'distance_cible_m',
-        'radar_info',
-        'distance_totale_m',
-        'ecart_lateral_m',
-        'ecart_profondeur_m'
-      ].join(','));
-
-      const dateVal   = dateText?.value||'';
-      const clubVal   = safe(club?.value || '');
-      const cibleVal  = safe(targetDist?.value || '');
-      const radarInfo = safe(getRadarInfoFromJson(json));
-
-      coups.forEach((c,i)=>{
-        rows.push([
-          i+1,
-          safe(dateVal),
-          clubVal,
-          cibleVal,
-          radarInfo,
-          safe(c.distance_totale_m),
-          safe(c.ecart_lateral_m),
-          safe(c.ecart_profondeur_m)
-        ].join(','));
-      });
-      return rows.join('\n');
-    }
-
     function setMaskLoading(isLoading) {
       if (isLoading) {
         maskBtn.disabled = true;
@@ -784,7 +761,7 @@
         }
 
         resultCard.classList.remove("hidden");
-        setStatus('Analyse terminée ✅', "info");
+        setStatus('Analyse terminée ✅ Vérifiez les coups avant de les ajouter à votre historique.', "info");
         setActiveTab(2);
       }catch(err){
         setStatus('Analyse impossible : '+err.message, "error");
@@ -821,7 +798,15 @@
         showPreview(blob);
         maskValidated = true;
         setMaskLoading(false);
-        setStatus("Masque généré ✅ Vérifiez la photo. Si tout est correct, allez à l'étape 2 pour analyser le coup. Sinon, rechargez une nouvelle photo.", "info");
+        setStatus(
+          "Masque généré ✅ Vérifiez bien la détection : " +
+          "• les trois repères sont entourés par des petits cercles, " +
+          "• chaque impact est marqué par un point vert sur les arcs rouges, " +
+          "• les cercles de distance suivent correctement les anneaux du radar. " +
+          "Si tout est correct, passez à l’étape 2 pour analyser le coup. " +
+          "Sinon, retournez à l’étape 1 et rechargez une nouvelle photo.",
+          "info"
+        );
         refreshSteps();
       }catch(err){
         maskValidated = false;
@@ -833,32 +818,63 @@
     }
     maskBtn.addEventListener('click', showMask);
 
-    function downloadCsv(name,content){
-      const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    csvBtn.addEventListener('click', ()=>{
-      if(!lastJson){
-        setStatus('Faites une analyse d\'abord.', "error");
+    function addCurrentResultToHistory() {
+      if (!lastJson) {
+        setStatus("Aucun résultat à enregistrer. Faites d’abord une analyse.", "error");
         return;
       }
-      const csv = toCsv(lastJson);
-      const d = new Date();
-      const yyyy=d.getFullYear();
-      const mm=String(d.getMonth()+1).padStart(2,'0');
-      const dd=String(d.getDate()).padStart(2,'0');
-      const name=`todogolf-analyse-${yyyy}-${mm}-${dd}.csv`;
-      downloadCsv(name,csv);
-      setStatus('CSV téléchargé ✅', "info");
-    });
+      const coups = Array.isArray(lastJson.coups) ? lastJson.coups : [];
+      if (coups.length === 0) {
+        setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
+        return;
+      }
+
+      let history = [];
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (raw) history = JSON.parse(raw) || [];
+      } catch (e) {
+        history = [];
+      }
+
+      const radarInfo = getRadarInfoFromJson(lastJson);
+      const dateVal   = dateText.value;
+      const clubVal   = club.value;
+      const cibleVal  = Number(targetDist.value);
+
+      coups.forEach(c => {
+        history.push({
+          date_text: dateVal,
+          club: clubVal,
+          distance_cible_m: cibleVal,
+          radar_info: radarInfo,
+          distance_totale_m: c.distance_totale_m,
+          ecart_lateral_m: c.ecart_lateral_m,
+          ecart_profondeur_m: c.ecart_profondeur_m
+        });
+      });
+
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        setStatus(`Résultat ajouté à votre historique (${coups.length} coup(s)).`, "info");
+      } catch (e) {
+        setStatus("Impossible d’enregistrer dans l’historique (quota navigateur atteint ?).", "error");
+      }
+    }
+
+    function clearCurrentResult() {
+      lastJson = null;
+      resultCard.classList.add("hidden");
+      shotsList.innerHTML = "";
+      rDate.textContent   = "—";
+      rClub.textContent   = "—";
+      rTarget.textContent = "—";
+      rRadar.textContent  = "—";
+      setStatus("Résultat effacé. Vous pouvez refaire une analyse avec une nouvelle photo.", "info");
+    }
+
+    saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
+    clearResultBtn.addEventListener('click', clearCurrentResult);
 
     step1El.addEventListener('click', ()=> setActiveTab(1));
     step2El.addEventListener('click', ()=> setActiveTab(2));
@@ -867,6 +883,17 @@
     setActiveTab(1);
     refreshSteps();
   </script>
+
+  <!-- Ping Render pour réveiller l'API en arrière-plan -->
+  <script>
+    (function() {
+      try {
+        fetch("https://todogolf-analyse.onrender.com/", {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(function(){});
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>
-
