@@ -61,6 +61,7 @@
       gap:8px;
       flex-wrap:wrap;
       justify-content:flex-end;
+      align-items:center;
     }
     .btn-top {
       border-radius:999px;
@@ -74,6 +75,14 @@
       white-space:nowrap;
     }
     .btn-top:hover { background:#101822; }
+
+    .export-warning {
+      flex-basis:100%;
+      text-align:right;
+      font-size:11px;
+      color:#facc15;
+      margin-top:4px;
+    }
 
     .wrap {
       max-width: 1120px;
@@ -193,6 +202,10 @@
       color:#9aa5b1;
       text-transform:uppercase;
       letter-spacing:0.04em;
+      user-select:none;
+    }
+    .sortable {
+      cursor:pointer;
     }
     tbody tr:nth-child(even) {
       background:#0b1117;
@@ -221,7 +234,7 @@
       padding:8px 0;
     }
 
-    /* Heatmap bloc grille */
+    /* Heatmap */
     .heatmap-grid {
       margin-top:8px;
       border-radius:12px;
@@ -249,22 +262,7 @@
       flex-wrap:wrap;
     }
 
-    /* Zone heatmap continue */
-    .heatmap-area {
-      margin-top:10px;
-      display:flex;
-      justify-content:center;
-    }
-    #heatCanvas {
-      width:100%;
-      max-width:420px;
-      border-radius:16px;
-      border:1px solid #202833;
-      background:#020617;
-      display:block;
-    }
-
-    /* Tabs (brutes / heatmap / oeil du pro) */
+    /* Tabs (vue brutes / heatmap) */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -272,7 +270,6 @@
       border:1px solid #202533;
       padding:2px;
       margin-bottom:10px;
-      gap:2px;
     }
     .view-tab {
       border:none;
@@ -348,59 +345,6 @@
       background:#111827;
     }
 
-    /* Pagination données brutes */
-    .pagination {
-      margin-top:10px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      flex-wrap:wrap;
-      font-size:12px;
-      color:#9aa5b1;
-    }
-    .pagination-buttons {
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-    }
-
-    /* L’œil du pro */
-    .pro-empty {
-      font-size:13px;
-      color:#9aa5b1;
-      margin-top:6px;
-    }
-    .pro-grid {
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:12px;
-      margin-top:8px;
-    }
-    .pro-item {
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid #202833;
-      background:#020617;
-      font-size:13px;
-    }
-    .pro-label {
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:0.05em;
-      color:#9ca3af;
-      margin-bottom:4px;
-    }
-    .pro-value {
-      font-size:14px;
-      font-weight:600;
-    }
-    .pro-note {
-      margin-top:8px;
-      font-size:11px;
-      color:#9ca3af;
-    }
-
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -416,9 +360,6 @@
       .top-actions {
         width:100%;
         justify-content:flex-start;
-      }
-      .pro-grid {
-        grid-template-columns:1fr;
       }
     }
   </style>
@@ -438,6 +379,7 @@
       <button id="btnImport" class="btn-top">⬆️ Importer CSV</button>
       <button id="btnExport" class="btn-top">⬇️ Exporter CSV</button>
       <input type="file" id="importInput" accept=".csv,text/csv" style="display:none;">
+      <div id="exportWarning" class="export-warning hidden"></div>
     </div>
   </div>
 
@@ -493,7 +435,6 @@
         <div class="view-tabs">
           <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
           <button id="tabHeatBtn" class="view-tab" type="button">Heatmap</button>
-          <button id="tabProBtn"  class="view-tab" type="button">L’œil du pro</button>
         </div>
 
         <!-- Vue Données brutes -->
@@ -504,15 +445,15 @@
 
           <div id="rawTableContainer">
             <table>
-              <thead>
+              <thead id="rawHead">
                 <tr>
-                  <th>Date</th>
-                  <th>Club</th>
-                  <th>Dist. cible</th>
-                  <th>Radar</th>
-                  <th>Dist. totale</th>
-                  <th>Écart lat.</th>
-                  <th>Écart prof.</th>
+                  <th data-sort="date_text" data-label="Date" class="sortable">Date</th>
+                  <th data-sort="club" data-label="Club" class="sortable">Club</th>
+                  <th data-sort="distance_cible_m" data-label="Dist. cible" class="sortable">Dist. cible</th>
+                  <th data-sort="radar_info" data-label="Radar" class="sortable">Radar</th>
+                  <th data-sort="distance_totale_m" data-label="Dist. totale" class="sortable">Dist. totale</th>
+                  <th data-sort="ecart_lateral_m" data-label="Écart lat." class="sortable">Écart lat.</th>
+                  <th data-sort="ecart_profondeur_m" data-label="Écart prof." class="sortable">Écart prof.</th>
                   <th></th>
                 </tr>
               </thead>
@@ -520,14 +461,6 @@
                 <tr><td colspan="8" class="empty-state">Chargement…</td></tr>
               </tbody>
             </table>
-          </div>
-
-          <div class="pagination" id="paginationBar">
-            <div class="pagination-buttons">
-              <button id="prevPageBtn" type="button">← Précédent</button>
-              <button id="nextPageBtn" type="button">Suivant →</button>
-            </div>
-            <div id="pageInfo">Page 1 / 1</div>
           </div>
         </div>
 
@@ -537,7 +470,6 @@
             Répartition des coups selon l’écart latéral (gauche / droite) et profondeur (court / long).
           </div>
 
-          <!-- Grille 3x3 de synthèse -->
           <div class="heatmap-grid">
             <table>
               <thead>
@@ -554,82 +486,10 @@
             </table>
           </div>
 
-          <!-- Nuage / carte de chaleur -->
-          <div class="heatmap-area">
-            <canvas id="heatCanvas"></canvas>
-          </div>
-
           <div class="heat-legend">
-            <div>Profondeur : haut = long, milieu = cible, bas = court</div>
-            <div>Latéral : gauche / centre / droite</div>
+            <div>Profondeur (lignes) : haut = long, milieu = cible, bas = court</div>
+            <div>Latéral (colonnes) : gauche / centre / droite</div>
             <div id="heatInfo"></div>
-          </div>
-        </div>
-
-        <!-- Vue L’œil du pro -->
-        <div id="viewPro" class="hidden">
-          <div class="card-subtitle">
-            Analyse avancée du <strong>club sélectionné</strong> sur la période filtrée.
-          </div>
-
-          <div id="proEmpty" class="pro-empty">
-            Sélectionnez un club dans les filtres à gauche et appliquez les filtres pour afficher l’analyse détaillée.
-          </div>
-
-          <div id="proContent" class="hidden">
-            <div class="pro-grid">
-              <div class="pro-item">
-                <div class="pro-label">Club analysé</div>
-                <div class="pro-value" id="proClubName">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Nombre de coups</div>
-                <div class="pro-value" id="proShotsCount">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Distance cible moyenne</div>
-                <div class="pro-value" id="proTargetMean">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Distance totale moyenne</div>
-                <div class="pro-value" id="proTotalMean">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Écart latéral moyen (signé)</div>
-                <div class="pro-value" id="proMeanLat">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Écart profondeur moyen (signé)</div>
-                <div class="pro-value" id="proMeanProf">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Dispersion latérale moyenne</div>
-                <div class="pro-value" id="proDispLat">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Dispersion profondeur moyenne</div>
-                <div class="pro-value" id="proDispProf">—</div>
-              </div>
-
-              <div class="pro-item">
-                <div class="pro-label">Fenêtre jouable</div>
-                <div class="pro-value" id="proPlayableRate">—</div>
-              </div>
-            </div>
-
-            <div class="pro-note">
-              Les moyennes sont <strong>signées</strong> :<br>
-              &nbsp;• écart latéral &lt; 0 → à gauche, &gt; 0 → à droite<br>
-              &nbsp;• écart profondeur &lt; 0 → court, &gt; 0 → long<br>
-              La fenêtre jouable correspond aux coups dans ±10&nbsp;m latéral et ±10&nbsp;m profondeur.
-            </div>
           </div>
         </div>
       </div>
@@ -653,88 +513,58 @@
 
   <script>
     const HISTORY_KEY = "todogolf_lab_history";
-    const PAGE_SIZE   = 30; // pagination données brutes
-    const PLAY_TOL_LAT   = 10; // m
-    const PLAY_TOL_PROF  = 10; // m
+    const EXPORT_META_KEY = "todogolf_lab_last_export_count";
 
     const $ = id => document.getElementById(id);
 
-    const rawBody     = $("rawBody");
-    const heatBody    = $("heatBody");
-    const heatInfo    = $("heatInfo");
-    const filterInfo  = $("filterInfo");
+    const rawBody    = $("rawBody");
+    const heatBody   = $("heatBody");
+    const heatInfo   = $("heatInfo");
+    const filterInfo = $("filterInfo");
+    const exportWarning = $("exportWarning");
 
-    const fDateFrom   = $("fDateFrom");
-    const fDateTo     = $("fDateTo");
-    const fClub       = $("fClub");
-    const fDistMin    = $("fDistMin");
-    const fDistMax    = $("fDistMax");
-    const fRadarType  = $("fRadarType");
+    const fDateFrom  = $("fDateFrom");
+    const fDateTo    = $("fDateTo");
+    const fClub      = $("fClub");
+    const fDistMin   = $("fDistMin");
+    const fDistMax   = $("fDistMax");
+    const fRadarType = $("fRadarType");
 
-    const btnApply    = $("btnApply");
-    const btnReset    = $("btnReset");
-    const btnImport   = $("btnImport");
-    const btnExport   = $("btnExport");
+    const btnApply   = $("btnApply");
+    const btnReset   = $("btnReset");
+    const btnImport  = $("btnImport");
+    const btnExport  = $("btnExport");
     const importInput = $("importInput");
 
-    const tabRawBtn   = $("tabRawBtn");
-    const tabHeatBtn  = $("tabHeatBtn");
-    const tabProBtn   = $("tabProBtn");
-    const viewRaw     = $("viewRaw");
-    const viewHeat    = $("viewHeat");
-    const viewPro     = $("viewPro");
+    const tabRawBtn  = $("tabRawBtn");
+    const tabHeatBtn = $("tabHeatBtn");
+    const viewRaw    = $("viewRaw");
+    const viewHeat   = $("viewHeat");
 
     const deletePopup      = $("deletePopup");
     const deleteCancelBtn  = $("deleteCancelBtn");
     const deleteConfirmBtn = $("deleteConfirmBtn");
 
-    const prevPageBtn = $("prevPageBtn");
-    const nextPageBtn = $("nextPageBtn");
-    const pageInfo    = $("pageInfo");
+    const rawHead = $("rawHead");
 
-    // L’œil du pro
-    const proEmpty        = $("proEmpty");
-    const proContent      = $("proContent");
-    const proClubName     = $("proClubName");
-    const proShotsCount   = $("proShotsCount");
-    const proTargetMean   = $("proTargetMean");
-    const proTotalMean    = $("proTotalMean");
-    const proMeanLat      = $("proMeanLat");
-    const proMeanProf     = $("proMeanProf");
-    const proDispLat      = $("proDispLat");
-    const proDispProf     = $("proDispProf");
-    const proPlayableRate = $("proPlayableRate");
-
-    const heatCanvas = $("heatCanvas");
-
-    let allRows       = [];
-    let filteredRows  = [];
-    let currentPage   = 1;
+    let allRows = [];
+    let filteredRows = [];
     let pendingDeleteIndex = null; // index dans allRows
+
+    let sortField = null;
+    let sortDir = "asc";
 
     function setView(view) {
       if (view === "raw") {
         viewRaw.classList.remove("hidden");
         viewHeat.classList.add("hidden");
-        viewPro.classList.add("hidden");
         tabRawBtn.classList.add("view-tab--active");
         tabHeatBtn.classList.remove("view-tab--active");
-        tabProBtn.classList.remove("view-tab--active");
-      } else if (view === "heat") {
+      } else {
         viewRaw.classList.add("hidden");
         viewHeat.classList.remove("hidden");
-        viewPro.classList.add("hidden");
-        tabRawBtn.classList.remove("view-tab--active");
         tabHeatBtn.classList.add("view-tab--active");
-        tabProBtn.classList.remove("view-tab--active");
-      } else {
-        // oeil du pro
-        viewRaw.classList.add("hidden");
-        viewHeat.classList.add("hidden");
-        viewPro.classList.remove("hidden");
         tabRawBtn.classList.remove("view-tab--active");
-        tabHeatBtn.classList.remove("view-tab--active");
-        tabProBtn.classList.add("view-tab--active");
       }
     }
 
@@ -777,8 +607,8 @@
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      currentPage = 1;
       applyFilters();
+      updateExportWarning();
     }
 
     function populateClubFilter() {
@@ -832,11 +662,11 @@
         return true;
       });
 
-      currentPage = 1;
+      applySort();
       renderRawTable();
       renderHeatmap();
-      computeProView();
       updateFilterInfo();
+      updateSortIndicators();
     }
 
     function updateFilterInfo() {
@@ -855,9 +685,7 @@
 
     function renderRawTable() {
       rawBody.innerHTML = "";
-
-      const totalRows = filteredRows.length;
-      if (!totalRows) {
+      if (!filteredRows.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 8;
@@ -865,20 +693,10 @@
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
         rawBody.appendChild(tr);
-
-        pageInfo.textContent = "Page 0 / 0";
-        prevPageBtn.disabled = true;
-        nextPageBtn.disabled = true;
         return;
       }
 
-      const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-      if (currentPage > totalPages) currentPage = totalPages;
-      const start = (currentPage - 1) * PAGE_SIZE;
-      const end   = start + PAGE_SIZE;
-      const pageRows = filteredRows.slice(start, end);
-
-      pageRows.forEach(r => {
+      filteredRows.forEach(r => {
         const tr = document.createElement("tr");
 
         const cDate = document.createElement("td");
@@ -929,10 +747,6 @@
 
         rawBody.appendChild(tr);
       });
-
-      pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
-      prevPageBtn.disabled = currentPage <= 1;
-      nextPageBtn.disabled = currentPage >= totalPages;
     }
 
     // Buckets : 3x3 (profondeur x latéral)
@@ -1009,88 +823,9 @@
         heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
       } else {
         heatInfo.textContent = maxCount > 0
-          ? `Cellule la plus dense : ${maxCount} coup(s). Chaque point sur la carte représente un coup.`
+          ? `Cellule la plus dense : ${maxCount} coup(s).`
           : "Aucune donnée mesurable (écarts non renseignés).";
       }
-
-      drawHeatScatter();
-    }
-
-    function drawHeatScatter() {
-      if (!heatCanvas || !heatCanvas.getContext) return;
-      const ctx = heatCanvas.getContext("2d");
-
-      // Ajuster la taille du canvas à son width CSS
-      const cssWidth = heatCanvas.clientWidth || 400;
-      heatCanvas.width  = cssWidth;
-      heatCanvas.height = cssWidth; // carré
-
-      const w = heatCanvas.width;
-      const h = heatCanvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      // Fond
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, w, h);
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const margin = 20;
-      const radius = Math.min(w, h) / 2 - margin;
-
-      // Cercle extérieur pour le repère
-      ctx.strokeStyle = "#1e293b";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Axes
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - radius);
-      ctx.lineTo(cx, cy + radius);
-      ctx.moveTo(cx - radius, cy);
-      ctx.lineTo(cx + radius, cy);
-      ctx.stroke();
-
-      // Centre
-      ctx.fillStyle = "#f9fafb";
-      ctx.beginPath();
-      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Déterminer l'échelle à partir des écarts
-      let maxAbs = 0;
-      const points = [];
-
-      filteredRows.forEach(r => {
-        const x = Number(r.ecart_lateral_m);
-        const y = Number(r.ecart_profondeur_m);
-        if (isNaN(x) || isNaN(y)) return;
-        const d = Math.sqrt(x*x + y*y);
-        if (d > maxAbs) maxAbs = d;
-        points.push({x, y});
-      });
-
-      if (!points.length) return;
-
-      const range = Math.max(10, maxAbs * 1.2);
-      const scale = radius / range;
-
-      // Dessiner les coups (nuage / chaleur)
-      points.forEach(p => {
-        const nx = cx + p.x * scale;
-        const ny = cy - p.y * scale; // y positif = long (vers le haut)
-
-        const d = Math.sqrt(p.x*p.x + p.y*p.y);
-        const ratio = Math.min(1, d / range);
-        const hue = 120 - 120 * ratio; // vert -> rouge
-
-        ctx.fillStyle = `hsla(${hue}, 80%, 50%, 0.45)`;
-        ctx.beginPath();
-        ctx.arc(nx, ny, 6, 0, Math.PI * 2);
-        ctx.fill();
-      });
     }
 
     function resetFilters() {
@@ -1139,12 +874,32 @@
         rows.push(line);
       });
 
+      const csv = rows.join("\n");
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
-      const csv = rows.join("\n");
+
+      // Mise à jour de la "photo" d'export
+      try {
+        localStorage.setItem(EXPORT_META_KEY, String(allRows.length));
+      } catch (e) {}
+
       downloadCSV(`todogolf-historique-${yyyy}-${mm}-${dd}.csv`, csv);
+      updateExportWarning();
+    }
+
+    // Clé unique pour éviter les doublons à l'import
+    function rowKey(r) {
+      return [
+        r.date_text || "",
+        r.club || "",
+        r.distance_cible_m ?? "",
+        r.radar_info || "",
+        r.distance_totale_m ?? "",
+        r.ecart_lateral_m ?? "",
+        r.ecart_profondeur_m ?? ""
+      ].join("|");
     }
 
     function importCSVText(text) {
@@ -1167,6 +922,9 @@
         return;
       }
 
+      const existing = parseStoredHistory();
+      const existingKeys = new Set(existing.map(rowKey));
+
       const imported = [];
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
@@ -1182,15 +940,21 @@
           ecart_lateral_m: idx.ecart_lateral_m >= 0 ? Number(cols[idx.ecart_lateral_m] || "") : null,
           ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? Number(cols[idx.ecart_profondeur_m] || "") : null
         };
+
+        const k = rowKey(row);
+        if (existingKeys.has(k)) {
+          // doublon → on ignore
+          continue;
+        }
+        existingKeys.add(k);
         imported.push(row);
       }
 
       if (!imported.length) {
-        alert("Aucune donnée exploitable trouvée dans ce CSV.");
+        alert("Aucune nouvelle donnée à ajouter (les coups semblent déjà présents dans votre historique).");
         return;
       }
 
-      const existing = parseStoredHistory();
       const merged = existing.concat(imported);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
       loadHistory();
@@ -1217,98 +981,88 @@
       allRows.splice(pendingDeleteIndex, 1);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
       closeDeletePopup();
-      loadHistory(); // rafraîchit table + heatmap + pro
+      loadHistory(); // rafraîchit la table + heatmap + filtres + warning
     }
 
-    // Oeil du pro : moyennes signées + dispersion + fenêtre jouable
-    function mean(values) {
-      const nums = values.filter(v => typeof v === "number" && !isNaN(v));
-      if (!nums.length) return null;
-      const s = nums.reduce((acc, v) => acc + v, 0);
-      return s / nums.length;
+    // Tri
+    function applySort() {
+      if (!sortField) return;
+      const numericFields = new Set([
+        "distance_cible_m",
+        "distance_totale_m",
+        "ecart_lateral_m",
+        "ecart_profondeur_m"
+      ]);
+
+      filteredRows.sort((a, b) => {
+        let va, vb;
+
+        if (sortField === "date_text") {
+          const da = parseISODate(formatDateTextToISO(a.date_text)) || new Date(0);
+          const db = parseISODate(formatDateTextToISO(b.date_text)) || new Date(0);
+          va = da.getTime();
+          vb = db.getTime();
+        } else if (numericFields.has(sortField)) {
+          va = a[sortField];
+          vb = b[sortField];
+          va = (va == null || isNaN(Number(va))) ? NaN : Number(va);
+          vb = (vb == null || isNaN(Number(vb))) ? NaN : Number(vb);
+        } else {
+          va = a[sortField] != null ? String(a[sortField]) : "";
+          vb = b[sortField] != null ? String(b[sortField]) : "";
+        }
+
+        let cmp = 0;
+        if (sortField === "date_text" || numericFields.has(sortField)) {
+          if (isNaN(va) && isNaN(vb)) cmp = 0;
+          else if (isNaN(va)) cmp = 1;
+          else if (isNaN(vb)) cmp = -1;
+          else cmp = va - vb;
+        } else {
+          cmp = va.localeCompare(vb, "fr", { sensitivity: "base" });
+        }
+
+        return sortDir === "asc" ? cmp : -cmp;
+      });
     }
 
-    function meanAbs(values) {
-      const nums = values.filter(v => typeof v === "number" && !isNaN(v));
-      if (!nums.length) return null;
-      const s = nums.reduce((acc, v) => acc + Math.abs(v), 0);
-      return s / nums.length;
-    }
-
-    function formatMeters(val) {
-      if (val == null || isNaN(val)) return "—";
-      return val.toFixed(1).replace(".", ",") + " m";
-    }
-
-    function computeProView() {
-      const clubFilter = fClub.value;
-
-      if (!filteredRows.length) {
-        proEmpty.textContent = "Aucun coup ne correspond aux filtres actuels.";
-        proEmpty.classList.remove("hidden");
-        proContent.classList.add("hidden");
-        return;
-      }
-
-      if (!clubFilter) {
-        proEmpty.textContent = "Sélectionnez un club dans les filtres à gauche pour afficher l’analyse détaillée.";
-        proEmpty.classList.remove("hidden");
-        proContent.classList.add("hidden");
-        return;
-      }
-
-      const rows = filteredRows.filter(r => r.club === clubFilter);
-      if (!rows.length) {
-        proEmpty.textContent = "Aucun coup enregistré pour ce club avec les filtres actuels.";
-        proEmpty.classList.remove("hidden");
-        proContent.classList.add("hidden");
-        return;
-      }
-
-      const n = rows.length;
-      const targetVals = rows.map(r => Number(r.distance_cible_m));
-      const totalVals  = rows.map(r => Number(r.distance_totale_m));
-      const latVals    = rows.map(r => Number(r.ecart_lateral_m));
-      const profVals   = rows.map(r => Number(r.ecart_profondeur_m));
-
-      const mTarget = mean(targetVals);
-      const mTotal  = mean(totalVals);
-      const mLat    = mean(latVals);       // signé
-      const mProf   = mean(profVals);      // signé
-
-      const dLat    = meanAbs(latVals);    // dispersion moyenne en valeur absolue
-      const dProf   = meanAbs(profVals);
-
-      let playableCount = 0;
-      let playableTotal = 0;
-      rows.forEach(r => {
-        const x = Number(r.ecart_lateral_m);
-        const y = Number(r.ecart_profondeur_m);
-        if (isNaN(x) || isNaN(y)) return;
-        playableTotal++;
-        if (Math.abs(x) <= PLAY_TOL_LAT && Math.abs(y) <= PLAY_TOL_PROF) {
-          playableCount++;
+    function updateSortIndicators() {
+      if (!rawHead) return;
+      const ths = rawHead.querySelectorAll("th");
+      ths.forEach(th => {
+        const field = th.dataset.sort;
+        const base = th.dataset.label || th.textContent.replace(/[▲▼]\s*$/, "").trim();
+        if (!field) {
+          th.textContent = base;
+          return;
+        }
+        if (field === sortField) {
+          const arrow = sortDir === "asc" ? " ▲" : " ▼";
+          th.textContent = base + arrow;
+        } else {
+          th.textContent = base;
         }
       });
+    }
 
-      let playableRate = "—";
-      if (playableTotal > 0) {
-        const pct = (playableCount * 100) / playableTotal;
-        playableRate = `${playableCount}/${playableTotal} coups (${pct.toFixed(1).replace(".", ",")} %)`;
+    function updateExportWarning() {
+      if (!exportWarning) return;
+      const total = allRows.length;
+      let lastCount = 0;
+      try {
+        const val = localStorage.getItem(EXPORT_META_KEY);
+        if (val) lastCount = Number(val) || 0;
+      } catch (e) {
+        lastCount = 0;
       }
-
-      proClubName.textContent   = clubFilter;
-      proShotsCount.textContent = String(n);
-      proTargetMean.textContent = formatMeters(mTarget);
-      proTotalMean.textContent  = formatMeters(mTotal);
-      proMeanLat.textContent    = formatMeters(mLat);
-      proMeanProf.textContent   = formatMeters(mProf);
-      proDispLat.textContent    = formatMeters(dLat);
-      proDispProf.textContent   = formatMeters(dProf);
-      proPlayableRate.textContent = playableRate;
-
-      proEmpty.classList.add("hidden");
-      proContent.classList.remove("hidden");
+      const diff = total - lastCount;
+      if (diff > 0) {
+        exportWarning.textContent = `⚠️ ${diff} coup(s) non exporté(s). Pensez à télécharger votre CSV.`;
+        exportWarning.classList.remove("hidden");
+      } else {
+        exportWarning.textContent = "";
+        exportWarning.classList.add("hidden");
+      }
     }
 
     // Listeners
@@ -1328,29 +1082,8 @@
       reader.readAsText(file, "utf-8");
     });
 
-    [fDateFrom, fDateTo, fClub, fDistMin, fDistMax, fRadarType].forEach(el => {
-      el.addEventListener("change", applyFilters);
-    });
-
     tabRawBtn.addEventListener("click", () => setView("raw"));
     tabHeatBtn.addEventListener("click", () => setView("heat"));
-    tabProBtn.addEventListener("click", () => setView("pro"));
-
-    // Pagination boutons
-    prevPageBtn.addEventListener("click", () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderRawTable();
-      }
-    });
-    nextPageBtn.addEventListener("click", () => {
-      const totalRows = filteredRows.length;
-      const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderRawTable();
-      }
-    });
 
     // Click sur la croix de suppression (délégation)
     rawBody.addEventListener("click", (e) => {
@@ -1366,32 +1099,45 @@
     deleteCancelBtn.addEventListener("click", closeDeletePopup);
     deleteConfirmBtn.addEventListener("click", confirmDelete);
 
-    // Redessiner le scatter quand la fenêtre change (pour adapter la taille)
-    window.addEventListener("resize", () => {
-      if (!viewHeat.classList.contains("hidden")) {
-        drawHeatScatter();
-      }
-    });
+    // Tri par clic sur les en-têtes
+    if (rawHead) {
+      rawHead.addEventListener("click", (e) => {
+        const th = e.target.closest("th");
+        if (!th) return;
+        const field = th.dataset.sort;
+        if (!field) return;
+        if (sortField === field) {
+          sortDir = (sortDir === "asc") ? "desc" : "asc";
+        } else {
+          sortField = field;
+          sortDir = "asc";
+        }
+        applySort();
+        renderRawTable();
+        updateSortIndicators();
+      });
+    }
 
     // Init
     setView("raw");
     loadHistory();
   </script>
 
-  <!-- Script keep-alive Render -->
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
+    // Fonction ping Render
     function pingRender() {
-      try {
-        fetch(RENDER_URL, {
-          method: "HEAD",
-          mode: "no-cors"
-        }).catch(() => {});
-      } catch (e) {}
+      fetch(RENDER_URL, {
+        method: "HEAD",
+        mode: "no-cors"
+      }).catch(() => {});
     }
 
+    // 🔸 Ping au chargement de la page
     pingRender();
+
+    // 🔸 Ping toutes les 5 minutes
     setInterval(pingRender, 5 * 60 * 1000);
   </script>
 </body>
