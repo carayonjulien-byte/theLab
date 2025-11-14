@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Lab by ToDoGolf – Lecture Radar</title>
+  <title>ToDoGolf Lab – Lecture Radar</title>
   <style>
     :root {
       --gap: 14px;
@@ -16,10 +16,10 @@
     }
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
       color: var(--text);
     }
     .hidden { display:none !important; }
@@ -29,12 +29,14 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: linear-gradient(to bottom, #050608, rgba(5,6,8,0.9));
-      border-bottom: 1px solid #121822;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
+      border-bottom: 1px solid #10151e;
       padding: 10px 16px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:flex-start;
+      backdrop-filter: blur(14px);
+      gap:10px;
     }
     .top-left {
       display:flex;
@@ -42,15 +44,15 @@
       gap:10px;
     }
     .brand-dot {
-      width:20px;
-      height:20px;
+      width:22px;
+      height:22px;
       border-radius:999px;
       background:var(--primary);
-      box-shadow:0 0 12px rgba(0,80,58,0.7);
+      box-shadow:0 0 16px rgba(0,80,58,0.85);
     }
     .top-title {
       font-weight:600;
-      font-size:15px;
+      font-size:16px;
     }
     .top-sub {
       font-size:11px;
@@ -65,14 +67,36 @@
       color:var(--text);
       cursor:pointer;
       text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
     }
     .btn-top:hover { background:#101822; }
 
     .wrap {
       max-width: 960px;
       margin: 0 auto;
-      padding: 16px;
-      padding-bottom: 40px;
+      padding: 18px 16px 40px;
+    }
+
+    .page-eyebrow {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      color:#6b7280;
+      margin-bottom:4px;
+    }
+    .page-title {
+      font-size:24px;
+      font-weight:650;
+      margin:6px 0 4px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      max-width:520px;
+      line-height:1.5;
+      margin-bottom:10px;
     }
 
     .card {
@@ -212,6 +236,7 @@
       border:1px solid #1a2530;
       cursor:pointer;
       user-select:none;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
     }
     .step-index {
       width:22px;
@@ -236,8 +261,12 @@
       color: #ffffff;
       border-color:var(--primary);
     }
-    .step--disabled {
-      opacity:0.5;
+
+    .step-help {
+      font-size:12px;
+      color:#9aa5b1;
+      margin-bottom:4px;
+      line-height:1.5;
     }
 
     .tab-content { margin-top: var(--gap); }
@@ -273,7 +302,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Status bar (amélioré) */
+    /* Status bar */
     #statusBox {
       font-size: 14px;
       padding: 14px 16px;
@@ -281,7 +310,7 @@
       margin-top: 14px;
       line-height: 1.5;
       display: none;
-      white-space: pre-line; /* support \n dans le texte */
+      white-space: pre-line;
     }
     .status--info {
       display:block;
@@ -296,25 +325,119 @@
       color: #ff9b9b;
     }
 
-    @media (max-width:720px){
-      .grid-2{grid-template-columns:1fr}
-      img{max-height:50vh}
-      .row > button,
-      .row > label[role=button],
-      .primary,
-      .ghost{width:100%}
-      .btn-row-2{grid-template-columns:1fr}
+    /* Sélecteur de club custom */
+    .select-club-btn {
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid #26303b;
+      background:#05080c;
+      color:#6b7280;
+      font-size:15px;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      cursor:pointer;
+    }
+    .select-club-btn::after {
+      content:"▾";
+      font-size:11px;
+      opacity:0.8;
+    }
+    .select-club-btn--filled {
+      color:var(--text);
     }
 
-    .page-title {
-      font-size:22px;
-      font-weight:600;
-      margin:10px 0 10px;
+    /* Modal clubs (verre dépoli) */
+    .modal-backdrop {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:120;
+      backdrop-filter: blur(12px);
+      padding:16px;
     }
-    .page-subtitle {
+    .modal-club {
+      background: rgba(15,20,25,0.92);
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,0.35);
+      box-shadow: 0 24px 45px rgba(0,0,0,0.7);
+      width:100%;
+      max-width:380px;
+      max-height:80vh;
+      display:flex;
+      flex-direction:column;
+      animation: modalFade 0.16s ease-out;
+    }
+    @keyframes modalFade {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .modal-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px 8px;
+      border-bottom:1px solid rgba(31,41,55,0.8);
+    }
+    .modal-title {
+      font-size:14px;
+      font-weight:600;
+    }
+    .modal-close-btn {
+      border-radius:999px;
+      border:1px solid #374151;
+      background:#111827;
+      color:#e5e7eb;
       font-size:13px;
-      color:#9aa5b1;
-      margin-bottom:10px;
+      padding:4px 8px;
+      cursor:pointer;
+    }
+    .modal-close-btn:hover {
+      background:#1f2933;
+    }
+    .modal-body {
+      padding:10px 14px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .modal-search {
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #26303b;
+      background:#05080c;
+      color:var(--text);
+      font-size:14px;
+    }
+    .modal-list {
+      margin-top:4px;
+      overflow-y:auto;
+      max-height: calc(80vh - 120px);
+    }
+    .modal-item {
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      transition: background 0.08s ease, transform 0.06s ease;
+    }
+    .modal-item:hover {
+      background:rgba(0,80,58,0.22);
+      transform:translateY(-1px);
+    }
+    .modal-empty {
+      padding:10px 12px;
+      font-size:13px;
+      color:#9ca3af;
     }
 
     /* Popup sauvegarde */
@@ -332,25 +455,56 @@
       box-shadow: 0 8px 22px rgba(0,0,0,0.55);
       z-index: 200;
     }
+
+    @media (max-width:720px){
+      .grid-2{grid-template-columns:1fr}
+      img{max-height:50vh}
+      .row > button,
+      .row > label[role=button],
+      .primary,
+      .ghost{width:100%}
+      .btn-row-2{grid-template-columns:1fr}
+      .modal-club{
+        max-width:none;
+        max-height:none;
+        height:100%;
+        border-radius:0;
+      }
+      .modal-list{
+        max-height:none;
+        flex:1;
+      }
+      .modal-body{
+        flex:1;
+        display:flex;
+        flex-direction:column;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="topbar">
+  <!-- Topbar -->
+  <header class="topbar">
     <div class="top-left">
       <div class="brand-dot"></div>
       <div>
-        <div class="top-title">Lab by ToDoGolf</div>
-        <div class="top-sub">Lecture radar – Masque & analyse</div>
+        <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
+        <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
     </div>
-    <div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-eyebrow">Lecture</div>
+    <h1 class="page-title">Lecture Radar</h1>
+    <p class="page-subtitle">
+      Étape 1 : prenez une photo de votre feuille vue du dessus avec les repères bien visibles. Étape 2 :
+      renseignez les informations de votre coup et lancez l’analyse.
+    </p>
+
+    <div class="row" style="margin: 6px 0 18px 0;">
       <a href="index.html" class="btn-top">← Accueil</a>
     </div>
-  </div>
-
-  <div class="wrap">
-    <div class="page-title">Lecture Radar</div>
-    <div class="page-subtitle">Étape 1 : photo • Étape 2 : analyse du coup</div>
 
     <div class="card">
       <!-- Stepper -->
@@ -369,6 +523,11 @@
             <div class="step-sub">Analyse</div>
           </div>
         </div>
+      </div>
+
+      <div class="step-help">
+        Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille,
+        et vérifiez que les <strong>trois repères du bas</strong> sont bien visibles et alignés dans l’image.
       </div>
 
       <!-- Loader -->
@@ -411,8 +570,12 @@
             <div class="hint">Préremplie à aujourd'hui</div>
           </div>
           <div class="row">
-            <label for="club">Club</label>
-            <input id="club" type="text" placeholder="ex: Fer7" required />
+            <label for="clubDisplay">Club</label>
+            <button id="clubDisplay" type="button" class="select-club-btn">
+              Sélectionner un club…
+            </button>
+            <input id="club" type="hidden" />
+            <div class="hint">Tapez pour filtrer et choisissez votre club.</div>
           </div>
         </div>
 
@@ -469,6 +632,20 @@
         </button>
       </div>
     </div>
+  </main>
+
+  <!-- Modal sélection de club -->
+  <div id="clubModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal-club">
+      <div class="modal-header">
+        <div class="modal-title">Sélectionner un club</div>
+        <button id="closeClubModal" type="button" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <input id="clubSearch" type="text" class="modal-search" placeholder="Rechercher un club…" />
+        <div id="clubList" class="modal-list"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Popup -->
@@ -496,6 +673,7 @@
 
     const dateText   = $("dateText");
     const club       = $("club");
+    const clubDisplay = $("clubDisplay");
     const targetDist = $("targetDist");
 
     const loaderBox  = $("loaderBox");
@@ -510,6 +688,41 @@
     const clearResultBtn   = $("clearResultBtn");
     const toStep2Btn       = $("toStep2Btn");
 
+    const clubModalBackdrop = $("clubModalBackdrop");
+    const clubSearch        = $("clubSearch");
+    const clubList          = $("clubList");
+    const closeClubModal    = $("closeClubModal");
+
+    const CLUBS = [
+      "Driver",
+      "Bois 3",
+      "Bois 5",
+      "Bois 7",
+      "Bois 9",
+      "Hybride 2",
+      "Hybride 3",
+      "Hybride 4",
+      "Hybride 5",
+      "Fer 2",
+      "Fer 3",
+      "Fer 4",
+      "Fer 5",
+      "Fer 6",
+      "Fer 7",
+      "Fer 8",
+      "Fer 9",
+      "Wedge 50°",
+      "Wedge 52°",
+      "Wedge 54°",
+      "Wedge 56°",
+      "Wedge 58°",
+      "Wedge 60°",
+      "Wedge 62°",
+      "Wedge 64°",
+      "Putter",
+      "Chipper"
+    ];
+
     let currentBlob   = null;
     let lastJson      = null;
     let maskValidated = false;
@@ -519,7 +732,6 @@
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
       if (!box) return;
-      // permet les messages multi-lignes
       box.innerHTML = msg.replace(/\n/g, "<br>");
       box.className = "";
       box.classList.add(type === "error" ? "status--error" : "status--info");
@@ -715,7 +927,7 @@
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
         }
         const blob = await res.blob();
         showPreview(blob);
@@ -724,10 +936,9 @@
         toStep2Btn.classList.remove("hidden");
         setStatus(
           "Masque généré ✅\n\n" +
-          "Vérifiez bien la détection :\n" +
-          "• les trois repères sont entourés\n" +
-          "• les impacts sont alignés sur les arcs rouges\n" +
-          "• les cercles de distance suivent correctement le radar\n\n" +
+          "Vérifiez la détection :\n" +
+          "• le cercle extérieur rouge passe bien par les trois repères\n" +
+          "• chaque repère est marqué par une icône au centre\n\n" +
           "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
           "info"
         );
@@ -735,7 +946,17 @@
         maskValidated = false;
         analyzeBtn.disabled = true;
         toStep2Btn.classList.add("hidden");
-        setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
+
+        const msg = (err && err.message) ? err.message : "";
+        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+          setStatus(
+            "🟡 Le service d’analyse est en cours de démarrage.\n" +
+            "Patientez quelques secondes puis réessayez.",
+            "error"
+          );
+        } else {
+          setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
+        }
       }finally{
         setLoading(false);
       }
@@ -781,7 +1002,7 @@
         const coups = Array.isArray(data.coups) ? data.coups : [];
 
         rDate.textContent   = dateText.value;
-        rClub.textContent   = club.value;
+        rClub.textContent   = club.value || "—";
         rTarget.textContent = targetDist.value + ' m';
 
         const radarInfo = getRadarInfoFromJson(data);
@@ -820,7 +1041,16 @@
         setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
         setActiveTab(2);
       }catch(err){
-        setStatus('Analyse impossible : '+err.message, "error");
+        const msg = (err && err.message) ? err.message : "";
+        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+          setStatus(
+            "🟡 Service d’analyse en cours de démarrage…\n" +
+            "Attendez quelques secondes et relancez l’analyse.",
+            "error"
+          );
+        } else {
+          setStatus("Analyse impossible : " + msg, "error");
+        }
       } finally {
         setLoading(false);
       }
@@ -899,27 +1129,74 @@
     step2El.addEventListener('click', ()=> setActiveTab(2));
     toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
 
+    // Gestion modal clubs
+    function renderClubList(query) {
+      const q = (query || "").trim().toLowerCase();
+      clubList.innerHTML = "";
+      const filtered = CLUBS.filter(name => !q || name.toLowerCase().includes(q));
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "modal-empty";
+        empty.textContent = "Aucun club trouvé.";
+        clubList.appendChild(empty);
+        return;
+      }
+      filtered.forEach(name => {
+        const item = document.createElement("div");
+        item.className = "modal-item";
+        item.textContent = name;
+        item.addEventListener("click", () => {
+          club.value = name;
+          clubDisplay.textContent = name;
+          clubDisplay.classList.add("select-club-btn--filled");
+          closeClubModalFn();
+        });
+        clubList.appendChild(item);
+      });
+    }
+
+    function openClubModal() {
+      clubModalBackdrop.classList.remove("hidden");
+      clubSearch.value = "";
+      renderClubList("");
+    }
+
+    function closeClubModalFn() {
+      clubModalBackdrop.classList.add("hidden");
+    }
+
+    clubDisplay.addEventListener("click", openClubModal);
+    closeClubModal.addEventListener("click", closeClubModalFn);
+    clubModalBackdrop.addEventListener("click", (e)=>{
+      if (e.target === clubModalBackdrop) {
+        closeClubModalFn();
+      }
+    });
+    clubSearch.addEventListener("input", (e)=>{
+      renderClubList(e.target.value);
+    });
+
     // Init
     setActiveTab(1);
     refreshSteps();
   </script>
 
+  <!-- Script keep-alive Render -->
   <script>
-  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
-  // Fonction ping Render
-  function pingRender() {
-    fetch(RENDER_URL, {
-      method: "HEAD",
-      mode: "no-cors"
-    }).catch(() => {});
-  }
+    function pingRender() {
+      try {
+        fetch(RENDER_URL, {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
-  // 🔸 Ping au chargement de la page
-  pingRender();
-
-  // 🔸 Ping toutes les 5 minutes
-  setInterval(pingRender, 5 * 60 * 1000);
-</script>
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
 </body>
 </html>
+
