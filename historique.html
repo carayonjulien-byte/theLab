@@ -221,7 +221,7 @@
       padding:8px 0;
     }
 
-    /* Heatmap */
+    /* Heatmap bloc grille */
     .heatmap-grid {
       margin-top:8px;
       border-radius:12px;
@@ -249,7 +249,22 @@
       flex-wrap:wrap;
     }
 
-    /* Tabs (vue brutes / heatmap) */
+    /* Zone heatmap continue */
+    .heatmap-area {
+      margin-top:10px;
+      display:flex;
+      justify-content:center;
+    }
+    #heatCanvas {
+      width:100%;
+      max-width:420px;
+      border-radius:16px;
+      border:1px solid #202833;
+      background:#020617;
+      display:block;
+    }
+
+    /* Tabs (brutes / heatmap / oeil du pro) */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -257,6 +272,7 @@
       border:1px solid #202533;
       padding:2px;
       margin-bottom:10px;
+      gap:2px;
     }
     .view-tab {
       border:none;
@@ -332,6 +348,59 @@
       background:#111827;
     }
 
+    /* Pagination données brutes */
+    .pagination {
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:#9aa5b1;
+    }
+    .pagination-buttons {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
+    /* L’œil du pro */
+    .pro-empty {
+      font-size:13px;
+      color:#9aa5b1;
+      margin-top:6px;
+    }
+    .pro-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
+      margin-top:8px;
+    }
+    .pro-item {
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #202833;
+      background:#020617;
+      font-size:13px;
+    }
+    .pro-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+      color:#9ca3af;
+      margin-bottom:4px;
+    }
+    .pro-value {
+      font-size:14px;
+      font-weight:600;
+    }
+    .pro-note {
+      margin-top:8px;
+      font-size:11px;
+      color:#9ca3af;
+    }
+
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -347,6 +416,9 @@
       .top-actions {
         width:100%;
         justify-content:flex-start;
+      }
+      .pro-grid {
+        grid-template-columns:1fr;
       }
     }
   </style>
@@ -418,15 +490,10 @@
       <!-- Résultats -->
       <div class="card">
         <div class="card-title">Vue des données</div>
-
-        <!-- Résumé style TrackMan -->
-        <div id="summaryCard" class="card-subtitle">
-          Sélectionnez un club ou appliquez des filtres pour afficher un résumé synthétique de vos coups.
-        </div>
-
         <div class="view-tabs">
           <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
           <button id="tabHeatBtn" class="view-tab" type="button">Heatmap</button>
+          <button id="tabProBtn"  class="view-tab" type="button">L’œil du pro</button>
         </div>
 
         <!-- Vue Données brutes -->
@@ -454,6 +521,14 @@
               </tbody>
             </table>
           </div>
+
+          <div class="pagination" id="paginationBar">
+            <div class="pagination-buttons">
+              <button id="prevPageBtn" type="button">← Précédent</button>
+              <button id="nextPageBtn" type="button">Suivant →</button>
+            </div>
+            <div id="pageInfo">Page 1 / 1</div>
+          </div>
         </div>
 
         <!-- Vue Heatmap -->
@@ -462,6 +537,7 @@
             Répartition des coups selon l’écart latéral (gauche / droite) et profondeur (court / long).
           </div>
 
+          <!-- Grille 3x3 de synthèse -->
           <div class="heatmap-grid">
             <table>
               <thead>
@@ -478,10 +554,82 @@
             </table>
           </div>
 
+          <!-- Nuage / carte de chaleur -->
+          <div class="heatmap-area">
+            <canvas id="heatCanvas"></canvas>
+          </div>
+
           <div class="heat-legend">
-            <div>Profondeur (lignes) : haut = long, milieu = cible, bas = court</div>
-            <div>Latéral (colonnes) : gauche / centre / droite</div>
+            <div>Profondeur : haut = long, milieu = cible, bas = court</div>
+            <div>Latéral : gauche / centre / droite</div>
             <div id="heatInfo"></div>
+          </div>
+        </div>
+
+        <!-- Vue L’œil du pro -->
+        <div id="viewPro" class="hidden">
+          <div class="card-subtitle">
+            Analyse avancée du <strong>club sélectionné</strong> sur la période filtrée.
+          </div>
+
+          <div id="proEmpty" class="pro-empty">
+            Sélectionnez un club dans les filtres à gauche et appliquez les filtres pour afficher l’analyse détaillée.
+          </div>
+
+          <div id="proContent" class="hidden">
+            <div class="pro-grid">
+              <div class="pro-item">
+                <div class="pro-label">Club analysé</div>
+                <div class="pro-value" id="proClubName">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Nombre de coups</div>
+                <div class="pro-value" id="proShotsCount">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Distance cible moyenne</div>
+                <div class="pro-value" id="proTargetMean">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Distance totale moyenne</div>
+                <div class="pro-value" id="proTotalMean">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Écart latéral moyen (signé)</div>
+                <div class="pro-value" id="proMeanLat">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Écart profondeur moyen (signé)</div>
+                <div class="pro-value" id="proMeanProf">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Dispersion latérale moyenne</div>
+                <div class="pro-value" id="proDispLat">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Dispersion profondeur moyenne</div>
+                <div class="pro-value" id="proDispProf">—</div>
+              </div>
+
+              <div class="pro-item">
+                <div class="pro-label">Fenêtre jouable</div>
+                <div class="pro-value" id="proPlayableRate">—</div>
+              </div>
+            </div>
+
+            <div class="pro-note">
+              Les moyennes sont <strong>signées</strong> :<br>
+              &nbsp;• écart latéral &lt; 0 → à gauche, &gt; 0 → à droite<br>
+              &nbsp;• écart profondeur &lt; 0 → court, &gt; 0 → long<br>
+              La fenêtre jouable correspond aux coups dans ±10&nbsp;m latéral et ±10&nbsp;m profondeur.
+            </div>
           </div>
         </div>
       </div>
@@ -505,52 +653,88 @@
 
   <script>
     const HISTORY_KEY = "todogolf_lab_history";
+    const PAGE_SIZE   = 30; // pagination données brutes
+    const PLAY_TOL_LAT   = 10; // m
+    const PLAY_TOL_PROF  = 10; // m
 
     const $ = id => document.getElementById(id);
 
-    const rawBody   = $("rawBody");
-    const heatBody  = $("heatBody");
-    const heatInfo  = $("heatInfo");
-    const filterInfo = $("filterInfo");
-    const summaryCard = $("summaryCard");
+    const rawBody     = $("rawBody");
+    const heatBody    = $("heatBody");
+    const heatInfo    = $("heatInfo");
+    const filterInfo  = $("filterInfo");
 
-    const fDateFrom = $("fDateFrom");
-    const fDateTo   = $("fDateTo");
-    const fClub     = $("fClub");
-    const fDistMin  = $("fDistMin");
-    const fDistMax  = $("fDistMax");
-    const fRadarType= $("fRadarType");
+    const fDateFrom   = $("fDateFrom");
+    const fDateTo     = $("fDateTo");
+    const fClub       = $("fClub");
+    const fDistMin    = $("fDistMin");
+    const fDistMax    = $("fDistMax");
+    const fRadarType  = $("fRadarType");
 
-    const btnApply  = $("btnApply");
-    const btnReset  = $("btnReset");
-    const btnImport = $("btnImport");
-    const btnExport = $("btnExport");
+    const btnApply    = $("btnApply");
+    const btnReset    = $("btnReset");
+    const btnImport   = $("btnImport");
+    const btnExport   = $("btnExport");
     const importInput = $("importInput");
 
-    const tabRawBtn  = $("tabRawBtn");
-    const tabHeatBtn = $("tabHeatBtn");
-    const viewRaw    = $("viewRaw");
-    const viewHeat   = $("viewHeat");
+    const tabRawBtn   = $("tabRawBtn");
+    const tabHeatBtn  = $("tabHeatBtn");
+    const tabProBtn   = $("tabProBtn");
+    const viewRaw     = $("viewRaw");
+    const viewHeat    = $("viewHeat");
+    const viewPro     = $("viewPro");
 
     const deletePopup      = $("deletePopup");
     const deleteCancelBtn  = $("deleteCancelBtn");
     const deleteConfirmBtn = $("deleteConfirmBtn");
 
-    let allRows = [];
-    let filteredRows = [];
+    const prevPageBtn = $("prevPageBtn");
+    const nextPageBtn = $("nextPageBtn");
+    const pageInfo    = $("pageInfo");
+
+    // L’œil du pro
+    const proEmpty        = $("proEmpty");
+    const proContent      = $("proContent");
+    const proClubName     = $("proClubName");
+    const proShotsCount   = $("proShotsCount");
+    const proTargetMean   = $("proTargetMean");
+    const proTotalMean    = $("proTotalMean");
+    const proMeanLat      = $("proMeanLat");
+    const proMeanProf     = $("proMeanProf");
+    const proDispLat      = $("proDispLat");
+    const proDispProf     = $("proDispProf");
+    const proPlayableRate = $("proPlayableRate");
+
+    const heatCanvas = $("heatCanvas");
+
+    let allRows       = [];
+    let filteredRows  = [];
+    let currentPage   = 1;
     let pendingDeleteIndex = null; // index dans allRows
 
     function setView(view) {
       if (view === "raw") {
         viewRaw.classList.remove("hidden");
         viewHeat.classList.add("hidden");
+        viewPro.classList.add("hidden");
         tabRawBtn.classList.add("view-tab--active");
         tabHeatBtn.classList.remove("view-tab--active");
-      } else {
+        tabProBtn.classList.remove("view-tab--active");
+      } else if (view === "heat") {
         viewRaw.classList.add("hidden");
         viewHeat.classList.remove("hidden");
-        tabHeatBtn.classList.add("view-tab--active");
+        viewPro.classList.add("hidden");
         tabRawBtn.classList.remove("view-tab--active");
+        tabHeatBtn.classList.add("view-tab--active");
+        tabProBtn.classList.remove("view-tab--active");
+      } else {
+        // oeil du pro
+        viewRaw.classList.add("hidden");
+        viewHeat.classList.add("hidden");
+        viewPro.classList.remove("hidden");
+        tabRawBtn.classList.remove("view-tab--active");
+        tabHeatBtn.classList.remove("view-tab--active");
+        tabProBtn.classList.add("view-tab--active");
       }
     }
 
@@ -593,6 +777,7 @@
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
+      currentPage = 1;
       applyFilters();
     }
 
@@ -647,10 +832,11 @@
         return true;
       });
 
+      currentPage = 1;
       renderRawTable();
       renderHeatmap();
+      computeProView();
       updateFilterInfo();
-      updateSummary();
     }
 
     function updateFilterInfo() {
@@ -667,163 +853,11 @@
       }
     }
 
-    function updateSummary() {
-      if (!summaryCard) return;
-
-      const total = filteredRows.length;
-      if (!total) {
-        summaryCard.textContent = "Aucune donnée ne correspond aux filtres actuels pour le moment.";
-        return;
-      }
-
-      // Club mis en avant
-      let clubFocusLabel = "";
-      const selectedClub = fClub.value;
-      if (selectedClub) {
-        clubFocusLabel = selectedClub;
-      } else {
-        const clubsSet = new Set(filteredRows.map(r => r.club).filter(Boolean));
-        if (clubsSet.size === 1) {
-          clubFocusLabel = [...clubsSet][0];
-        } else {
-          clubFocusLabel = "Plusieurs clubs";
-        }
-      }
-
-      // Distance cible
-      const distValues = filteredRows
-        .map(r => r.distance_cible_m)
-        .filter(v => v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v)))
-        .map(Number);
-
-      let distLabel = "";
-      if (distValues.length) {
-        const uniques = Array.from(new Set(distValues));
-        if (uniques.length === 1) {
-          distLabel = uniques[0] + " m";
-        } else {
-          const minD = Math.min(...uniques);
-          const maxD = Math.max(...uniques);
-          distLabel = `${minD}–${maxD} m`;
-        }
-      }
-
-      // Distances totales
-      const distTotValues = filteredRows
-        .map(r => r.distance_totale_m)
-        .filter(v => v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v)))
-        .map(Number);
-
-      let avgDistText = "—";
-      let maxDistText = "—";
-      let medianDistText = null;
-
-      if (distTotValues.length) {
-        const n = distTotValues.length;
-        const sum = distTotValues.reduce((a,b)=>a+b,0);
-        const avg = sum / n;
-        const sorted = [...distTotValues].sort((a,b)=>a-b);
-        const median = n%2 ? sorted[(n-1)/2] : (sorted[n/2-1] + sorted[n/2]) / 2;
-        const maxD = Math.max(...distTotValues);
-        avgDistText = avg.toFixed(1) + " m";
-        medianDistText = median.toFixed(1) + " m";
-        maxDistText = maxD.toFixed(1) + " m";
-      }
-
-      // Dispersion latérale / profondeur
-      const lateralVals = [];
-      const profVals = [];
-      filteredRows.forEach(r=>{
-        const x = Number(r.ecart_lateral_m);
-        const y = Number(r.ecart_profondeur_m);
-        if (!Number.isNaN(x)) lateralVals.push(x);
-        if (!Number.isNaN(y)) profVals.push(y);
-      });
-
-      let avgLatAbsText = "—";
-      let avgProfAbsText = "—";
-      let biasLatText = "";
-      let biasProfText = "";
-
-      if (lateralVals.length) {
-        const avgAbs = lateralVals.reduce((a,b)=>a+Math.abs(b),0)/lateralVals.length;
-        avgLatAbsText = avgAbs.toFixed(1) + " m";
-        let left=0, centre=0, right=0;
-        lateralVals.forEach(x=>{
-          if (x < -2) left++;
-          else if (x > 2) right++;
-          else centre++;
-        });
-        if (left>right && left>centre) biasLatText = " (plutôt à gauche)";
-        else if (right>left && right>centre) biasLatText = " (plutôt à droite)";
-        else biasLatText = " (globalement centré)";
-      }
-
-      if (profVals.length) {
-        const avgAbs = profVals.reduce((a,b)=>a+Math.abs(b),0)/profVals.length;
-        avgProfAbsText = avgAbs.toFixed(1) + " m";
-        let court=0, cible=0, long=0;
-        profVals.forEach(y=>{
-          if (y < -2) court++;
-          else if (y > 2) long++;
-          else cible++;
-        });
-        if (court>long && court>cible) biasProfText = " (plutôt un peu court)";
-        else if (long>court && long>cible) biasProfText = " (plutôt un peu long)";
-        else biasProfText = " (profondeur bien maîtrisée)";
-      }
-
-      // Fenêtres de précision
-      let shotsForWindow = 0;
-      let playableCount = 0;
-      let targetCount = 0;
-      filteredRows.forEach(r=>{
-        const x = Number(r.ecart_lateral_m);
-        const y = Number(r.ecart_profondeur_m);
-        if (Number.isNaN(x) || Number.isNaN(y)) return;
-        shotsForWindow++;
-        const absX = Math.abs(x);
-        const absY = Math.abs(y);
-        if (absX<=5 && absY<=8) playableCount++;
-        if (absX<=2 && absY<=3) targetCount++;
-      });
-
-      let playableText = "—";
-      let targetText = "—";
-      if (shotsForWindow>0) {
-        playableText = Math.round(playableCount*100/shotsForWindow) + " %";
-        targetText = Math.round(targetCount*100/shotsForWindow) + " %";
-      }
-
-      const headerParts = [];
-      if (clubFocusLabel) headerParts.push(`<strong>${clubFocusLabel}</strong>`);
-      if (distLabel) headerParts.push(distLabel);
-      headerParts.push(`${total} coup(s) filtré(s)`);
-
-      let html = `<div>${headerParts.join(" • ")}</div>`;
-
-      html += `<div style="margin-top:4px;">
-        Distance moyenne : <strong>${avgDistText}</strong>${medianDistText ? ` (médiane ${medianDistText})` : ""} – meilleur coup : <strong>${maxDistText}</strong>
-      </div>`;
-
-      html += `<div style="margin-top:2px;">
-        Dispersion latérale moyenne : <strong>${avgLatAbsText}</strong>${biasLatText}
-      </div>`;
-
-      html += `<div style="margin-top:2px;">
-        Dispersion en profondeur : <strong>${avgProfAbsText}</strong>${biasProfText}
-      </div>`;
-
-      html += `<div style="margin-top:2px;">
-        Fenêtre "jouable" (±5 m lat., ±8 m prof.) : <strong>${playableText}</strong> • Fenêtre "pile dans la cible" (±2 m / ±3 m) : <strong>${targetText}</strong>
-      </div>`;
-
-      summaryCard.innerHTML = html;
-    }
-
     function renderRawTable() {
       rawBody.innerHTML = "";
-      if (!filteredRows.length) {
+
+      const totalRows = filteredRows.length;
+      if (!totalRows) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 8;
@@ -831,10 +865,20 @@
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
         rawBody.appendChild(tr);
+
+        pageInfo.textContent = "Page 0 / 0";
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
         return;
       }
 
-      filteredRows.forEach(r => {
+      const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end   = start + PAGE_SIZE;
+      const pageRows = filteredRows.slice(start, end);
+
+      pageRows.forEach(r => {
         const tr = document.createElement("tr");
 
         const cDate = document.createElement("td");
@@ -885,6 +929,10 @@
 
         rawBody.appendChild(tr);
       });
+
+      pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
     }
 
     // Buckets : 3x3 (profondeur x latéral)
@@ -906,15 +954,10 @@
 
     function renderHeatmap() {
       const grid = [
-        [0,0,0], // long (haut)
+        [0,0,0], // long
         [0,0,0], // cible
-        [0,0,0]  // court (bas)
+        [0,0,0]  // court
       ];
-
-      const labelsRows = ["Long", "Cible", "Court"];
-      const labelsCols = ["Gauche", "Centre", "Droite"];
-
-      let countShots = 0;
 
       filteredRows.forEach(r => {
         const x = Number(r.ecart_lateral_m);
@@ -923,21 +966,12 @@
         const j = bucketLat(x);
         if (i === null || j === null) return;
         grid[i][j] += 1;
-        countShots++;
       });
 
+      const labelsRows = ["Long", "Cible", "Court"];
+
       let maxCount = 0;
-      let maxI = 0;
-      let maxJ = 0;
-      grid.forEach((row, i) => {
-        row.forEach((v, j) => {
-          if (v > maxCount) {
-            maxCount = v;
-            maxI = i;
-            maxJ = j;
-          }
-        });
-      });
+      grid.forEach(row => row.forEach(v => { if (v > maxCount) maxCount = v; }));
 
       heatBody.innerHTML = "";
 
@@ -971,25 +1005,92 @@
         heatBody.appendChild(tr);
       }
 
-      if (!filteredRows.length || !countShots) {
+      if (!filteredRows.length) {
         heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
       } else {
-        const centerCell = grid[1][1]; // Cible / Centre
-        const centerRowTotal = grid[1][0] + grid[1][1] + grid[1][2];
-        const centerColTotal = grid[0][1] + grid[1][1] + grid[2][1];
-
-        const pct = (n) => Math.round(n * 100 / countShots);
-
-        const pCell = pct(centerCell);
-        const pRow  = pct(centerRowTotal);
-        const pCol  = pct(centerColTotal);
-
-        heatInfo.textContent =
-          `Zone la plus dense : ${labelsRows[maxI]} / ${labelsCols[maxJ]} (${maxCount} coup(s)). ` +
-          `Centre pile sur la cible : ${pCell}% des coups. ` +
-          `Bande de profondeur "cible" : ${pRow}% des coups. ` +
-          `Coups dans l’axe (colonne centre) : ${pCol}% des coups.`;
+        heatInfo.textContent = maxCount > 0
+          ? `Cellule la plus dense : ${maxCount} coup(s). Chaque point sur la carte représente un coup.`
+          : "Aucune donnée mesurable (écarts non renseignés).";
       }
+
+      drawHeatScatter();
+    }
+
+    function drawHeatScatter() {
+      if (!heatCanvas || !heatCanvas.getContext) return;
+      const ctx = heatCanvas.getContext("2d");
+
+      // Ajuster la taille du canvas à son width CSS
+      const cssWidth = heatCanvas.clientWidth || 400;
+      heatCanvas.width  = cssWidth;
+      heatCanvas.height = cssWidth; // carré
+
+      const w = heatCanvas.width;
+      const h = heatCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Fond
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const margin = 20;
+      const radius = Math.min(w, h) / 2 - margin;
+
+      // Cercle extérieur pour le repère
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Axes
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - radius);
+      ctx.lineTo(cx, cy + radius);
+      ctx.moveTo(cx - radius, cy);
+      ctx.lineTo(cx + radius, cy);
+      ctx.stroke();
+
+      // Centre
+      ctx.fillStyle = "#f9fafb";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Déterminer l'échelle à partir des écarts
+      let maxAbs = 0;
+      const points = [];
+
+      filteredRows.forEach(r => {
+        const x = Number(r.ecart_lateral_m);
+        const y = Number(r.ecart_profondeur_m);
+        if (isNaN(x) || isNaN(y)) return;
+        const d = Math.sqrt(x*x + y*y);
+        if (d > maxAbs) maxAbs = d;
+        points.push({x, y});
+      });
+
+      if (!points.length) return;
+
+      const range = Math.max(10, maxAbs * 1.2);
+      const scale = radius / range;
+
+      // Dessiner les coups (nuage / chaleur)
+      points.forEach(p => {
+        const nx = cx + p.x * scale;
+        const ny = cy - p.y * scale; // y positif = long (vers le haut)
+
+        const d = Math.sqrt(p.x*p.x + p.y*p.y);
+        const ratio = Math.min(1, d / range);
+        const hue = 120 - 120 * ratio; // vert -> rouge
+
+        ctx.fillStyle = `hsla(${hue}, 80%, 50%, 0.45)`;
+        ctx.beginPath();
+        ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
     function resetFilters() {
@@ -1116,7 +1217,98 @@
       allRows.splice(pendingDeleteIndex, 1);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
       closeDeletePopup();
-      loadHistory(); // rafraîchit la table + heatmap + filtres
+      loadHistory(); // rafraîchit table + heatmap + pro
+    }
+
+    // Oeil du pro : moyennes signées + dispersion + fenêtre jouable
+    function mean(values) {
+      const nums = values.filter(v => typeof v === "number" && !isNaN(v));
+      if (!nums.length) return null;
+      const s = nums.reduce((acc, v) => acc + v, 0);
+      return s / nums.length;
+    }
+
+    function meanAbs(values) {
+      const nums = values.filter(v => typeof v === "number" && !isNaN(v));
+      if (!nums.length) return null;
+      const s = nums.reduce((acc, v) => acc + Math.abs(v), 0);
+      return s / nums.length;
+    }
+
+    function formatMeters(val) {
+      if (val == null || isNaN(val)) return "—";
+      return val.toFixed(1).replace(".", ",") + " m";
+    }
+
+    function computeProView() {
+      const clubFilter = fClub.value;
+
+      if (!filteredRows.length) {
+        proEmpty.textContent = "Aucun coup ne correspond aux filtres actuels.";
+        proEmpty.classList.remove("hidden");
+        proContent.classList.add("hidden");
+        return;
+      }
+
+      if (!clubFilter) {
+        proEmpty.textContent = "Sélectionnez un club dans les filtres à gauche pour afficher l’analyse détaillée.";
+        proEmpty.classList.remove("hidden");
+        proContent.classList.add("hidden");
+        return;
+      }
+
+      const rows = filteredRows.filter(r => r.club === clubFilter);
+      if (!rows.length) {
+        proEmpty.textContent = "Aucun coup enregistré pour ce club avec les filtres actuels.";
+        proEmpty.classList.remove("hidden");
+        proContent.classList.add("hidden");
+        return;
+      }
+
+      const n = rows.length;
+      const targetVals = rows.map(r => Number(r.distance_cible_m));
+      const totalVals  = rows.map(r => Number(r.distance_totale_m));
+      const latVals    = rows.map(r => Number(r.ecart_lateral_m));
+      const profVals   = rows.map(r => Number(r.ecart_profondeur_m));
+
+      const mTarget = mean(targetVals);
+      const mTotal  = mean(totalVals);
+      const mLat    = mean(latVals);       // signé
+      const mProf   = mean(profVals);      // signé
+
+      const dLat    = meanAbs(latVals);    // dispersion moyenne en valeur absolue
+      const dProf   = meanAbs(profVals);
+
+      let playableCount = 0;
+      let playableTotal = 0;
+      rows.forEach(r => {
+        const x = Number(r.ecart_lateral_m);
+        const y = Number(r.ecart_profondeur_m);
+        if (isNaN(x) || isNaN(y)) return;
+        playableTotal++;
+        if (Math.abs(x) <= PLAY_TOL_LAT && Math.abs(y) <= PLAY_TOL_PROF) {
+          playableCount++;
+        }
+      });
+
+      let playableRate = "—";
+      if (playableTotal > 0) {
+        const pct = (playableCount * 100) / playableTotal;
+        playableRate = `${playableCount}/${playableTotal} coups (${pct.toFixed(1).replace(".", ",")} %)`;
+      }
+
+      proClubName.textContent   = clubFilter;
+      proShotsCount.textContent = String(n);
+      proTargetMean.textContent = formatMeters(mTarget);
+      proTotalMean.textContent  = formatMeters(mTotal);
+      proMeanLat.textContent    = formatMeters(mLat);
+      proMeanProf.textContent   = formatMeters(mProf);
+      proDispLat.textContent    = formatMeters(dLat);
+      proDispProf.textContent   = formatMeters(dProf);
+      proPlayableRate.textContent = playableRate;
+
+      proEmpty.classList.add("hidden");
+      proContent.classList.remove("hidden");
     }
 
     // Listeners
@@ -1142,6 +1334,23 @@
 
     tabRawBtn.addEventListener("click", () => setView("raw"));
     tabHeatBtn.addEventListener("click", () => setView("heat"));
+    tabProBtn.addEventListener("click", () => setView("pro"));
+
+    // Pagination boutons
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRawTable();
+      }
+    });
+    nextPageBtn.addEventListener("click", () => {
+      const totalRows = filteredRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRawTable();
+      }
+    });
 
     // Click sur la croix de suppression (délégation)
     rawBody.addEventListener("click", (e) => {
@@ -1157,19 +1366,29 @@
     deleteCancelBtn.addEventListener("click", closeDeletePopup);
     deleteConfirmBtn.addEventListener("click", confirmDelete);
 
+    // Redessiner le scatter quand la fenêtre change (pour adapter la taille)
+    window.addEventListener("resize", () => {
+      if (!viewHeat.classList.contains("hidden")) {
+        drawHeatScatter();
+      }
+    });
+
     // Init
     setView("raw");
     loadHistory();
   </script>
 
+  <!-- Script keep-alive Render -->
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
     function pingRender() {
-      fetch(RENDER_URL, {
-        method: "HEAD",
-        mode: "no-cors"
-      }).catch(() => {});
+      try {
+        fetch(RENDER_URL, {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(() => {});
+      } catch (e) {}
     }
 
     pingRender();
