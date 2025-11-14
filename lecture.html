@@ -527,7 +527,7 @@
 
       <div class="step-help">
         Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille,
-        et vérifiez que les <strong>trois repères du bas</strong> sont bien visibles et alignés dans l’image.
+        et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.
       </div>
 
       <!-- Loader -->
@@ -657,6 +657,16 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const HISTORY_KEY = "todogolf_lab_history";
 
+    // 🔹 fetch avec timeout pour gérer Render KO / très lent
+    function fetchWithTimeout(url, options = {}, timeout = 20000) {
+      return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), timeout)
+        )
+      ]);
+    }
+
     const $ = id => document.getElementById(id);
 
     const fileCam    = $("fileCam");
@@ -671,10 +681,10 @@
     const rTarget = $("rTarget");
     const rRadar  = $("rRadar");
 
-    const dateText   = $("dateText");
-    const club       = $("club");
+    const dateText    = $("dateText");
+    const club        = $("club");
     const clubDisplay = $("clubDisplay");
-    const targetDist = $("targetDist");
+    const targetDist  = $("targetDist");
 
     const loaderBox  = $("loaderBox");
     const loaderText = $("loaderText");
@@ -923,7 +933,7 @@
 
       try{
         setLoading(true, "Génération du masque…");
-        const res = await fetch(url,{method:'POST',body:fd});
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -948,7 +958,14 @@
         toStep2Btn.classList.add("hidden");
 
         const msg = (err && err.message) ? err.message : "";
-        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        if (msg === "Timeout") {
+          setStatus(
+            "🟡 Le service d’analyse ne répond pas.\n" +
+            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
+            "Réessayez dans quelques secondes.",
+            "error"
+          );
+        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
           setStatus(
             "🟡 Le service d’analyse est en cours de démarrage.\n" +
             "Patientez quelques secondes puis réessayez.",
@@ -990,7 +1007,7 @@
 
       try{
         setLoading(true, "Analyse en cours…");
-        const res = await fetch(url,{method:'POST',body:fd});
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -1042,7 +1059,14 @@
         setActiveTab(2);
       }catch(err){
         const msg = (err && err.message) ? err.message : "";
-        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        if (msg === "Timeout") {
+          setStatus(
+            "🟡 Le service d’analyse ne répond pas.\n" +
+            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
+            "Réessayez dans quelques secondes.",
+            "error"
+          );
+        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
           setStatus(
             "🟡 Service d’analyse en cours de démarrage…\n" +
             "Attendez quelques secondes et relancez l’analyse.",
@@ -1120,6 +1144,11 @@
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
       setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
+
+      // 🔁 Retour à l'accueil comme pour l'ajout à l’historique
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 1000);
     }
 
     saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
@@ -1199,4 +1228,3 @@
   </script>
 </body>
 </html>
-
