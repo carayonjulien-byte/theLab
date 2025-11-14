@@ -262,7 +262,7 @@
       flex-wrap:wrap;
     }
 
-    /* Tabs (vue brutes / heatmap) */
+    /* Tabs (vue brutes / heatmap / pro) */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -283,6 +283,62 @@
     .view-tab--active {
       background:#0f172a;
       color:#e5f0ff;
+    }
+
+    /* Pagination */
+    .pagination-bar {
+      margin-top:8px;
+      font-size:12px;
+      color:#9aa5b1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .page-btn {
+      padding:4px 10px;
+      font-size:12px;
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#020617;
+      color:#e5e7eb;
+      cursor:pointer;
+    }
+    .page-btn:disabled {
+      opacity:0.4;
+      cursor:not-allowed;
+    }
+
+    /* Œil du pro */
+    .pro-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+      gap:12px;
+      margin-top:8px;
+    }
+    .pro-box {
+      border-radius:12px;
+      border:1px solid #1f2933;
+      background:#020617;
+      padding:10px 12px;
+      font-size:13px;
+    }
+    .pro-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      color:#9ca3af;
+      margin-bottom:4px;
+    }
+    .pro-value {
+      font-size:15px;
+      font-weight:600;
+    }
+    .pro-note {
+      font-size:11px;
+      color:#9ca3af;
+      margin-top:4px;
     }
 
     /* Bouton de suppression */
@@ -435,6 +491,7 @@
         <div class="view-tabs">
           <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
           <button id="tabHeatBtn" class="view-tab" type="button">Heatmap</button>
+          <button id="tabProBtn"  class="view-tab" type="button">Œil du pro</button>
         </div>
 
         <!-- Vue Données brutes -->
@@ -462,6 +519,14 @@
               </tbody>
             </table>
           </div>
+
+          <div id="paginationBar" class="pagination-bar hidden">
+            <div id="paginationInfo"></div>
+            <div>
+              <button id="pagePrev" class="page-btn">Précédent</button>
+              <button id="pageNext" class="page-btn">Suivant</button>
+            </div>
+          </div>
         </div>
 
         <!-- Vue Heatmap -->
@@ -475,9 +540,11 @@
               <thead>
                 <tr>
                   <th></th>
+                  <th>G. fort</th>
                   <th>Gauche</th>
-                  <th>Centre</th>
+                  <th>Cible</th>
                   <th>Droite</th>
+                  <th>D. fort</th>
                 </tr>
               </thead>
               <tbody id="heatBody">
@@ -487,10 +554,18 @@
           </div>
 
           <div class="heat-legend">
-            <div>Profondeur (lignes) : haut = long, milieu = cible, bas = court</div>
-            <div>Latéral (colonnes) : gauche / centre / droite</div>
+            <div>Profondeur (lignes) : haut = long fort, milieu = cible, bas = court fort</div>
+            <div>Latéral (colonnes) : gauche fort / gauche / cible / droite / droite fort</div>
             <div id="heatInfo"></div>
           </div>
+        </div>
+
+        <!-- Vue Œil du pro -->
+        <div id="viewPro" class="hidden">
+          <div class="card-subtitle">
+            Synthèse des coups actuellement filtrés. Filtrez à gauche (club, distance, radar) puis lisez l’analyse ici.
+          </div>
+          <div id="proContent"></div>
         </div>
       </div>
     </div>
@@ -538,14 +613,22 @@
 
     const tabRawBtn  = $("tabRawBtn");
     const tabHeatBtn = $("tabHeatBtn");
+    const tabProBtn  = $("tabProBtn");
     const viewRaw    = $("viewRaw");
     const viewHeat   = $("viewHeat");
+    const viewPro    = $("viewPro");
+    const proContent = $("proContent");
 
     const deletePopup      = $("deletePopup");
     const deleteCancelBtn  = $("deleteCancelBtn");
     const deleteConfirmBtn = $("deleteConfirmBtn");
 
     const rawHead = $("rawHead");
+
+    const paginationBar  = $("paginationBar");
+    const paginationInfo = $("paginationInfo");
+    const pagePrev       = $("pagePrev");
+    const pageNext       = $("pageNext");
 
     let allRows = [];
     let filteredRows = [];
@@ -554,17 +637,31 @@
     let sortField = null;
     let sortDir = "asc";
 
+    const rowsPerPage = 30;
+    let currentPage = 1;
+
     function setView(view) {
       if (view === "raw") {
         viewRaw.classList.remove("hidden");
         viewHeat.classList.add("hidden");
+        viewPro.classList.add("hidden");
         tabRawBtn.classList.add("view-tab--active");
         tabHeatBtn.classList.remove("view-tab--active");
-      } else {
+        tabProBtn.classList.remove("view-tab--active");
+      } else if (view === "heat") {
         viewRaw.classList.add("hidden");
         viewHeat.classList.remove("hidden");
+        viewPro.classList.add("hidden");
         tabHeatBtn.classList.add("view-tab--active");
         tabRawBtn.classList.remove("view-tab--active");
+        tabProBtn.classList.remove("view-tab--active");
+      } else {
+        viewRaw.classList.add("hidden");
+        viewHeat.classList.add("hidden");
+        viewPro.classList.remove("hidden");
+        tabProBtn.classList.add("view-tab--active");
+        tabRawBtn.classList.remove("view-tab--active");
+        tabHeatBtn.classList.remove("view-tab--active");
       }
     }
 
@@ -662,11 +759,13 @@
         return true;
       });
 
+      currentPage = 1; // on revient au début sur changement de filtres
       applySort();
       renderRawTable();
       renderHeatmap();
       updateFilterInfo();
       updateSortIndicators();
+      renderProView();
     }
 
     function updateFilterInfo() {
@@ -685,7 +784,9 @@
 
     function renderRawTable() {
       rawBody.innerHTML = "";
-      if (!filteredRows.length) {
+      const total = filteredRows.length;
+
+      if (!total) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 8;
@@ -693,10 +794,19 @@
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
         rawBody.appendChild(tr);
+
+        paginationBar.classList.add("hidden");
         return;
       }
 
-      filteredRows.forEach(r => {
+      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex   = startIndex + rowsPerPage;
+      const pageRows   = filteredRows.slice(startIndex, endIndex);
+
+      pageRows.forEach(r => {
         const tr = document.createElement("tr");
 
         const cDate = document.createElement("td");
@@ -747,31 +857,43 @@
 
         rawBody.appendChild(tr);
       });
+
+      // Pagination bar
+      paginationBar.classList.remove("hidden");
+      paginationInfo.textContent = `Page ${currentPage} / ${totalPages} – ${total} coup(s) filtré(s)`;
+
+      pagePrev.disabled = (currentPage <= 1);
+      pageNext.disabled = (currentPage >= totalPages);
     }
 
-    // Buckets : 3x3 (profondeur x latéral)
-    // Latéral : 0 = gauche, 1 = centre, 2 = droite
+    // Heatmap 5x5
+    // Lat : 0 = G. fort, 1 = Gauche, 2 = Cible, 3 = Droite, 4 = D. fort
     function bucketLat(x) {
       if (x == null || isNaN(x)) return null;
-      if (x < -2) return 0;   // gauche
-      if (x >  2) return 2;   // droite
-      return 1;               // centre
+      if (x <= -8) return 0;       // très à gauche
+      if (x <  -3) return 1;       // gauche
+      if (x <=  3) return 2;       // cible
+      if (x <   8) return 3;       // droite
+      return 4;                    // très à droite
     }
 
-    // Profondeur (vertical) : 0 = long (haut), 1 = cible (milieu), 2 = court (bas)
+    // Prof : 0 = Long fort, 1 = Long, 2 = Cible, 3 = Court, 4 = Court fort
     function bucketProf(y) {
       if (y == null || isNaN(y)) return null;
-      if (y > 2)  return 0;   // long
-      if (y < -2) return 2;   // court
-      return 1;               // cible
+      if (y >  8) return 0;        // très long
+      if (y >  3) return 1;        // long
+      if (y >= -3) return 2;       // cible
+      if (y >= -8) return 3;       // court
+      return 4;                    // très court
     }
 
     function renderHeatmap() {
-      const grid = [
-        [0,0,0], // long
-        [0,0,0], // cible
-        [0,0,0]  // court
-      ];
+      const size = 5;
+      const grid = [];
+      for (let i=0;i<size;i++){
+        const row = new Array(size).fill(0);
+        grid.push(row);
+      }
 
       filteredRows.forEach(r => {
         const x = Number(r.ecart_lateral_m);
@@ -782,21 +904,21 @@
         grid[i][j] += 1;
       });
 
-      const labelsRows = ["Long", "Cible", "Court"];
+      const labelsRows = ["Long fort", "Long", "Cible", "Court", "Court fort"];
 
       let maxCount = 0;
       grid.forEach(row => row.forEach(v => { if (v > maxCount) maxCount = v; }));
 
       heatBody.innerHTML = "";
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < size; i++) {
         const tr = document.createElement("tr");
 
         const th = document.createElement("th");
         th.textContent = labelsRows[i];
         tr.appendChild(th);
 
-        for (let j = 0; j < 3; j++) {
+        for (let j = 0; j < size; j++) {
           const count = grid[i][j];
           const td = document.createElement("td");
 
@@ -1065,6 +1187,122 @@
       }
     }
 
+    // Vue Œil du pro : stats sur filteredRows
+    function renderProView() {
+      if (!proContent) return;
+      if (!filteredRows.length) {
+        proContent.innerHTML = '<div class="empty-state">Aucun coup filtré pour le moment. Sélectionnez un club ou une période pour afficher l’analyse.</div>';
+        return;
+      }
+
+      const n = filteredRows.length;
+      const clubs = new Set(filteredRows.map(r => r.club).filter(Boolean));
+      const radarTypes = new Set(filteredRows.map(r => getRadarTypeKey(r.radar_info) || "").filter(Boolean));
+
+      let sumTot = 0, nTot = 0;
+      let sumLat = 0, nLat = 0;
+      let sumLatAbs = 0;
+      let sumProf = 0, nProf = 0;
+      let sumProfAbs = 0;
+      let playable = 0;
+
+      filteredRows.forEach(r => {
+        const d = Number(r.distance_totale_m);
+        if (!isNaN(d)) {
+          sumTot += d;
+          nTot++;
+        }
+        const lat = Number(r.ecart_lateral_m);
+        if (!isNaN(lat)) {
+          sumLat += lat;              // signé
+          sumLatAbs += Math.abs(lat); // absolu pour info
+          nLat++;
+        }
+        const prof = Number(r.ecart_profondeur_m);
+        if (!isNaN(prof)) {
+          sumProf += prof;
+          sumProfAbs += Math.abs(prof);
+          nProf++;
+        }
+        if (!isNaN(lat) && !isNaN(prof)) {
+          if (Math.abs(lat) <= 5 && Math.abs(prof) <= 5) {
+            playable++;
+          }
+        }
+      });
+
+      const meanTot   = nTot  ? (sumTot / nTot) : null;
+      const meanLat   = nLat  ? (sumLat / nLat) : null;      // signé
+      const meanLatAbs= nLat  ? (sumLatAbs / nLat) : null;   // moyen absolu
+      const meanProf  = nProf ? (sumProf / nProf) : null;    // signé
+      const meanProfAbs= nProf? (sumProfAbs / nProf) : null; // moyen absolu
+      const playablePct = n ? (playable * 100 / n) : null;
+
+      function fmt(v, unit="m") {
+        if (v == null || isNaN(v)) return "—";
+        return v.toFixed(1) + " " + unit;
+      }
+
+      function fmtPct(v) {
+        if (v == null || isNaN(v)) return "—";
+        return v.toFixed(0) + " %";
+      }
+
+      const clubsText = clubs.size ? Array.from(clubs).sort().join(", ") : "—";
+      let radarText = "—";
+      if (radarTypes.size === 1) {
+        const t = Array.from(radarTypes)[0];
+        if (t === "putting") radarText = "Putting";
+        else if (t === "petit_jeu") radarText = "Petit jeu";
+        else if (t === "long_jeu") radarText = "Long jeu";
+        else radarText = "Mix de radars";
+      } else if (radarTypes.size > 1) {
+        radarText = "Mix de radars";
+      }
+
+      proContent.innerHTML = `
+        <div class="pro-grid">
+          <div class="pro-box">
+            <div class="pro-label">Volume analysé</div>
+            <div class="pro-value">${n} coup(s)</div>
+            <div class="pro-note">Clubs : ${clubsText}<br>Radar : ${radarText}</div>
+          </div>
+
+          <div class="pro-box">
+            <div class="pro-label">Distance totale moyenne</div>
+            <div class="pro-value">${fmt(meanTot)}</div>
+            <div class="pro-note">Basé sur les coups avec distance mesurée.</div>
+          </div>
+
+          <div class="pro-box">
+            <div class="pro-label">Écart latéral moyen (signé)</div>
+            <div class="pro-value">${fmt(meanLat)}</div>
+            <div class="pro-note">
+              Valeur négative = à gauche, positive = à droite.<br>
+              Écart moyen absolu : ${fmt(meanLatAbs)}.
+            </div>
+          </div>
+
+          <div class="pro-box">
+            <div class="pro-label">Écart profondeur moyen (signé)</div>
+            <div class="pro-value">${fmt(meanProf)}</div>
+            <div class="pro-note">
+              Valeur négative = court, positive = long.<br>
+              Écart moyen absolu : ${fmt(meanProfAbs)}.
+            </div>
+          </div>
+
+          <div class="pro-box">
+            <div class="pro-label">Fenêtre jouable (±5 m)</div>
+            <div class="pro-value">${fmtPct(playablePct)}</div>
+            <div class="pro-note">
+              Pourcentage de coups dans un rectangle de 10 m de large × 10 m de profondeur autour de la cible.
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     // Listeners
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
@@ -1084,6 +1322,23 @@
 
     tabRawBtn.addEventListener("click", () => setView("raw"));
     tabHeatBtn.addEventListener("click", () => setView("heat"));
+    tabProBtn.addEventListener("click", () => setView("pro"));
+
+    // Pagination
+    pagePrev.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRawTable();
+      }
+    });
+    pageNext.addEventListener("click", () => {
+      const total = filteredRows.length;
+      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRawTable();
+      }
+    });
 
     // Click sur la croix de suppression (délégation)
     rawBody.addEventListener("click", (e) => {
@@ -1118,6 +1373,45 @@
       });
     }
 
+    function updateSortIndicators() {
+      if (!rawHead) return;
+      const ths = rawHead.querySelectorAll("th");
+      ths.forEach(th => {
+        const field = th.dataset.sort;
+        const base = th.dataset.label || th.textContent.replace(/[▲▼]\s*$/, "").trim();
+        if (!field) {
+          th.textContent = base;
+          return;
+        }
+        if (field === sortField) {
+          const arrow = sortDir === "asc" ? " ▲" : " ▼";
+          th.textContent = base + arrow;
+        } else {
+          th.textContent = base;
+        }
+      });
+    }
+
+    function updateExportWarning() {
+      if (!exportWarning) return;
+      const total = allRows.length;
+      let lastCount = 0;
+      try {
+        const val = localStorage.getItem(EXPORT_META_KEY);
+        if (val) lastCount = Number(val) || 0;
+      } catch (e) {
+        lastCount = 0;
+      }
+      const diff = total - lastCount;
+      if (diff > 0) {
+        exportWarning.textContent = `⚠️ ${diff} coup(s) non exporté(s). Pensez à télécharger votre CSV.`;
+        exportWarning.classList.remove("hidden");
+      } else {
+        exportWarning.textContent = "";
+        exportWarning.classList.add("hidden");
+      }
+    }
+
     // Init
     setView("raw");
     loadHistory();
@@ -1126,7 +1420,6 @@
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
-    // Fonction ping Render
     function pingRender() {
       fetch(RENDER_URL, {
         method: "HEAD",
@@ -1134,10 +1427,7 @@
       }).catch(() => {});
     }
 
-    // 🔸 Ping au chargement de la page
     pingRender();
-
-    // 🔸 Ping toutes les 5 minutes
     setInterval(pingRender, 5 * 60 * 1000);
   </script>
 </body>
