@@ -1223,8 +1223,8 @@
         const density = densities[i];
         const t = density / maxDensity; // 0 = isolé, 1 = zone dense
 
-        // 0 -> rouge, ~0.5 -> orange, 1 -> vert
-        const hue = 0 + 120 * t; // 0=rouge, 60=jaune, 120=vert
+        // 0 -> vert, ~0.5 -> orange, 1 -> rouge
+        const hue = 120 - 120 * t; // 120=vert, 0=rouge
         const saturation = 80;
         const lightness = 50;
 
