@@ -1060,12 +1060,22 @@
     // Heatmap (canvas + halo)
     function renderHeatmap() {
       if (!heatCanvas) return;
-      const ctx = heatCanvas.getContext("2d");
-      const w = heatCanvas.width = heatCanvas.clientWidth * (window.devicePixelRatio || 1);
-      const h = heatCanvas.height = heatCanvas.clientHeight * (window.devicePixelRatio || 1);
-      ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
 
-      ctx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
+      const dpr = window.devicePixelRatio || 1;
+      const rect = heatCanvas.getBoundingClientRect();
+
+      // On force un canvas bien carré basé sur la largeur affichée
+      const size = rect.width || 300; // fallback
+      heatCanvas.width  = size * dpr;
+      heatCanvas.height = size * dpr;
+
+      const ctx = heatCanvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const w = size;
+      const h = size;
+
+      ctx.clearRect(0, 0, w, h);
 
       if (!filteredRows.length) {
         heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
@@ -1074,6 +1084,7 @@
         return;
       }
 
+      // 1) Distances disponibles
       const distances = Array.from(
         new Set(
           filteredRows
@@ -1109,20 +1120,19 @@
         return !isNaN(d) && d >= minD && d <= maxD;
       });
 
+      // Fond
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, w, h);
+
       if (!shots.length) {
         heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
-        ctx.fillStyle = "#020617";
-        ctx.fillRect(0,0,w,h);
         return;
       }
 
-      // Draw radar background (circles + axes)
+      // Radar (cercle + axes)
       const cx = w / 2;
       const cy = h / 2;
       const radius = Math.min(w, h) * 0.42;
-
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0,0,w,h);
 
       ctx.strokeStyle = "#1f2937";
       ctx.lineWidth = 1;
@@ -1143,10 +1153,12 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
+      // Échelle latérale / profondeur
       const maxAbsLat = Math.max(...shots.map(s => Math.abs(Number(s.ecart_lateral_m) || 0)), 5);
       const maxAbsProf = Math.max(...shots.map(s => Math.abs(Number(s.ecart_profondeur_m) || 0)), 5);
       const scale = radius / Math.max(maxAbsLat, maxAbsProf, 1);
 
+      // Densité locale pour la couleur (halo)
       const densities = shots.map((s, i) => {
         const x = (Number(s.ecart_lateral_m) || 0);
         const y = (Number(s.ecart_profondeur_m) || 0);
@@ -1177,7 +1189,7 @@
 
         const density = densities[i];
         const t = density / maxDensity;
-        const hue = 10 + (120 - 10) * t;
+        const hue = 10 + (120 - 10) * t; // rouge -> vert
         const saturation = 80;
         const lightness = 45 + 10 * t;
 
