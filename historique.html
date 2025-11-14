@@ -432,7 +432,18 @@
       <!-- Filtres -->
       <section class="card">
         <div class="card-title">Filtres</div>
-        <div class="card-subtitle">Ajustez les critères puis cliquez sur « Appliquer les filtres ».</div>
+        <div class="card-subtitle">
+          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+        </div>
+
+        <!-- Type de radar en premier et obligatoire pour la heatmap -->
+        <label for="fRadarType">Type de radar (obligatoire pour la heatmap)</label>
+        <select id="fRadarType">
+          <option value="all">— Choisissez un type —</option>
+          <option value="putting">Putting</option>
+          <option value="petit_jeu">Petit jeu</option>
+          <option value="long_jeu">Long jeu</option>
+        </select>
 
         <label for="fDateFrom">Date min</label>
         <input type="date" id="fDateFrom">
@@ -450,14 +461,6 @@
 
         <label for="fDistMax">Distance cible max (m)</label>
         <input type="number" id="fDistMax" placeholder="ex: 120">
-
-        <label for="fRadarType">Type de radar</label>
-        <select id="fRadarType">
-          <option value="all">Tous</option>
-          <option value="putting">Putting</option>
-          <option value="petit_jeu">Petit jeu</option>
-          <option value="long_jeu">Long jeu</option>
-        </select>
 
         <div class="filters-actions">
           <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
@@ -514,7 +517,7 @@
         <div id="viewHeat" class="hidden">
           <div class="card-subtitle">
             Répartition de vos coups autour de la cible : écarts latéraux (gauche / droite)
-            et en profondeur (court / long), visualisés sur un radar de dispersion.
+            et en profondeur (court / long), visualisés sur un radar de dispersion à 4 anneaux.
           </div>
 
           <div class="heat-controls">
@@ -526,7 +529,7 @@
               <input id="heatRange" type="range" min="0" max="0" value="0" disabled>
             </div>
             <div class="heat-controls-row">
-              <span id="heatInfo" style="flex:1;">Aucune donnée pour construire la heatmap.</span>
+              <span id="heatInfo" style="flex:1;">Choisissez un type de radar pour afficher la heatmap.</span>
             </div>
           </div>
 
@@ -642,7 +645,7 @@
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      applyFilters(); // initial apply
+      applyFilters(); // initial
       updateExportWarning();
     }
 
@@ -867,12 +870,12 @@
     }
 
     function resetFilters() {
+      fRadarType.value = "all";
       fDateFrom.value = "";
       fDateTo.value   = "";
       fClub.value     = "";
       fDistMin.value  = "";
       fDistMax.value  = "";
-      fRadarType.value = "all";
       applyFilters();
     }
 
@@ -1057,29 +1060,47 @@
       });
     }
 
-    // Heatmap (canvas + halo + anneaux dynamiques)
+    // Heatmap (4 anneaux fixes + halo rouge/orange/vert)
     function renderHeatmap() {
       if (!heatCanvas) return;
       const ctx = heatCanvas.getContext("2d");
 
-      // Gestion retina propre pour éviter les cadrans coupés
-      const dpr = window.devicePixelRatio || 1;
-      const rect = heatCanvas.getBoundingClientRect();
-      const w = rect.width || heatCanvas.clientWidth || 300;
-      const h = rect.height || heatCanvas.clientHeight || 300;
+      const radarTypeVal = fRadarType.value;
+      if (!radarTypeVal || radarTypeVal === "all") {
+        // Pas de type -> pas de heatmap exploitable
+        const w0 = heatCanvas.clientWidth || 300;
+        const h0 = heatCanvas.clientHeight || 300;
+        const ratio = window.devicePixelRatio || 1;
+        heatCanvas.width = w0 * ratio;
+        heatCanvas.height = h0 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,heatCanvas.width,heatCanvas.height);
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        heatInfo.textContent = "Choisissez un type de radar pour afficher la heatmap.";
+        return;
+      }
 
-      heatCanvas.width = w * dpr;
-      heatCanvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const ratio = window.devicePixelRatio || 1;
+      const w = heatCanvas.clientWidth || 300;
+      const h = heatCanvas.clientHeight || 300;
+      heatCanvas.width = w * ratio;
+      heatCanvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
       ctx.clearRect(0, 0, w, h);
 
       if (!filteredRows.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
         heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
         heatDistanceLabel.textContent = "Toutes distances";
         heatRange.disabled = true;
         return;
       }
 
+      // Distances cibles disponibles
       const distances = Array.from(
         new Set(
           filteredRows
@@ -1089,97 +1110,86 @@
       ).sort((a,b)=>a-b);
 
       if (!distances.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
         heatInfo.textContent = "Aucune distance cible renseignée pour ce filtre.";
         heatDistanceLabel.textContent = "Toutes distances";
         heatRange.disabled = true;
         return;
       }
 
+      // Curseur aligné sur les valeurs existantes
       if (heatRange.max != String(distances.length - 1)) {
         heatRange.min = "0";
         heatRange.max = String(distances.length - 1);
         heatRange.value = "0";
       }
+      let idx = Number(heatRange.value) || 0;
+      if (idx < 0) idx = 0;
+      if (idx > distances.length - 1) idx = distances.length - 1;
+      const centerDist = distances[idx];
 
-      const idx = Number(heatRange.value) || 0;
-      const centerDist = distances[Math.min(Math.max(idx, 0), distances.length - 1)];
-      const windowHalf = 5; // ±5 m autour de la cible
+      // Fenêtre selon type de radar
+      let windowHalf;
+      if (radarTypeVal === "putting") {
+        windowHalf = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        windowHalf = 2;
+      } else {
+        windowHalf = 5; // long jeu
+      }
+
       const minD = centerDist - windowHalf;
       const maxD = centerDist + windowHalf;
 
       heatDistanceLabel.textContent = `Cible ${centerDist} m (±${windowHalf} m)`;
       heatRange.disabled = false;
 
+      // Shots dans cette plage de distance cible
       const shots = filteredRows.filter(r => {
         const d = Number(r.distance_cible_m);
         return !isNaN(d) && d >= minD && d <= maxD;
       });
 
-      if (!shots.length) {
-        heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
-        ctx.fillStyle = "#020617";
-        ctx.fillRect(0,0,w,h);
-        return;
-      }
-
-      // Radar background
       const cx = w / 2;
       const cy = h / 2;
       const radius = Math.min(w, h) * 0.42;
 
+      // Fond
       ctx.fillStyle = "#020617";
       ctx.fillRect(0,0,w,h);
 
-      // Écarts max pour dimensionner l'échelle
-      const maxAbsLat = Math.max(...shots.map(s => Math.abs(Number(s.ecart_lateral_m) || 0)), 0);
-      const maxAbsProf = Math.max(...shots.map(s => Math.abs(Number(s.ecart_profondeur_m) || 0)), 0);
-      const maxAbs = Math.max(maxAbsLat, maxAbsProf, 1);
+      if (!shots.length) {
+        heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
+        // On dessine quand même le radar vide
+        drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+        return;
+      }
 
-      // Choix du pas d'anneau en mètres (indépendant du radar papier)
-      let stepM;
-      if (maxAbs <= 3) {
-        stepM = 0.5;
-      } else if (maxAbs <= 8) {
-        stepM = 1;
-      } else if (maxAbs <= 20) {
-        stepM = 2;
+      // Dessin du radar (4 anneaux)
+      drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+
+      // Échelle fixe selon le type de radar (mètres par anneau)
+      let metersPerRing;
+      if (radarTypeVal === "putting") {
+        metersPerRing = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        metersPerRing = 2;
       } else {
-        stepM = 5;
+        metersPerRing = 5;
       }
+      const maxMetric = 4 * metersPerRing;
+      const scale = radius / maxMetric;
 
-      const ringCount = Math.max(2, Math.ceil(maxAbs / stepM));
-      const maxRadiusM = ringCount * stepM;
-
-      // Échelle m -> px
-      const scale = radius / maxRadiusM;
-
-      // Cercles d'échelle
-      ctx.strokeStyle = "#1f2937";
-      ctx.lineWidth = 1;
-      for (let i = 1; i <= ringCount; i++) {
-        const rPx = i * stepM * scale;
-        ctx.beginPath();
-        ctx.arc(cx, cy, rPx, 0, Math.PI*2);
-        ctx.stroke();
-      }
-
-      // Axes croisés
-      ctx.beginPath();
-      ctx.moveTo(cx - radius, cy);
-      ctx.lineTo(cx + radius, cy);
-      ctx.moveTo(cx, cy - radius);
-      ctx.lineTo(cx, cy + radius);
-      ctx.stroke();
-
-      // Densité locale (proximité ≤ 2 m)
+      // Densité locale (distance <= 2 m pour counting)
       const densities = shots.map((s, i) => {
-        const x = (Number(s.ecart_lateral_m) || 0);
-        const y = (Number(s.ecart_profondeur_m) || 0);
+        const x = Number(s.ecart_lateral_m) || 0;
+        const y = Number(s.ecart_profondeur_m) || 0;
         let count = 0;
         for (let j = 0; j < shots.length; j++) {
           const s2 = shots[j];
-          const x2 = (Number(s2.ecart_lateral_m) || 0);
-          const y2 = (Number(s2.ecart_profondeur_m) || 0);
+          const x2 = Number(s2.ecart_lateral_m) || 0;
+          const y2 = Number(s2.ecart_profondeur_m) || 0;
           const dx = x2 - x;
           const dy = y2 - y;
           const dist = Math.sqrt(dx*dx + dy*dy);
@@ -1189,33 +1199,39 @@
       });
       const maxDensity = Math.max(...densities, 1);
 
-      // Heatmap : halos larges + color map rouge -> orange -> vert
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
 
-      const baseRadiusPx = Math.max(14, radius * 0.14); // halo plus large
-
       for (let i = 0; i < shots.length; i++) {
         const s = shots[i];
-        const xVal = Number(s.ecart_lateral_m) || 0;
-        const yVal = Number(s.ecart_profondeur_m) || 0;
+        let xVal = Number(s.ecart_lateral_m) || 0;
+        let yVal = Number(s.ecart_profondeur_m) || 0;
 
-        const x = cx + xVal * scale;
-        const y = cy - yVal * scale;
+        // Conversion m -> px + clamp au bord du radar
+        let px = xVal * scale;
+        let py = yVal * scale;
+        const distPix = Math.sqrt(px*px + py*py);
+        if (distPix > radius) {
+          const f = radius / distPix;
+          px *= f;
+          py *= f;
+        }
+
+        const x = cx + px;
+        const y = cy - py;
 
         const density = densities[i];
-        let t = density / maxDensity;     // 0 → isolé, 1 → gros paquet
-        t = Math.min(1, Math.max(0, t));
+        const t = density / maxDensity; // 0 = isolé, 1 = zone dense
 
-        // 0 = rouge, 0.5 = orange / jaune, 1 = vert
-        const hue = 0 + 120 * t;          // 0..120
+        // 0 -> rouge, ~0.5 -> orange, 1 -> vert
+        const hue = 0 + 120 * t; // 0=rouge, 60=jaune, 120=vert
         const saturation = 80;
-        const lightness = 45 + 10 * t;
+        const lightness = 50;
 
-        const rPix = baseRadiusPx;
+        const rPix = Math.max(16, radius * 0.16); // halo plus large
         const grad = ctx.createRadialGradient(x, y, 0, x, y, rPix);
-        grad.addColorStop(0,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0.9)`);
-        grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.6)`);
+        grad.addColorStop(0,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0.95)`);
+        grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
         grad.addColorStop(1,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
 
         ctx.fillStyle = grad;
@@ -1227,6 +1243,39 @@
       ctx.restore();
 
       heatInfo.textContent = `${shots.length} coup(s) affiché(s) pour cette plage de distance.`;
+    }
+
+    // Dessine le radar à 4 anneaux (sans lire les coups)
+    function drawRadarBackground(ctx, cx, cy, radius, radarTypeVal) {
+      ctx.save();
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 1.1;
+
+      // 4 anneaux
+      for (let i = 1; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, (radius * i) / 4, 0, Math.PI*2);
+        if (i === 4) {
+          ctx.strokeStyle = "#1f2937";
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = "#111827";
+          ctx.setLineDash([4,4]);
+        }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Axes
+      ctx.strokeStyle = "#1f2937";
+      ctx.beginPath();
+      ctx.moveTo(cx - radius, cy);
+      ctx.lineTo(cx + radius, cy);
+      ctx.moveTo(cx, cy - radius);
+      ctx.lineTo(cx, cy + radius);
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     // Listeners
