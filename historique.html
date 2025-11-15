@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Lab by ToDoGolf – Historique</title>
+  <title>ToDoGolf Lab – Historique</title>
   <style>
     :root {
       --gap: 14px;
@@ -16,10 +16,10 @@
     }
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
       padding: 0;
-      background: var(--bg);
+      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
       color: var(--text);
     }
     .hidden { display:none !important; }
@@ -29,12 +29,14 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: linear-gradient(to bottom, #050608, rgba(5,6,8,0.9));
-      border-bottom: 1px solid #121822;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
+      border-bottom: 1px solid #10151e;
       padding: 10px 16px;
       display:flex;
       align-items:center;
       justify-content:space-between;
+      backdrop-filter: blur(14px);
+      gap:8px;
     }
     .top-left {
       display:flex;
@@ -42,25 +44,27 @@
       gap:10px;
     }
     .brand-dot {
-      width:20px;
-      height:20px;
+      width:22px;
+      height:22px;
       border-radius:999px;
       background:var(--primary);
-      box-shadow:0 0 12px rgba(0,80,58,0.7);
+      box-shadow:0 0 16px rgba(0,80,58,0.85);
     }
     .top-title {
       font-weight:600;
-      font-size:15px;
+      font-size:16px;
     }
     .top-sub {
       font-size:11px;
       color:#8b9aaa;
     }
+
     .top-actions {
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       justify-content:flex-end;
+      align-items:center;
     }
     .btn-top {
       border-radius:999px;
@@ -72,8 +76,21 @@
       cursor:pointer;
       text-decoration:none;
       white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
     }
     .btn-top:hover { background:#101822; }
+
+    .export-warning {
+      font-size:11px;
+      color:#fbbf24;
+      background:rgba(251,191,36,0.06);
+      border-radius:999px;
+      border:1px solid rgba(251,191,36,0.4);
+      padding:4px 8px;
+      white-space:nowrap;
+    }
 
     .wrap {
       max-width: 1120px;
@@ -193,6 +210,17 @@
       color:#9aa5b1;
       text-transform:uppercase;
       letter-spacing:0.04em;
+      cursor:pointer;
+    }
+    th.sort-asc::after {
+      content:" ↑";
+      font-size:10px;
+      opacity:0.8;
+    }
+    th.sort-desc::after {
+      content:" ↓";
+      font-size:10px;
+      opacity:0.8;
     }
     tbody tr:nth-child(even) {
       background:#0b1117;
@@ -221,35 +249,7 @@
       padding:8px 0;
     }
 
-    /* Heatmap */
-    .heatmap-grid {
-      margin-top:8px;
-      border-radius:12px;
-      overflow:hidden;
-      border:1px solid #202833;
-    }
-    .heatmap-grid table {
-      margin:0;
-    }
-    .heatmap-grid th,
-    .heatmap-grid td {
-      text-align:center;
-    }
-    .heatmap-grid thead {
-      background:#05080c;
-    }
-
-    .heat-legend {
-      margin-top:6px;
-      font-size:11px;
-      color:#9aa5b1;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    /* Tabs (vue brutes / heatmap) */
+    /* Tabs (brutes / heatmap) */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -272,7 +272,7 @@
       color:#e5f0ff;
     }
 
-    /* Bouton de suppression */
+    /* Bouton suppression */
     .delete-btn {
       border-radius:999px;
       border:1px solid #4b5563;
@@ -287,6 +287,26 @@
       background:#7f1d1d;
       border-color:#fca5a5;
       color:#fee2e2;
+    }
+
+    /* Pagination */
+    .pagination {
+      margin-top:8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:12px;
+      color:#9aa5b1;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .pagination-buttons {
+      display:flex;
+      gap:6px;
+    }
+    .pagination button {
+      padding:4px 8px;
+      font-size:12px;
     }
 
     /* Popup suppression */
@@ -332,6 +352,35 @@
       background:#111827;
     }
 
+    /* Heatmap canvas */
+    #heatCanvas {
+      width:100%;
+      max-width:480px;
+      aspect-ratio:1/1;
+      border-radius:16px;
+      background:radial-gradient(circle at center, #020617 0, #020617 55%, #020308 100%);
+      border:1px solid #202833;
+      display:block;
+      margin-top:10px;
+    }
+    .heat-controls {
+      margin-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:12px;
+      color:#9aa5b1;
+    }
+    .heat-controls-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .heat-controls-row input[type=range] {
+      flex:1;
+    }
+
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -353,34 +402,48 @@
 </head>
 <body>
   <!-- Topbar -->
-  <div class="topbar">
+  <header class="topbar">
     <div class="top-left">
       <div class="brand-dot"></div>
       <div>
-        <div class="top-title">Lab by ToDoGolf</div>
-        <div class="top-sub">Historique des coups & analyse</div>
+        <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
+        <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
     </div>
     <div class="top-actions">
       <a href="index.html" class="btn-top">← Accueil</a>
+      <span id="exportWarning" class="export-warning hidden">
+        ⚠️ Des coups n’ont pas encore été exportés
+      </span>
       <button id="btnImport" class="btn-top">⬆️ Importer CSV</button>
       <button id="btnExport" class="btn-top">⬇️ Exporter CSV</button>
       <input type="file" id="importInput" accept=".csv,text/csv" style="display:none;">
     </div>
-  </div>
+  </header>
 
-  <div class="wrap">
+  <main class="wrap">
     <div class="page-title">Historique de vos coups</div>
     <div class="page-subtitle">
-      Les données affichées ici proviennent de votre navigateur (localStorage).<br>
-      Vous pouvez filtrer, exporter ou réimporter vos coups depuis un autre appareil.
+      Les données affichées ici proviennent de votre navigateur (<strong>localStorage</strong>).<br>
+      Vous pouvez filtrer, trier, paginer, exporter ou réimporter vos coups depuis un autre appareil.
     </div>
 
     <div class="layout">
       <!-- Filtres -->
-      <div class="card">
+      <section class="card">
         <div class="card-title">Filtres</div>
-        <div class="card-subtitle">Ajustez les critères pour analyser une partie précise de votre historique.</div>
+        <div class="card-subtitle">
+          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+        </div>
+
+        <!-- Type de radar en premier et obligatoire pour la heatmap -->
+        <label for="fRadarType">Type de radar (obligatoire pour la heatmap)</label>
+        <select id="fRadarType">
+          <option value="all">— Choisissez un type —</option>
+          <option value="putting">Putting</option>
+          <option value="petit_jeu">Petit jeu</option>
+          <option value="long_jeu">Long jeu</option>
+        </select>
 
         <label for="fDateFrom">Date min</label>
         <input type="date" id="fDateFrom">
@@ -399,24 +462,16 @@
         <label for="fDistMax">Distance cible max (m)</label>
         <input type="number" id="fDistMax" placeholder="ex: 120">
 
-        <label for="fRadarType">Type de radar</label>
-        <select id="fRadarType">
-          <option value="all">Tous</option>
-          <option value="putting">Putting</option>
-          <option value="petit_jeu">Petit jeu</option>
-          <option value="long_jeu">Long jeu</option>
-        </select>
-
         <div class="filters-actions">
-          <button id="btnApply" class="primary">Appliquer les filtres</button>
-          <button id="btnReset">Réinitialiser</button>
+          <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
+          <button id="btnReset" type="button">Réinitialiser</button>
         </div>
 
         <div id="filterInfo" class="status-bar"></div>
-      </div>
+      </section>
 
       <!-- Résultats -->
-      <div class="card">
+      <section class="card">
         <div class="card-title">Vue des données</div>
         <div class="view-tabs">
           <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
@@ -433,14 +488,14 @@
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Club</th>
-                  <th>Dist. cible</th>
-                  <th>Radar</th>
-                  <th>Dist. totale</th>
-                  <th>Écart lat.</th>
-                  <th>Écart prof.</th>
-                  <th></th>
+                  <th data-sort="date">Date</th>
+                  <th data-sort="club">Club</th>
+                  <th data-sort="dist_cible">Dist. cible</th>
+                  <th data-sort="radar">Radar</th>
+                  <th data-sort="dist_totale">Dist. totale</th>
+                  <th data-sort="lat">Écart lat.</th>
+                  <th data-sort="prof">Écart prof.</th>
+                  <th data-sort="none"></th>
                 </tr>
               </thead>
               <tbody id="rawBody">
@@ -448,39 +503,41 @@
               </tbody>
             </table>
           </div>
+
+          <div class="pagination">
+            <div id="paginationInfo">Page 1 / 1</div>
+            <div class="pagination-buttons">
+              <button id="prevPageBtn" type="button">Précédent</button>
+              <button id="nextPageBtn" type="button">Suivant</button>
+            </div>
+          </div>
         </div>
 
         <!-- Vue Heatmap -->
         <div id="viewHeat" class="hidden">
           <div class="card-subtitle">
-            Répartition des coups selon l’écart latéral (gauche / droite) et profondeur (court / long).
+            Répartition de vos coups autour de la cible : écarts latéraux (gauche / droite)
+            et en profondeur (court / long), visualisés sur un radar de dispersion à 4 anneaux.
           </div>
 
-          <div class="heatmap-grid">
-            <table>
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Gauche</th>
-                  <th>Centre</th>
-                  <th>Droite</th>
-                </tr>
-              </thead>
-              <tbody id="heatBody">
-                <!-- rempli en JS -->
-              </tbody>
-            </table>
+          <div class="heat-controls">
+            <div class="heat-controls-row">
+              <span>Distance cible filtrée :</span>
+              <span id="heatDistanceLabel">Toutes distances</span>
+            </div>
+            <div class="heat-controls-row">
+              <input id="heatRange" type="range" min="0" max="0" value="0" disabled>
+            </div>
+            <div class="heat-controls-row">
+              <span id="heatInfo" style="flex:1;">Choisissez un type de radar pour afficher la heatmap.</span>
+            </div>
           </div>
 
-          <div class="heat-legend">
-            <div>Profondeur (lignes) : haut = long, milieu = cible, bas = court</div>
-            <div>Latéral (colonnes) : gauche / centre / droite</div>
-            <div id="heatInfo"></div>
-          </div>
+          <canvas id="heatCanvas"></canvas>
         </div>
-      </div>
+      </section>
     </div>
-  </div>
+  </main>
 
   <!-- Popup suppression -->
   <div id="deletePopup" class="delete-popup-overlay hidden">
@@ -491,21 +548,21 @@
         Cette action est définitive.
       </div>
       <div class="delete-actions">
-        <button id="deleteCancelBtn" class="btn-ghost">Annuler</button>
-        <button id="deleteConfirmBtn" class="primary">Oui, supprimer</button>
+        <button id="deleteCancelBtn" class="btn-ghost" type="button">Annuler</button>
+        <button id="deleteConfirmBtn" class="primary" type="button">Oui, supprimer</button>
       </div>
     </div>
   </div>
 
   <script>
     const HISTORY_KEY = "todogolf_lab_history";
+    const LAST_EXPORT_COUNT_KEY = "todogolf_lab_last_export_count";
 
     const $ = id => document.getElementById(id);
 
     const rawBody   = $("rawBody");
-    const heatBody  = $("heatBody");
-    const heatInfo  = $("heatInfo");
     const filterInfo = $("filterInfo");
+    const exportWarning = $("exportWarning");
 
     const fDateFrom = $("fDateFrom");
     const fDateTo   = $("fDateTo");
@@ -529,23 +586,25 @@
     const deleteCancelBtn  = $("deleteCancelBtn");
     const deleteConfirmBtn = $("deleteConfirmBtn");
 
+    const paginationInfo = $("paginationInfo");
+    const prevPageBtn = $("prevPageBtn");
+    const nextPageBtn = $("nextPageBtn");
+
+    const heatCanvas = $("heatCanvas");
+    const heatRange = $("heatRange");
+    const heatDistanceLabel = $("heatDistanceLabel");
+    const heatInfo = $("heatInfo");
+
+    const ROWS_PER_PAGE = 30;
+
     let allRows = [];
     let filteredRows = [];
-    let pendingDeleteIndex = null; // index dans allRows
+    let currentPage = 1;
+    let totalPages = 1;
 
-    function setView(view) {
-      if (view === "raw") {
-        viewRaw.classList.remove("hidden");
-        viewHeat.classList.add("hidden");
-        tabRawBtn.classList.add("view-tab--active");
-        tabHeatBtn.classList.remove("view-tab--active");
-      } else {
-        viewRaw.classList.add("hidden");
-        viewHeat.classList.remove("hidden");
-        tabHeatBtn.classList.add("view-tab--active");
-        tabRawBtn.classList.remove("view-tab--active");
-      }
-    }
+    let sortState = { column: "date", direction: "asc" };
+
+    let pendingDeleteIndex = null;
 
     function parseStoredHistory() {
       try {
@@ -586,7 +645,8 @@
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      applyFilters();
+      applyFilters(); // initial
+      updateExportWarning();
     }
 
     function populateClubFilter() {
@@ -640,6 +700,8 @@
         return true;
       });
 
+      currentPage = 1;
+      sortFilteredRows();
       renderRawTable();
       renderHeatmap();
       updateFilterInfo();
@@ -659,6 +721,59 @@
       }
     }
 
+    function compareValues(a, b) {
+      if (a == null && b == null) return 0;
+      if (a == null) return -1;
+      if (b == null) return 1;
+      if (typeof a === "number" && typeof b === "number") {
+        return a - b;
+      }
+      const sa = String(a);
+      const sb = String(b);
+      return sa.localeCompare(sb);
+    }
+
+    function sortFilteredRows() {
+      const col = sortState.column;
+      const dir = sortState.direction === "asc" ? 1 : -1;
+      filteredRows.sort((r1, r2) => {
+        let v1, v2;
+        switch(col) {
+          case "date":
+            v1 = parseISODate(formatDateTextToISO(r1.date_text));
+            v2 = parseISODate(formatDateTextToISO(r2.date_text));
+            break;
+          case "club":
+            v1 = r1.club || "";
+            v2 = r2.club || "";
+            break;
+          case "dist_cible":
+            v1 = Number(r1.distance_cible_m);
+            v2 = Number(r2.distance_cible_m);
+            break;
+          case "radar":
+            v1 = r1.radar_info || "";
+            v2 = r2.radar_info || "";
+            break;
+          case "dist_totale":
+            v1 = Number(r1.distance_totale_m);
+            v2 = Number(r2.distance_totale_m);
+            break;
+          case "lat":
+            v1 = Number(r1.ecart_lateral_m);
+            v2 = Number(r2.ecart_lateral_m);
+            break;
+          case "prof":
+            v1 = Number(r1.ecart_profondeur_m);
+            v2 = Number(r2.ecart_profondeur_m);
+            break;
+          default:
+            v1 = 0; v2 = 0;
+        }
+        return compareValues(v1, v2) * dir;
+      });
+    }
+
     function renderRawTable() {
       rawBody.innerHTML = "";
       if (!filteredRows.length) {
@@ -669,10 +784,19 @@
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
         rawBody.appendChild(tr);
+        paginationInfo.textContent = "Page 0 / 0";
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
         return;
       }
 
-      filteredRows.forEach(r => {
+      totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      const end = start + ROWS_PER_PAGE;
+      const pageRows = filteredRows.slice(start, end);
+
+      pageRows.forEach(r => {
         const tr = document.createElement("tr");
 
         const cDate = document.createElement("td");
@@ -723,95 +847,35 @@
 
         rawBody.appendChild(tr);
       });
+
+      paginationInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+      updateSortHeaders();
     }
 
-    // Buckets : 3x3 (profondeur x latéral)
-    // Latéral : 0 = gauche, 1 = centre, 2 = droite
-    function bucketLat(x) {
-      if (x == null || isNaN(x)) return null;
-      if (x < -2) return 0;   // gauche
-      if (x >  2) return 2;   // droite
-      return 1;               // centre
-    }
-
-    // Profondeur (vertical) : 0 = long (haut), 1 = cible (milieu), 2 = court (bas)
-    function bucketProf(y) {
-      if (y == null || isNaN(y)) return null;
-      if (y > 2)  return 0;   // long
-      if (y < -2) return 2;   // court
-      return 1;               // cible
-    }
-
-    function renderHeatmap() {
-      const grid = [
-        [0,0,0], // long
-        [0,0,0], // cible
-        [0,0,0]  // court
-      ];
-
-      filteredRows.forEach(r => {
-        const x = Number(r.ecart_lateral_m);
-        const y = Number(r.ecart_profondeur_m);
-        const i = bucketProf(y);
-        const j = bucketLat(x);
-        if (i === null || j === null) return;
-        grid[i][j] += 1;
-      });
-
-      const labelsRows = ["Long", "Cible", "Court"];
-      const labelsCols = ["Gauche", "Centre", "Droite"];
-
-      let maxCount = 0;
-      grid.forEach(row => row.forEach(v => { if (v > maxCount) maxCount = v; }));
-
-      heatBody.innerHTML = "";
-
-      for (let i = 0; i < 3; i++) {
-        const tr = document.createElement("tr");
-
-        const th = document.createElement("th");
-        th.textContent = labelsRows[i];
-        tr.appendChild(th);
-
-        for (let j = 0; j < 3; j++) {
-          const count = grid[i][j];
-          const td = document.createElement("td");
-
-          if (count === 0) {
-            td.style.background = "#05080c";
-            td.style.color = "#64748b";
-          } else {
-            const ratio = maxCount > 0 ? (count / maxCount) : 0;
-            const hue = 120 - 120 * ratio; // 120 = vert, 0 = rouge
-            const saturation = 80;
-            const lightness = 45;
-            td.style.background = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            td.style.color = "#f9fafb";
-            td.style.fontWeight = "600";
-          }
-
-          td.textContent = count;
-          tr.appendChild(td);
-        }
-        heatBody.appendChild(tr);
-      }
-
-      if (!filteredRows.length) {
-        heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
+    function setView(view) {
+      if (view === "raw") {
+        viewRaw.classList.remove("hidden");
+        viewHeat.classList.add("hidden");
+        tabRawBtn.classList.add("view-tab--active");
+        tabHeatBtn.classList.remove("view-tab--active");
       } else {
-        heatInfo.textContent = maxCount > 0
-          ? `Cellule la plus dense : ${maxCount} coup(s).`
-          : "Aucune donnée mesurable (écarts non renseignés).";
+        viewRaw.classList.add("hidden");
+        viewHeat.classList.remove("hidden");
+        tabHeatBtn.classList.add("view-tab--active");
+        tabRawBtn.classList.remove("view-tab--active");
+        renderHeatmap();
       }
     }
 
     function resetFilters() {
+      fRadarType.value = "all";
       fDateFrom.value = "";
       fDateTo.value   = "";
       fClub.value     = "";
       fDistMin.value  = "";
       fDistMax.value  = "";
-      fRadarType.value = "all";
       applyFilters();
     }
 
@@ -857,6 +921,11 @@
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
       downloadCSV(`todogolf-historique-${yyyy}-${mm}-${dd}.csv`, csv);
+
+      try {
+        localStorage.setItem(LAST_EXPORT_COUNT_KEY, String(allRows.length));
+        updateExportWarning();
+      } catch(e) {}
     }
 
     function importCSVText(text) {
@@ -903,13 +972,44 @@
       }
 
       const existing = parseStoredHistory();
-      const merged = existing.concat(imported);
+      const existingKeys = new Set(
+        existing.map(r => {
+          return [
+            r.date_text || "",
+            r.club || "",
+            r.distance_cible_m ?? "",
+            r.radar_info || "",
+            r.distance_totale_m ?? "",
+            r.ecart_lateral_m ?? "",
+            r.ecart_profondeur_m ?? ""
+          ].join("|");
+        })
+      );
+
+      const merged = [...existing];
+      let added = 0;
+      imported.forEach(r => {
+        const key = [
+          r.date_text || "",
+          r.club || "",
+          r.distance_cible_m ?? "",
+          r.radar_info || "",
+          r.distance_totale_m ?? "",
+          r.ecart_lateral_m ?? "",
+          r.ecart_profondeur_m ?? ""
+        ].join("|");
+        if (!existingKeys.has(key)) {
+          existingKeys.add(key);
+          merged.push(r);
+          added++;
+        }
+      });
+
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
       loadHistory();
-      alert(`${imported.length} ligne(s) importée(s) et ajoutée(s) à votre historique.`);
+      alert(`${added} ligne(s) ajoutée(s) à votre historique (doublons ignorés).`);
     }
 
-    // Suppression
     function openDeletePopup(globalIndex) {
       if (globalIndex == null || globalIndex < 0 || globalIndex >= allRows.length) return;
       pendingDeleteIndex = globalIndex;
@@ -929,7 +1029,253 @@
       allRows.splice(pendingDeleteIndex, 1);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
       closeDeletePopup();
-      loadHistory(); // rafraîchit la table + heatmap + filtres
+      loadHistory();
+      updateExportWarning();
+    }
+
+    function updateExportWarning() {
+      const total = allRows.length;
+      let last = 0;
+      try {
+        const raw = localStorage.getItem(LAST_EXPORT_COUNT_KEY);
+        if (raw) last = Number(raw) || 0;
+      } catch(e) {}
+      const diff = total - last;
+      if (diff > 0) {
+        exportWarning.textContent = `⚠️ ${diff} coup(s) ajouté(s) depuis le dernier export`;
+        exportWarning.classList.remove("hidden");
+      } else {
+        exportWarning.classList.add("hidden");
+      }
+    }
+
+    function updateSortHeaders() {
+      const ths = document.querySelectorAll("thead th[data-sort]");
+      ths.forEach(th => {
+        th.classList.remove("sort-asc","sort-desc");
+        const col = th.getAttribute("data-sort");
+        if (col === sortState.column) {
+          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
+        }
+      });
+    }
+
+    // Heatmap (4 anneaux fixes + halo rouge/orange/vert)
+    function renderHeatmap() {
+      if (!heatCanvas) return;
+      const ctx = heatCanvas.getContext("2d");
+
+      const radarTypeVal = fRadarType.value;
+      if (!radarTypeVal || radarTypeVal === "all") {
+        // Pas de type -> pas de heatmap exploitable
+        const w0 = heatCanvas.clientWidth || 300;
+        const h0 = heatCanvas.clientHeight || 300;
+        const ratio = window.devicePixelRatio || 1;
+        heatCanvas.width = w0 * ratio;
+        heatCanvas.height = h0 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,heatCanvas.width,heatCanvas.height);
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        heatInfo.textContent = "Choisissez un type de radar pour afficher la heatmap.";
+        return;
+      }
+
+      const ratio = window.devicePixelRatio || 1;
+      const w = heatCanvas.clientWidth || 300;
+      const h = heatCanvas.clientHeight || 300;
+      heatCanvas.width = w * ratio;
+      heatCanvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (!filteredRows.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
+        heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        return;
+      }
+
+      // Distances cibles disponibles
+      const distances = Array.from(
+        new Set(
+          filteredRows
+            .map(r => r.distance_cible_m)
+            .filter(v => v != null && !isNaN(v))
+        )
+      ).sort((a,b)=>a-b);
+
+      if (!distances.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
+        heatInfo.textContent = "Aucune distance cible renseignée pour ce filtre.";
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        return;
+      }
+
+      // Curseur aligné sur les valeurs existantes
+      if (heatRange.max != String(distances.length - 1)) {
+        heatRange.min = "0";
+        heatRange.max = String(distances.length - 1);
+        heatRange.value = "0";
+      }
+      let idx = Number(heatRange.value) || 0;
+      if (idx < 0) idx = 0;
+      if (idx > distances.length - 1) idx = distances.length - 1;
+      const centerDist = distances[idx];
+
+      // Fenêtre selon type de radar
+      let windowHalf;
+      if (radarTypeVal === "putting") {
+        windowHalf = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        windowHalf = 2;
+      } else {
+        windowHalf = 5; // long jeu
+      }
+
+      const minD = centerDist - windowHalf;
+      const maxD = centerDist + windowHalf;
+
+      heatDistanceLabel.textContent = `Cible ${centerDist} m (±${windowHalf} m)`;
+      heatRange.disabled = false;
+
+      // Shots dans cette plage de distance cible
+      const shots = filteredRows.filter(r => {
+        const d = Number(r.distance_cible_m);
+        return !isNaN(d) && d >= minD && d <= maxD;
+      });
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) * 0.42;
+
+      // Fond
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0,0,w,h);
+
+      if (!shots.length) {
+        heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
+        // On dessine quand même le radar vide
+        drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+        return;
+      }
+
+      // Dessin du radar (4 anneaux)
+      drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+
+      // Échelle fixe selon le type de radar (mètres par anneau)
+      let metersPerRing;
+      if (radarTypeVal === "putting") {
+        metersPerRing = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        metersPerRing = 2;
+      } else {
+        metersPerRing = 5;
+      }
+      const maxMetric = 4 * metersPerRing;
+      const scale = radius / maxMetric;
+
+      // Densité locale (distance <= 2 m pour counting)
+      const densities = shots.map((s, i) => {
+        const x = Number(s.ecart_lateral_m) || 0;
+        const y = Number(s.ecart_profondeur_m) || 0;
+        let count = 0;
+        for (let j = 0; j < shots.length; j++) {
+          const s2 = shots[j];
+          const x2 = Number(s2.ecart_lateral_m) || 0;
+          const y2 = Number(s2.ecart_profondeur_m) || 0;
+          const dx = x2 - x;
+          const dy = y2 - y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist <= 2) count++;
+        }
+        return count;
+      });
+      const maxDensity = Math.max(...densities, 1);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      for (let i = 0; i < shots.length; i++) {
+        const s = shots[i];
+        let xVal = Number(s.ecart_lateral_m) || 0;
+        let yVal = Number(s.ecart_profondeur_m) || 0;
+
+        // Conversion m -> px + clamp au bord du radar
+        let px = xVal * scale;
+        let py = yVal * scale;
+        const distPix = Math.sqrt(px*px + py*py);
+        if (distPix > radius) {
+          const f = radius / distPix;
+          px *= f;
+          py *= f;
+        }
+
+        const x = cx + px;
+        const y = cy - py;
+
+        const density = densities[i];
+        const t = density / maxDensity; // 0 = isolé, 1 = zone dense
+
+        // 0 -> vert, ~0.5 -> orange, 1 -> rouge
+        const hue = 120 - 120 * t; // 120=vert, 0=rouge
+        const saturation = 80;
+        const lightness = 50;
+
+        const rPix = Math.max(16, radius * 0.16); // halo plus large
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, rPix);
+        grad.addColorStop(0,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0.95)`);
+        grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+        grad.addColorStop(1,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, rPix, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      heatInfo.textContent = `${shots.length} coup(s) affiché(s) pour cette plage de distance.`;
+    }
+
+    // Dessine le radar à 4 anneaux (sans lire les coups)
+    function drawRadarBackground(ctx, cx, cy, radius, radarTypeVal) {
+      ctx.save();
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 1.1;
+
+      // 4 anneaux
+      for (let i = 1; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, (radius * i) / 4, 0, Math.PI*2);
+        if (i === 4) {
+          ctx.strokeStyle = "#1f2937";
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = "#111827";
+          ctx.setLineDash([4,4]);
+        }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Axes
+      ctx.strokeStyle = "#1f2937";
+      ctx.beginPath();
+      ctx.moveTo(cx - radius, cy);
+      ctx.lineTo(cx + radius, cy);
+      ctx.moveTo(cx, cy - radius);
+      ctx.lineTo(cx, cy + radius);
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     // Listeners
@@ -949,14 +1295,9 @@
       reader.readAsText(file, "utf-8");
     });
 
-    [fDateFrom, fDateTo, fClub, fDistMin, fDistMax, fRadarType].forEach(el => {
-      el.addEventListener("change", applyFilters);
-    });
-
     tabRawBtn.addEventListener("click", () => setView("raw"));
     tabHeatBtn.addEventListener("click", () => setView("heat"));
 
-    // Click sur la croix de suppression (délégation)
     rawBody.addEventListener("click", (e) => {
       const btn = e.target.closest(".delete-btn");
       if (!btn) return;
@@ -970,27 +1311,64 @@
     deleteCancelBtn.addEventListener("click", closeDeletePopup);
     deleteConfirmBtn.addEventListener("click", confirmDelete);
 
-    // Init
-    setView("raw");
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRawTable();
+      }
+    });
+    nextPageBtn.addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRawTable();
+      }
+    });
+
+    document.querySelectorAll("thead th[data-sort]").forEach(th => {
+      const col = th.getAttribute("data-sort");
+      if (col === "none") return;
+      th.addEventListener("click", () => {
+        if (sortState.column === col) {
+          sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+        } else {
+          sortState.column = col;
+          sortState.direction = "asc";
+        }
+        sortFilteredRows();
+        currentPage = 1;
+        renderRawTable();
+      });
+    });
+
+    function onHeatRangeChange() {
+      renderHeatmap();
+    }
+    heatRange.addEventListener("input", onHeatRangeChange);
+    heatRange.addEventListener("change", onHeatRangeChange);
+
+    window.addEventListener("resize", () => {
+      if (!viewHeat.classList.contains("hidden")) {
+        renderHeatmap();
+      }
+    });
+
     loadHistory();
   </script>
 
-<script>
-  const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+  <script>
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
-  // Fonction ping Render
-  function pingRender() {
-    fetch(RENDER_URL, {
-      method: "HEAD",
-      mode: "no-cors"
-    }).catch(() => {});
-  }
+    function pingRender() {
+      try {
+        fetch(RENDER_URL, {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
-  // 🔸 Ping au chargement de la page
-  pingRender();
-
-  // 🔸 Ping toutes les 5 minutes
-  setInterval(pingRender, 5 * 60 * 1000);
-</script>
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
 </body>
 </html>

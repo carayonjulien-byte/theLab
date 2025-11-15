@@ -28,7 +28,7 @@
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 40;
       background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
       border-bottom: 1px solid #10151e;
       padding: 10px 16px;
@@ -70,6 +70,8 @@
       display:inline-flex;
       align-items:center;
       gap:4px;
+      flex-shrink:0;
+      white-space:nowrap;
     }
     .btn-top:hover { background:#101822; }
 
@@ -487,11 +489,12 @@
   <header class="topbar">
     <div class="top-left">
       <div class="brand-dot"></div>
-      <div>
+      <div class="top-texts">
         <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
         <div class="top-sub">Outils d’analyse pour vos radars papier</div>
       </div>
     </div>
+    <a href="index.html" class="btn-top">← Accueil</a>
   </header>
 
   <main class="wrap">
@@ -501,10 +504,6 @@
       Étape 1 : prenez une photo de votre feuille vue du dessus avec les repères bien visibles. Étape 2 :
       renseignez les informations de votre coup et lancez l’analyse.
     </p>
-
-    <div class="row" style="margin: 6px 0 18px 0;">
-      <a href="index.html" class="btn-top">← Accueil</a>
-    </div>
 
     <div class="card">
       <!-- Stepper -->
@@ -657,7 +656,6 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const HISTORY_KEY = "todogolf_lab_history";
 
-    // 🔹 fetch avec timeout pour gérer Render KO / très lent
     function fetchWithTimeout(url, options = {}, timeout = 20000) {
       return Promise.race([
         fetch(url, options),
@@ -894,7 +892,6 @@
       const file=e.target.files && e.target.files[0];
       if(!file) return;
 
-      // reset état
       lastJson = null;
       maskValidated = false;
       analyzeBtn.disabled = true;
@@ -1011,7 +1008,7 @@
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:''));
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
         }
         const data = await res.json();
         lastJson = data;
@@ -1144,8 +1141,6 @@
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
       setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
-
-      // 🔁 Retour à l'accueil comme pour l'ajout à l’historique
       setTimeout(() => {
         window.location.href = "index.html";
       }, 1000);
@@ -1158,7 +1153,6 @@
     step2El.addEventListener('click', ()=> setActiveTab(2));
     toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
 
-    // Gestion modal clubs
     function renderClubList(query) {
       const q = (query || "").trim().toLowerCase();
       clubList.innerHTML = "";
@@ -1205,7 +1199,6 @@
       renderClubList(e.target.value);
     });
 
-    // Init
     setActiveTab(1);
     refreshSteps();
   </script>
