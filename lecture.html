@@ -566,7 +566,7 @@
         <!-- Bouton recadrage -->
         <div class="row">
           <button id="openCropModalBtn" class="ghost hidden" type="button" style="width:100%;">
-            ✂️ Recadrer la photo
+            ✂️ Recadrer la photo (avant détection)
           </button>
         </div>
 
@@ -674,7 +674,7 @@
       <div class="modal-body">
         <div class="hint">
           Tracez un rectangle sur la zone utile (feuille + repères).<br>
-          Relâchez pour fixer le cadre, puis validez le recadrage.
+          Vous pouvez aussi valider directement pour utiliser toute l’image.
         </div>
         <canvas id="cropCanvas"></canvas>
         <div class="btn-row-2" style="margin-top:10px;">
@@ -824,7 +824,7 @@
 
     function setActiveTab(n){
       if (n === 2 && !maskValidated) {
-        setStatus("Validez d'abord une photo (masque) avant de passer à l’étape 2.", "error");
+        setStatus("Lancez d’abord la détection des repères (recadrage + masque) avant de passer à l’étape 2.", "error");
         return;
       }
       activeTab = n;
@@ -871,6 +871,7 @@
     function showPreview(fileOrBlob){
       if(!fileOrBlob){
         preview.classList.add("hidden");
+        openCropModalBtn.classList.add("hidden");
         return;
       }
       const url = URL.createObjectURL(fileOrBlob);
@@ -910,12 +911,6 @@
           resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
         });
       }
-    }
-
-    function safe(v){
-      if(v==null) return '';
-      if(typeof v==='number' && !Number.isFinite(v)) return '';
-      return String(v).replace(/[\n\r,]/g,' ');
     }
 
     function getRadarInfoFromJson(json){
@@ -965,10 +960,13 @@
 
       ensureJpegFile(file).then(f=>{
         currentBlob = f;
-        setStatus('Image prête : '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
+        setStatus(
+          'Image prête : '+Math.round(currentBlob.size/1024)+' KB\n' +
+          'Recadrez la photo pour centrer la feuille avant la détection des repères.',
+          "info"
+        );
         showPreview(currentBlob);
         setActiveTab(1);
-        generateMask();
       }).catch(err=> setStatus('Erreur image : '+err.message, "error"));
     }
 
@@ -989,7 +987,7 @@
       fd.append('image_file', imgFile, imgFile.name);
 
       try{
-        setLoading(true, "Génération du masque…");
+        setLoading(true, "Détection des repères…");
         const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
         if(!res.ok){
           let t='';
@@ -1002,7 +1000,7 @@
         analyzeBtn.disabled = false;
         toStep2Btn.classList.remove("hidden");
         setStatus(
-          "Masque généré ✅\n\n" +
+          "Repères détectés ✅\n\n" +
           "Vérifiez la détection :\n" +
           "• le cercle extérieur rouge passe bien par les trois repères\n" +
           "• chaque repère est marqué par une icône au centre\n\n" +
@@ -1029,7 +1027,7 @@
             "error"
           );
         } else {
-          setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
+          setStatus('Erreur dans le traitement de la photo, merci de la recharger ou de recadrer différemment.', "error");
         }
       }finally{
         setLoading(false);
@@ -1038,7 +1036,7 @@
 
     async function analyze(){
       if(!maskValidated){
-        setStatus('Validez d\'abord une photo avant de lancer l’analyse.', "error");
+        setStatus('Lancez d\'abord la détection des repères (recadrage + masque).', "error");
         return;
       }
       if(!dateText.value || !club.value || !targetDist.value){
@@ -1063,7 +1061,7 @@
       fd.append('centre_distance', targetDist.value);
 
       try{
-        setLoading(true, "Analyse en cours…");
+        setLoading(true, "Analyse des coups…");
         const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
         if(!res.ok){
           let t='';
@@ -1254,7 +1252,7 @@
       renderClubList(e.target.value);
     });
 
-    /* Recadrage : ouverture / fermeture modal */
+    /* Recadrage */
 
     function resetCropState() {
       cropImg = null;
@@ -1301,8 +1299,9 @@
         cropScaleX = canvasWidth / img.naturalWidth;
         cropScaleY = canvasHeight / img.naturalHeight;
 
-        const ctx = cropCanvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        // Par défaut : rectangle = toute l’image
+        cropRect = { x: 0, y: 0, w: canvasWidth, h: canvasHeight };
+        redrawCropCanvas();
       } catch (e) {
         setStatus("Impossible d’ouvrir la photo pour recadrage.", "error");
         cropModalBackdrop.classList.add("hidden");
@@ -1322,8 +1321,6 @@
       }
     });
 
-    /* Recadrage : dessin du rectangle */
-
     function redrawCropCanvas() {
       if (!cropImg || !cropCanvas) return;
       const ctx = cropCanvas.getContext("2d");
@@ -1332,12 +1329,9 @@
 
       if (cropRect) {
         ctx.save();
-        // voile sombre
         ctx.fillStyle = "rgba(0,0,0,0.45)";
         ctx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
-        // trou clair
         ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        // bordure
         ctx.strokeStyle = "rgba(255,255,255,0.9)";
         ctx.lineWidth = 2;
         ctx.strokeRect(cropRect.x+1, cropRect.y+1, cropRect.w-2, cropRect.h-2);
@@ -1397,10 +1391,8 @@
       });
     }
 
-    /* Validation du recadrage */
-
     async function validateCrop() {
-      if (!cropImg || !cropRect || cropRect.w < 20 || cropRect.h < 20) {
+      if (!cropImg || !cropRect || cropRect.w < 5 || cropRect.h < 5) {
         setStatus("Sélectionnez d’abord une zone suffisamment grande sur la photo.", "error");
         return;
       }
@@ -1433,7 +1425,6 @@
 
         currentBlob = new File([blob], "capture_crop.jpg", { type: "image/jpeg" });
 
-        // On reset l’état analyse, puis on relance un masque sur l’image recadrée
         resetResultState();
         maskValidated = false;
         analyzeBtn.disabled = true;
@@ -1441,7 +1432,7 @@
 
         showPreview(currentBlob);
         closeCropModalFn();
-        setStatus("Photo recadrée ✅\nGénération d’un nouveau masque sur la zone sélectionnée…", "info");
+        setStatus("Photo recadrée ✅\nLancement de la détection des repères…", "info");
         generateMask();
       } catch (e) {
         setStatus("Erreur pendant le recadrage de l’image.", "error");
