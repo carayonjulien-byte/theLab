@@ -1,1223 +1,1314 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ToDoGolf Lab – Lecture Radar</title>
-  <style>
-    :root {
-      --gap: 14px;
-      --primary: #00503a;
-      --bg: #050608;
-      --card: #0f1419;
-      --border: #182028;
-      --text: #e7e8ea;
-      --muted: #b8c0cc;
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
-      color: var(--text);
-    }
-    .hidden { display:none !important; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ToDoGolf Lab – Lecture Radar</title>
 
-    /* Topbar */
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
-      border-bottom: 1px solid #10151e;
-      padding: 10px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      backdrop-filter: blur(14px);
-      gap:10px;
-    }
-    .top-left {
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .brand-dot {
-      width:22px;
-      height:22px;
-      border-radius:999px;
-      background:var(--primary);
-      box-shadow:0 0 16px rgba(0,80,58,0.85);
-    }
-    .top-title {
-      font-weight:600;
-      font-size:16px;
-    }
-    .top-sub {
-      font-size:11px;
-      color:#8b9aaa;
-    }
-    .btn-top {
-      border-radius:999px;
-      border:1px solid #26303b;
-      background:#0b1016;
-      padding:6px 10px;
-      font-size:12px;
-      color:var(--text);
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-      flex-shrink:0;
-      white-space:nowrap;
-    }
-    .btn-top:hover { background:#101822; }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" integrity="sha512-9KkIqDNIvD1B8Gj7jqsGf2N1zxTGFVSaaUljL5lMmiGJCalBpb5SGzuSAzD1KdeQG5sWNpdkkBEXsXsWsAADvA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    .wrap {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 18px 16px 40px;
-    }
+  <style>
+    :root {
+      --gap: 14px;
+      --primary: #00503a;
+      --bg: #050608;
+      --card: #0f1419;
+      --border: #182028;
+      --text: #e7e8ea;
+      --muted: #b8c0cc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
+      color: var(--text);
+    }
+    .hidden { display:none !important; }
 
-    .page-eyebrow {
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:0.16em;
-      color:#6b7280;
-      margin-bottom:4px;
-    }
-    .page-title {
-      font-size:24px;
-      font-weight:650;
-      margin:6px 0 4px;
-    }
-    .page-subtitle {
-      font-size:13px;
-      color:#9aa5b1;
-      max-width:520px;
-      line-height:1.5;
-      margin-bottom:10px;
-    }
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
+      border-bottom: 1px solid #10151e;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      backdrop-filter: blur(14px);
+      gap:10px;
+    }
+    .top-left {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .brand-dot {
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      background:var(--primary);
+      box-shadow:0 0 16px rgba(0,80,58,0.85);
+    }
+    .top-title {
+      font-weight:600;
+      font-size:16px;
+    }
+    .top-sub {
+      font-size:11px;
+      color:#8b9aaa;
+    }
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--text);
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      flex-shrink:0;
+      white-space:nowrap;
+    }
+    .btn-top:hover { background:#101822; }
 
-    .card {
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.4);
-    }
-    .row { margin-top: var(--gap); }
-    .grid-2 {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:var(--gap);
-    }
-    label {
-      font-size: 13px;
-      color:#b8c0cc;
-      margin-bottom:6px;
-      display:block;
-    }
-    input[type=text],
-    input[type=number] {
-      width:100%;
-      padding:12px 14px;
-      border:1px solid #26303b;
-      border-radius:12px;
-      font-size:16px;
-      background:#05080c;
-      color:var(--text);
-    }
-    button,
-    label[role=button] {
-      display:inline-block;
-      text-align:center;
-      padding:12px 14px;
-      border-radius:999px;
-      border:1px solid #26303b;
-      background:#11171e;
-      color:var(--text);
-      font-weight:600;
-      cursor:pointer;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
-    }
-    button:active,
-    label[role=button]:active {
-      transform: scale(0.97);
-      box-shadow:none;
-    }
-    button:disabled {
-      opacity:0.55;
-      cursor:not-allowed;
-      box-shadow:none;
-    }
-    .primary {
-      background:var(--primary);
-      border-color:var(--primary);
-      color:#fff;
-      box-shadow:0 6px 16px rgba(0,80,58,0.5);
-    }
-    .primary:hover:not(:disabled) {
-      background:#046046;
-    }
-    .ghost {
-      background:#0b1016;
-    }
-    img {
-      width: 100%;
-      max-height: 60vh;
-      object-fit: contain;
-      background:#000;
-      border-radius: 16px;
-      border:1px solid #1b232c;
-    }
-    .hint {
-      font-size: 12px;
-      color:#9aa5b1;
-      margin-top: 6px;
-    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
 
-    .result {
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      line-height:1.45;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
-    }
-    .result h3 { margin: 0 0 8px 0; font-size: 18px; }
-    .result .kv {
-      display:flex;
-      justify-content:space-between;
-      padding:8px 0;
-      border-top:1px dashed #26303b;
-      font-size:14px;
-    }
-    .result .kv:first-of-type { border-top: none; }
-    .result-subtitle {
-      margin-top: 10px;
-      font-size: 13px;
-      color:#9aa5b1;
-    }
-    .shots-list {
-      margin-top: 8px;
-      border-top:1px dashed #26303b;
-      padding-top:8px;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      font-size:13px;
-    }
-    .shot-row {
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .shot-left { font-weight:600; }
-    .shot-right { opacity:0.9; }
+    .page-eyebrow {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      color:#6b7280;
+      margin-bottom:4px;
+    }
+    .page-title {
+      font-size:24px;
+      font-weight:650;
+      margin:6px 0 4px;
+    }
+    .page-subtitle {
+      font-size:13px;
+      color:#9aa5b1;
+      max-width:520px;
+      line-height:1.5;
+      margin-bottom:10px;
+    }
 
-    /* Stepper */
-    .stepper {
-      display:flex;
-      gap: 8px;
-      margin-bottom: 10px;
-      font-size: 12px;
-    }
-    .step {
-      flex:1;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      background:#0a0f13;
-      color:#8b9aaa;
-      border:1px solid #1a2530;
-      cursor:pointer;
-      user-select:none;
-      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-    }
-    .step-index {
-      width:22px;
-      height:22px;
-      border-radius:999px;
-      border:1px solid currentColor;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:11px;
-      font-weight:700;
-    }
-    .step-texts { display:flex; flex-direction:column; gap:2px; }
-    .step-label {
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:0.06em;
-    }
-    .step-sub { font-size:12px; opacity:0.9; }
-    .step--active {
-      background:var(--primary);
-      color: #ffffff;
-      border-color:var(--primary);
-    }
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    }
+    .row { margin-top: var(--gap); }
+    .grid-2 {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:var(--gap);
+    }
+    label {
+      font-size: 13px;
+      color:#b8c0cc;
+      margin-bottom:6px;
+      display:block;
+    }
+    input[type=text],
+    input[type=number] {
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #26303b;
+      border-radius:12px;
+      font-size:16px;
+      background:#05080c;
+      color:var(--text);
+    }
+    button,
+    label[role=button] {
+      display:inline-block;
+      text-align:center;
+      padding:12px 14px;
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#11171e;
+      color:var(--text);
+      font-weight:600;
+      cursor:pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
+    }
+    button:active,
+    label[role=button]:active {
+      transform: scale(0.97);
+      box-shadow:none;
+    }
+    button:disabled {
+      opacity:0.55;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .primary {
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+      box-shadow:0 6px 16px rgba(0,80,58,0.5);
+    }
+    .primary:hover:not(:disabled) {
+      background:#046046;
+    }
+    .ghost {
+      background:#0b1016;
+    }
+    img {
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      background:#000;
+      border-radius: 16px;
+      border:1px solid #1b232c;
+    }
+    .hint {
+      font-size: 12px;
+      color:#9aa5b1;
+      margin-top: 6px;
+    }
 
-    .step-help {
-      font-size:12px;
-      color:#9aa5b1;
-      margin-bottom:4px;
-      line-height:1.5;
-    }
+    .result {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      line-height:1.45;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+    }
+    .result h3 { margin: 0 0 8px 0; font-size: 18px; }
+    .result .kv {
+      display:flex;
+      justify-content:space-between;
+      padding:8px 0;
+      border-top:1px dashed #26303b;
+      font-size:14px;
+    }
+    .result .kv:first-of-type { border-top: none; }
+    .result-subtitle {
+      margin-top: 10px;
+      font-size: 13px;
+      color:#9aa5b1;
+    }
+    .shots-list {
+      margin-top: 8px;
+      border-top:1px dashed #26303b;
+      padding-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:13px;
+    }
+    .shot-row {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .shot-left { font-weight:600; }
+    .shot-right { opacity:0.9; }
 
-    .tab-content { margin-top: var(--gap); }
+    /* Stepper */
+    .stepper {
+      display:flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .step {
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#0a0f13;
+      color:#8b9aaa;
+      border:1px solid #1a2530;
+      cursor:pointer;
+      user-select:none;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .step-index {
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid currentColor;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:700;
+    }
+    .step-texts { display:flex; flex-direction:column; gap:2px; }
+    .step-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+  S }
+    .step-sub { font-size:12px; opacity:0.9; }
+    .step--active {
+      background:var(--primary);
+      color: #ffffff;
+      border-color:var(--primary);
+    }
 
-    .btn-row-2 {
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--gap);
-    }
+    .step-help {
+      font-size:12px;
+      color:#9aa5b1;
+      margin-bottom:4px;
+      line-height:1.5;
+    }
 
-    /* Loader */
-    #loaderBox {
-      font-size:13px;
-      color:#cbd5f5;
-    }
-    .loader {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      background:#0b1016;
-      border-radius:999px;
-      border:1px solid #1b242f;
-      width: fit-content;
-    }
-    .spinner {
-      width:14px;
-      height:14px;
-      border-radius:50%;
-      border:2px solid rgba(148,163,184,0.35);
-      border-top-color:#f9fafb;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-content { margin-top: var(--gap); }
 
-    /* Status bar */
-    #statusBox {
-      font-size: 14px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      margin-top: 14px;
-      line-height: 1.5;
-      display: none;
-      white-space: pre-line;
-    }
-    .status--info {
-      display:block;
-      background: rgba(0, 80, 58, 0.15);
-      border: 1px solid #00503a;
-      color: #b6f7d2;
-    }
-    .status--error {
-      display:block;
-      background: rgba(255, 80, 80, 0.12);
-      border: 1px solid #ff6b6b;
-      color: #ff9b9b;
-    }
+    .btn-row-2 {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
 
-    /* Sélecteur de club custom */
-    .select-club-btn {
-      width:100%;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid #26303b;
-      background:#05080c;
-      color:#6b7280;
-      font-size:15px;
-      text-align:left;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      cursor:pointer;
-    }
-    .select-club-btn::after {
-      content:"▾";
-      font-size:11px;
-      opacity:0.8;
-    }
-    .select-club-btn--filled {
-      color:var(--text);
-    }
+    /* Loader */
+    #loaderBox {
+      font-size:13px;
+      color:#cbd5f5;
+    }
+    .loader {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      background:#0b1016;
+      border-radius:999px;
+      border:1px solid #1b242f;
+      width: fit-content;
+    }
+    .spinner {
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      border:2px solid rgba(148,163,184,0.35);
+      border-top-color:#f9fafb;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Modal clubs (verre dépoli) */
-    .modal-backdrop {
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.55);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:120;
-      backdrop-filter: blur(12px);
-      padding:16px;
-    }
-    .modal-club {
-      background: rgba(15,20,25,0.92);
-      border-radius:18px;
-      border:1px solid rgba(148,163,184,0.35);
-      box-shadow: 0 24px 45px rgba(0,0,0,0.7);
-      width:100%;
-      max-width:380px;
-      max-height:80vh;
-      display:flex;
-      flex-direction:column;
-      animation: modalFade 0.16s ease-out;
-    }
-    @keyframes modalFade {
-      from { opacity:0; transform:translateY(6px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    .modal-header {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:12px 14px 8px;
-      border-bottom:1px solid rgba(31,41,55,0.8);
-    }
-    .modal-title {
-      font-size:14px;
-      font-weight:600;
-    }
-    .modal-close-btn {
-      border-radius:999px;
-      border:1px solid #374151;
-      background:#111827;
-      color:#e5e7eb;
-      font-size:13px;
-      padding:4px 8px;
-      cursor:pointer;
-    }
-    .modal-close-btn:hover {
-      background:#1f2933;
-    }
-    .modal-body {
-      padding:10px 14px 14px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .modal-search {
-      width:100%;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid #26303b;
-      background:#05080c;
-      color:var(--text);
-      font-size:14px;
-    }
-    .modal-list {
-      margin-top:4px;
-      overflow-y:auto;
-      max-height: calc(80vh - 120px);
-    }
-    .modal-item {
-      padding:10px 12px;
-      border-radius:10px;
-      font-size:14px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      transition: background 0.08s ease, transform 0.06s ease;
-    }
-    .modal-item:hover {
-      background:rgba(0,80,58,0.22);
-      transform:translateY(-1px);
-    }
-    .modal-empty {
-      padding:10px 12px;
-      font-size:13px;
-      color:#9ca3af;
-    }
+    /* Status bar */
+    #statusBox {
+      font-size: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+      line-height: 1.5;
+      display: none;
+      white-space: pre-line;
+    }
+    .status--info {
+      display:block;
+      background: rgba(0, 80, 58, 0.15);
+      border: 1px solid #00503a;
+      color: #b6f7d2;
+    }
+    .status--error {
+      display:block;
+      background: rgba(255, 80, 80, 0.12);
+      border: 1px solid #ff6b6b;
+      color: #ff9b9b;
+    }
 
-    /* Popup sauvegarde */
-    .save-popup {
-      position: fixed;
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--primary);
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.55);
-      z-index: 200;
-    }
+    /* Sélecteur de club custom */
+    .select-club-btn {
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid #26303b;
+      background:#05080c;
+      color:#6b7280;
+      font-size:15px;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      cursor:pointer;
+    }
+    .select-club-btn::after {
+      content:"▾";
+      font-size:11px;
+      opacity:0.8;
+    }
+    .select-club-btn--filled {
+      color:var(--text);
+    }
 
-    @media (max-width:720px){
-      .grid-2{grid-template-columns:1fr}
-      img{max-height:50vh}
-      .row > button,
-      .row > label[role=button],
-      .primary,
-      .ghost{width:100%}
-      .btn-row-2{grid-template-columns:1fr}
-      .modal-club{
-        max-width:none;
-        max-height:none;
-        height:100%;
-        border-radius:0;
-      }
-      .modal-list{
-        max-height:none;
-        flex:1;
-      }
-      .modal-body{
-        flex:1;
-        display:flex;
-        flex-direction:column;
-      }
-    }
-  </style>
+    /* Modal clubs (verre dépoli) */
+    .modal-backdrop {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:120;
+      backdrop-filter: blur(12px);
+      padding:16px;
+    }
+    .modal-club {
+      background: rgba(15,20,25,0.92);
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,0.35);
+      box-shadow: 0 24px 45px rgba(0,0,0,0.7);
+      width:100%;
+      max-width:380px;
+      max-height:80vh;
+      display:flex;
+      flex-direction:column;
+      animation: modalFade 0.16s ease-out;
+    }
+    @keyframes modalFade {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .modal-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px 8px;
+      border-bottom:1px solid rgba(31,41,55,0.8);
+    }
+    .modal-title {
+      font-size:14px;
+      font-weight:600;
+    }
+    .modal-close-btn {
+      border-radius:999px;
+      border:1px solid #374151;
+      background:#111827;
+      color:#e5e7eb;
+      font-size:13px;
+      padding:4px 8px;
+      cursor:pointer;
+    }
+    .modal-close-btn:hover {
+      background:#1f2933;
+    }
+    .modal-body {
+      padding:10px 14px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .modal-search {
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #26303b;
+      background:#05080c;
+      color:var(--text);
+      font-size:14px;
+    }
+    .modal-list {
+      margin-top:4px;
+      overflow-y:auto;
+      max-height: calc(80vh - 120px);
+    }
+    .modal-item {
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      transition: background 0.08s ease, transform 0.06s ease;
+    }
+    .modal-item:hover {
+      background:rgba(0,80,58,0.22);
+      transform:translateY(-1px);
+    }
+    .modal-empty {
+      padding:10px 12px;
+      font-size:13px;
+      color:#9ca3af;
+    }
+
+    /* AJOUT : Styles pour la modale de recadrage */
+    .modal-cropper {
+      background: rgba(15,20,25,0.92);
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,0.35);
+      box-shadow: 0 24px 45px rgba(0,0,0,0.7);
+      width:100%;
+      max-width:600px; /* Plus large pour le recadrage */
+      max-height:90vh;
+      display:flex;
+      flex-direction:column;
+      animation: modalFade 0.16s ease-out;
+    }
+    .cropper-img-container {
+      max-height: calc(90vh - 120px);
+      overflow: hidden;
+      background: #000;
+    }
+    .cropper-img-container img {
+      max-width: 100%;
+      max-height: calc(90vh - 120px);
+      object-fit: contain;
+    }
+    .modal-footer {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(31,41,55,0.8);
+      text-align: right;
+    }
+
+    /* Popup sauvegarde */
+    .save-popup {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+      z-index: 200;
+    }
+
+    @media (max-width:720px){
+      .grid-2{grid-template-columns:1fr}
+      img{max-height:50vh}
+      .row > button,
+      .row > label[role=button],
+      .primary,
+      .ghost{width:100%}
+      .btn-row-2{grid-template-columns:1fr}
+      .modal-club,
+      /* AJOUT : Cropper en plein écran sur mobile */
+      .modal-cropper {
+        max-width:none;
+        max-height:none;
+        height:100%;
+        border-radius:0;
+      }
+      .modal-list{
+        max-height:none;
+        flex:1;
+      }
+      .modal-body{
+        flex:1;
+        display:flex;
+        flex-direction:column;
+      }
+      /* AJOUT */
+      .cropper-img-container {
+        flex: 1;
+        max-height: none;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- Topbar -->
-  <header class="topbar">
-    <div class="top-left">
-      <div class="brand-dot"></div>
-      <div class="top-texts">
-        <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
-        <div class="top-sub">Outils d’analyse pour vos radars papier</div>
-      </div>
-    </div>
-    <a href="index.html" class="btn-top">← Accueil</a>
-  </header>
-
-  <main class="wrap">
-    <div class="page-eyebrow">Lecture</div>
-    <h1 class="page-title">Lecture Radar</h1>
-    <p class="page-subtitle">
-      Étape 1 : prenez une photo de votre feuille vue du dessus avec les repères bien visibles. Étape 2 :
-      renseignez les informations de votre coup et lancez l’analyse.
-    </p>
-
-    <div class="card">
-      <!-- Stepper -->
-      <div class="stepper">
-        <div id="step1" class="step">
-          <div class="step-index">1</div>
-          <div class="step-texts">
-            <div class="step-label">Étape 1</div>
-            <div class="step-sub">Photo</div>
-          </div>
-        </div>
-        <div id="step2" class="step">
-          <div class="step-index">2</div>
-          <div class="step-texts">
-            <div class="step-label">Étape 2</div>
-            <div class="step-sub">Analyse</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="step-help">
-        Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille,
-        et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.
-      </div>
-
-      <!-- Loader -->
-      <div class="row hidden" id="loaderBox">
-        <div class="loader">
-          <div class="spinner"></div>
-          <span id="loaderText">Chargement…</span>
-        </div>
-      </div>
-
-      <!-- Status -->
-      <div id="statusBox"></div>
-
-      <!-- Onglet 1 -->
-      <div id="tab1" class="tab-content">
-        <div class="row btn-row-2">
-          <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
-          <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
-          <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
-          <input id="fileGal" type="file" accept="image/*" style="display:none;" />
-        </div>
-
-        <div class="row">
-          <img id="preview" class="hidden" alt="aperçu image" />
-        </div>
-
-        <div class="row">
-          <button id="toStep2Btn" class="primary hidden" type="button" style="width:100%;">
-            ➡️ Analyser les coups (Étape 2)
-          </button>
-        </div>
-      </div>
-
-      <!-- Onglet 2 -->
-      <div id="tab2" class="tab-content hidden">
-        <div class="grid-2">
-          <div class="row">
-            <label for="dateText">Date (JJ/MM/AAAA)</label>
-            <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
-            <div class="hint">Préremplie à aujourd'hui</div>
-          </div>
-          <div class="row">
-            <label for="clubDisplay">Club</label>
-            <button id="clubDisplay" type="button" class="select-club-btn">
-              Sélectionner un club…
-            </button>
-            <input id="club" type="hidden" />
-            <div class="hint">Tapez pour filtrer et choisissez votre club.</div>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="row">
-            <label for="targetDist">Distance cible (m)</label>
-            <input id="targetDist" type="number" step="1" min="0" value="100" required />
-          </div>
-        </div>
-
-        <div class="row">
-          <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
-            🧠 Analyser l’image
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Résultat -->
-    <div class="row result hidden" id="resultCard">
-      <h3>Distances</h3>
-
-      <div class="kv">
-        <div>Date</div>
-        <div id="rDate">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Club</div>
-        <div id="rClub">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Distance cible</div>
-        <div id="rTarget">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Radar</div>
-        <div id="rRadar">—</div>
-      </div>
-
-      <div class="result-subtitle">Détail des coups</div>
-      <div id="shotsList" class="shots-list"></div>
-
-      <div class="row" style="margin-top:12px;">
-        <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
-          📊 Ajouter à mon historique
-        </button>
-      </div>
-      <div class="row" style="margin-top:6px;">
-        <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
-          🧹 Effacer ce résultat
-        </button>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal sélection de club -->
-  <div id="clubModalBackdrop" class="modal-backdrop hidden">
-    <div class="modal-club">
-      <div class="modal-header">
-        <div class="modal-title">Sélectionner un club</div>
-        <button id="closeClubModal" type="button" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <input id="clubSearch" type="text" class="modal-search" placeholder="Rechercher un club…" />
-        <div id="clubList" class="modal-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Popup -->
-  <div id="savePopup" class="save-popup hidden">
-    Données enregistrées ✔️
-  </div>
-
-  <script>
-    const API_BASE = "https://todogolf-analyse.onrender.com";
-    const HISTORY_KEY = "todogolf_lab_history";
-
-    function fetchWithTimeout(url, options = {}, timeout = 20000) {
-      return Promise.race([
-        fetch(url, options),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), timeout)
-        )
-      ]);
-    }
-
-    const $ = id => document.getElementById(id);
-
-    const fileCam    = $("fileCam");
-    const fileGal    = $("fileGal");
-    const preview    = $("preview");
-    const analyzeBtn = $("analyzeBtn");
-    const resultCard = $("resultCard");
-    const shotsList  = $("shotsList");
-
-    const rDate   = $("rDate");
-    const rClub   = $("rClub");
-    const rTarget = $("rTarget");
-    const rRadar  = $("rRadar");
-
-    const dateText    = $("dateText");
-    const club        = $("club");
-    const clubDisplay = $("clubDisplay");
-    const targetDist  = $("targetDist");
-
-    const loaderBox  = $("loaderBox");
-    const loaderText = $("loaderText");
-
-    const step1El    = $("step1");
-    const step2El    = $("step2");
-    const tab1El     = $("tab1");
-    const tab2El     = $("tab2");
-
-    const saveToHistoryBtn = $("saveToHistoryBtn");
-    const clearResultBtn   = $("clearResultBtn");
-    const toStep2Btn       = $("toStep2Btn");
-
-    const clubModalBackdrop = $("clubModalBackdrop");
-    const clubSearch        = $("clubSearch");
-    const clubList          = $("clubList");
-    const closeClubModal    = $("closeClubModal");
-
-    const CLUBS = [
-      "Driver",
-      "Bois 3",
-      "Bois 5",
-      "Bois 7",
-      "Bois 9",
-      "Hybride 2",
-      "Hybride 3",
-      "Hybride 4",
-      "Hybride 5",
-      "Fer 2",
-      "Fer 3",
-      "Fer 4",
-      "Fer 5",
-      "Fer 6",
-      "Fer 7",
-      "Fer 8",
-      "Fer 9",
-      "Wedge 50°",
-      "Wedge 52°",
-      "Wedge 54°",
-      "Wedge 56°",
-      "Wedge 58°",
-      "Wedge 60°",
-      "Wedge 62°",
-      "Wedge 64°",
-      "Putter",
-      "Chipper"
-    ];
-
-    let currentBlob   = null;
-    let lastJson      = null;
-    let maskValidated = false;
-    let activeTab     = 1;
-    let statusTimeoutId = null;
-
-    function setStatus(msg, type = "info") {
-      const box = $("statusBox");
-      if (!box) return;
-      box.innerHTML = msg.replace(/\n/g, "<br>");
-      box.className = "";
-      box.classList.add(type === "error" ? "status--error" : "status--info");
-      box.style.display = "block";
-      if (statusTimeoutId) clearTimeout(statusTimeoutId);
-      statusTimeoutId = setTimeout(() => {
-        box.className = "";
-        box.style.display = "none";
-      }, 10000);
-    }
-
-    function clampSize(w,h,max=1600){
-      if(Math.max(w,h) <= max) return [w,h];
-      const s = max / Math.max(w,h);
-      return [Math.round(w*s), Math.round(h*s)];
-    }
-
-    function refreshSteps(){
-      if (!step1El || !step2El) return;
-      if (activeTab === 1) {
-        step1El.classList.add('step--active');
-        step2El.classList.remove('step--active');
-      } else {
-        step2El.classList.add('step--active');
-        step1El.classList.remove('step--active');
-      }
-    }
-
-    function setActiveTab(n){
-      if (n === 2 && !maskValidated) {
-        setStatus("Validez d'abord une photo (masque) avant de passer à l’étape 2.", "error");
-        return;
-      }
-      activeTab = n;
-      if (activeTab === 1) {
-        tab1El.classList.remove('hidden');
-        tab2El.classList.add('hidden');
-        resultCard.classList.add("hidden");
-      } else {
-        tab1El.classList.add('hidden');
-        tab2El.classList.remove('hidden');
-        if (lastJson) {
-          resultCard.classList.remove("hidden");
-        }
-      }
-      refreshSteps();
-    }
-
-    function setLoading(isLoading, text) {
-      if (!loaderBox) return;
-      if (isLoading) {
-        if (loaderText && text) loaderText.textContent = text;
-        loaderBox.classList.remove("hidden");
-      } else {
-        loaderBox.classList.add("hidden");
-      }
-    }
-
-    function todayStr(){
-      const d = new Date();
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const yyyy = d.getFullYear();
-      return `${dd}/${mm}/${yyyy}`;
-    }
-    if(dateText && !dateText.value) dateText.value = todayStr();
-
-    dateText?.addEventListener('input', e=>{
-      let v = e.target.value.replace(/\D/g,'').slice(0,8);
-      if(v.length>=5) v=v.replace(/^(\d{2})(\d{2})(\d{1,4})$/,'$1/$2/$3');
-      else if(v.length>=3) v=v.replace(/^(\d{2})(\d{1,2})$/,'$1/$2');
-      e.target.value=v;
-    });
-
-    function showPreview(fileOrBlob){
-      if(!fileOrBlob){
-        preview.classList.add("hidden");
-        return;
-      }
-      const url = URL.createObjectURL(fileOrBlob);
-      preview.src = url;
-      preview.onload = ()=> URL.revokeObjectURL(url);
-      preview.classList.remove("hidden");
-    }
-
-    async function ensureJpegFile(fileOrBlob){
-      if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-        return fileOrBlob;
-      }
-      try{
-        const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
-        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
-        const canvas = document.createElement('canvas');
-        canvas.width = tw;
-        canvas.height = th;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(bmp,0,0,tw,th);
-        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
-        return new File([blob], 'capture.jpg', {type:'image/jpeg'});
-      }catch{
-        return await new Promise(async (resolve)=>{
-          const img = new Image();
-          img.src = URL.createObjectURL(fileOrBlob);
-          await img.decode();
-          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
-          const canvas=document.createElement('canvas');
-          canvas.width = tw;
-          canvas.height= th;
-          const ctx=canvas.getContext('2d');
-          ctx.drawImage(img,0,0,tw,th);
-          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
-          URL.revokeObjectURL(img.src);
-          resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
-        });
-      }
-    }
-
-    function safe(v){
-      if(v==null) return '';
-      if(typeof v==='number' && !Number.isFinite(v)) return '';
-      return String(v).replace(/[\n\r,]/g,' ');
-    }
-
-    function getRadarInfoFromJson(json){
-      const dbg = json && json.debug ? json.debug : {};
-      const ringReason   = (dbg.ring_reason || '').toLowerCase();
-      const circleReason = (dbg.circle_reason || '').toLowerCase();
-      const step         = dbg.ring_step_m;
-
-      let usage = null;
-      if (ringReason.includes('triangle')) {
-        usage = 'Putting';
-      } else if (ringReason.includes('carre') || ringReason.includes('square')) {
-        usage = 'Petit jeu';
-      } else if (circleReason) {
-        usage = 'Long jeu';
-      }
-
-      if (!usage && (step === undefined || step === null || step === '')) {
-        return '—';
-      }
-      if (usage && (step !== undefined && step !== null && step !== '')) {
-        return usage + ' – ' + step + ' m';
-      }
-      if (usage) return usage;
-      return step + ' m';
-    }
-
-    function onPick(e){
-      const file=e.target.files && e.target.files[0];
-      if(!file) return;
-
-      lastJson = null;
-      maskValidated = false;
-      analyzeBtn.disabled = true;
-      resultCard.classList.add("hidden");
-      shotsList.innerHTML = "";
-      rDate.textContent   = "—";
-      rClub.textContent   = "—";
-      rTarget.textContent = "—";
-      rRadar.textContent  = "—";
-      toStep2Btn.classList.add("hidden");
-
-      ensureJpegFile(file).then(f=>{
-        currentBlob = f;
-        setStatus('Image prête : '+currentBlob.type+' · '+Math.round(currentBlob.size/1024)+' KB');
-        showPreview(currentBlob);
-        setActiveTab(1);
-        generateMask();
-      }).catch(err=> setStatus('Erreur image : '+err.message, "error"));
-    }
-
-    fileCam.addEventListener('change', onPick);
-    fileGal.addEventListener('change', onPick);
-
-    async function generateMask(){
-      const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
-      if(!file){
-        setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
-        return;
-      }
-      const url = API_BASE + '/mask';
-      const fd  = new FormData();
-      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
-      fd.append('image', imgFile, imgFile.name);
-      fd.append('file', imgFile, imgFile.name);
-      fd.append('image_file', imgFile, imgFile.name);
-
-      try{
-        setLoading(true, "Génération du masque…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
-        if(!res.ok){
-          let t='';
-          try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
-        }
-        const blob = await res.blob();
-        showPreview(blob);
-        maskValidated = true;
-        analyzeBtn.disabled = false;
-        toStep2Btn.classList.remove("hidden");
-        setStatus(
-          "Masque généré ✅\n\n" +
-          "Vérifiez la détection :\n" +
-          "• le cercle extérieur rouge passe bien par les trois repères\n" +
-          "• chaque repère est marqué par une icône au centre\n\n" +
-          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
-          "info"
-        );
-      }catch(err){
-        maskValidated = false;
-        analyzeBtn.disabled = true;
-        toStep2Btn.classList.add("hidden");
-
-        const msg = (err && err.message) ? err.message : "";
-        if (msg === "Timeout") {
-          setStatus(
-            "🟡 Le service d’analyse ne répond pas.\n" +
-            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
-            "Réessayez dans quelques secondes.",
-            "error"
-          );
-        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-          setStatus(
-            "🟡 Le service d’analyse est en cours de démarrage.\n" +
-            "Patientez quelques secondes puis réessayez.",
-            "error"
-          );
-        } else {
-          setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
-        }
-      }finally{
-        setLoading(false);
-      }
-    }
-
-    async function analyze(){
-      if(!maskValidated){
-        setStatus('Validez d\'abord une photo avant de lancer l’analyse.', "error");
-        return;
-      }
-      if(!dateText.value || !club.value || !targetDist.value){
-        setStatus('Remplissez la date, le club et la distance cible.', "error");
-        return;
-      }
-      const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
-      if(!file){
-        setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
-        return;
-      }
-
-      const url = API_BASE + '/analyze';
-      const fd  = new FormData();
-      const imgFile = file instanceof File ? file : new File([file],'capture.jpg',{type:'image/jpeg'});
-
-      fd.append('image', imgFile, imgFile.name);
-      fd.append('file', imgFile, imgFile.name);
-      fd.append('image_file', imgFile, imgFile.name);
-      fd.append('date_text', dateText.value);
-      fd.append('club', club.value);
-      fd.append('centre_distance', targetDist.value);
-
-      try{
-        setLoading(true, "Analyse en cours…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
-        if(!res.ok){
-          let t='';
-          try{ t = await res.text(); }catch(_){}
-          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
-        }
-        const data = await res.json();
-        lastJson = data;
-
-        const coups = Array.isArray(data.coups) ? data.coups : [];
-
-        rDate.textContent   = dateText.value;
-        rClub.textContent   = club.value || "—";
-        rTarget.textContent = targetDist.value + ' m';
-
-        const radarInfo = getRadarInfoFromJson(data);
-        rRadar.textContent = radarInfo;
-
-        shotsList.innerHTML = '';
-        if (coups.length === 0) {
-          const line = document.createElement('div');
-          line.textContent = 'Aucun coup détecté.';
-          shotsList.appendChild(line);
-        } else {
-          coups.forEach((c, idx)=>{
-            const row = document.createElement('div');
-            row.className = 'shot-row';
-
-            const left = document.createElement('div');
-            left.className = 'shot-left';
-            left.textContent = 'Coup ' + (idx+1);
-
-            const right = document.createElement('div');
-            right.className = 'shot-right';
-
-            const parts = [];
-            if (c.distance_totale_m !== undefined && c.distance_totale_m !== null) parts.push('Dist. ' + c.distance_totale_m + ' m');
-            if (c.ecart_lateral_m  !== undefined && c.ecart_lateral_m  !== null)   parts.push('Lat. '  + c.ecart_lateral_m  + ' m');
-            if (c.ecart_profondeur_m !== undefined && c.ecart_profondeur_m !== null) parts.push('Prof. ' + c.ecart_profondeur_m + ' m');
-
-            right.textContent = parts.join(' · ') || '—';
-            row.appendChild(left);
-            row.appendChild(right);
-            shotsList.appendChild(row);
-          });
-        }
-
-        resultCard.classList.remove("hidden");
-        setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
-        setActiveTab(2);
-      }catch(err){
-        const msg = (err && err.message) ? err.message : "";
-        if (msg === "Timeout") {
-          setStatus(
-            "🟡 Le service d’analyse ne répond pas.\n" +
-            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
-            "Réessayez dans quelques secondes.",
-            "error"
-          );
-        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-          setStatus(
-            "🟡 Service d’analyse en cours de démarrage…\n" +
-            "Attendez quelques secondes et relancez l’analyse.",
-            "error"
-          );
-        } else {
-          setStatus("Analyse impossible : " + msg, "error");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-    analyzeBtn.addEventListener('click', analyze);
-
-    function showSavePopup(){
-      const pop = $("savePopup");
-      if(!pop) return;
-      pop.classList.remove("hidden");
-      setTimeout(()=>{ pop.classList.add("hidden"); }, 1200);
-    }
-
-    function addCurrentResultToHistory() {
-      if (!lastJson) {
-        setStatus("Aucun résultat à enregistrer. Faites d’abord une analyse.", "error");
-        return;
-      }
-      const coups = Array.isArray(lastJson.coups) ? lastJson.coups : [];
-      if (coups.length === 0) {
-        setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
-        return;
-      }
-
-      let history = [];
-      try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (raw) history = JSON.parse(raw) || [];
-      } catch (e) {
-        history = [];
-      }
-
-      const radarInfo = getRadarInfoFromJson(lastJson);
-      const dateVal   = dateText.value;
-      const clubVal   = club.value;
-      const cibleVal  = Number(targetDist.value);
-
-      coups.forEach(c => {
-        history.push({
-          date_text: dateVal,
-          club: clubVal,
-          distance_cible_m: cibleVal,
-          radar_info: radarInfo,
-          distance_totale_m: c.distance_totale_m,
-          ecart_lateral_m: c.ecart_lateral_m,
-          ecart_profondeur_m: c.ecart_profondeur_m
-        });
-      });
-
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        showSavePopup();
-        setTimeout(()=> {
-          window.location.href = "index.html";
-        }, 1300);
-      } catch (e) {
-        setStatus("Impossible d’enregistrer dans l’historique (quota navigateur atteint ?).", "error");
-      }
-    }
-
-    function clearCurrentResult() {
-      lastJson = null;
-      resultCard.classList.add("hidden");
-      shotsList.innerHTML = "";
-      rDate.textContent   = "—";
-      rClub.textContent   = "—";
-      rTarget.textContent = "—";
-      rRadar.textContent  = "—";
-      setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
-      setTimeout(() => {
-        window.location.href = "index.html";
-      }, 1000);
-    }
-
-    saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
-    clearResultBtn.addEventListener('click', clearCurrentResult);
-
-    step1El.addEventListener('click', ()=> setActiveTab(1));
-    step2El.addEventListener('click', ()=> setActiveTab(2));
-    toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
-
-    function renderClubList(query) {
-      const q = (query || "").trim().toLowerCase();
-      clubList.innerHTML = "";
-      const filtered = CLUBS.filter(name => !q || name.toLowerCase().includes(q));
-      if (!filtered.length) {
-        const empty = document.createElement("div");
-        empty.className = "modal-empty";
-        empty.textContent = "Aucun club trouvé.";
-        clubList.appendChild(empty);
-        return;
-      }
-      filtered.forEach(name => {
-        const item = document.createElement("div");
-        item.className = "modal-item";
-        item.textContent = name;
-        item.addEventListener("click", () => {
-          club.value = name;
-          clubDisplay.textContent = name;
-          clubDisplay.classList.add("select-club-btn--filled");
-          closeClubModalFn();
-        });
-        clubList.appendChild(item);
-      });
-    }
-
-    function openClubModal() {
-      clubModalBackdrop.classList.remove("hidden");
-      clubSearch.value = "";
-      renderClubList("");
-    }
-
-    function closeClubModalFn() {
-      clubModalBackdrop.classList.add("hidden");
-    }
-
-    clubDisplay.addEventListener("click", openClubModal);
-    closeClubModal.addEventListener("click", closeClubModalFn);
-    clubModalBackdrop.addEventListener("click", (e)=>{
-      if (e.target === clubModalBackdrop) {
-        closeClubModalFn();
-      }
-    });
-    clubSearch.addEventListener("input", (e)=>{
-      renderClubList(e.target.value);
-    });
-
-    setActiveTab(1);
-    refreshSteps();
-  </script>
-
-  <!-- Script keep-alive Render -->
-  <script>
-    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
-
-    function pingRender() {
-      try {
-        fetch(RENDER_URL, {
-          method: "HEAD",
-          mode: "no-cors"
-        }).catch(() => {});
-      } catch (e) {}
-    }
-
-    pingRender();
-    setInterval(pingRender, 5 * 60 * 1000);
-  </script>
+    <header class="topbar">
+    <div class="top-left">
+      <div class="brand-dot"></div>
+      <div class="top-texts">
+        <div class="top-title">ToDoGolf Lab – Analyse & Performance</div>
+        <div class="top-sub">Outils d’analyse pour vos radars papier</div>
+      </div>
+    </div>
+    <a href="index.html" class="btn-top">← Accueil</a>
+  </header>
+
+  <main class="wrap">
+    <div class="page-eyebrow">Lecture</div>
+    <h1 class="page-title">Lecture Radar</h1>
+    <p class="page-subtitle">
+      Étape 1 : prenez une photo de votre feuille. Étape 1b : Recadrez-la. Étape 2 :
+      renseignez les informations et lancez l’analyse.
+    </p>
+
+    <div class="card">
+            <div class="stepper">
+        <div id="step1" class="step">
+          <div class="step-index">1</div>
+          <div class="step-texts">
+            <div class="step-label">Étape 1</div>
+            <div class="step-sub">Photo & Masque</div>
+          </div>
+        </div>
+        <div id="step2" class="step">
+          <div class="step-index">2</div>
+          <div class="step-texts">
+            <div class="step-label">Étape 2</div>
+            <div class="step-sub">Analyse</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-help">
+        Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille,
+        et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.
+      </div>
+
+            <div class="row hidden" id="loaderBox">
+        <div class="loader">
+          <div class="spinner"></div>
+          <span id="loaderText">Chargement…</span>
+        </div>
+      </div>
+
+            <div id="statusBox"></div>
+
+            <div id="tab1" class="tab-content">
+        <div class="row btn-row-2">
+          <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
+          <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
+          <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
+          <input id="fileGal" type="file" accept="image/*" style="display:none;" />
+        </div>
+
+        <div class="row">
+          <img id="preview" class="hidden" alt="aperçu image" />
+        </div>
+
+        <div class="row">
+          <button id="toStep2Btn" class="primary hidden" type="button" style="width:100%;">
+            ➡️ Analyser les coups (Étape 2)
+          </button>
+        </div>
+      </div>
+
+            <div id="tab2" class="tab-content hidden">
+        <div class="grid-2">
+          <div class="row">
+            <label for="dateText">Date (JJ/MM/AAAA)</label>
+            <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
+            <div class="hint">Préremplie à aujourd'hui</div>
+          </div>
+          <div class="row">
+            <label for="clubDisplay">Club</label>
+            <button id="clubDisplay" type="button" class="select-club-btn">
+              Sélectionner un club…
+            </button>
+            <input id="club" type="hidden" />
+            <div class="hint">Tapez pour filtrer et choisissez votre club.</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="row">
+            <label for="targetDist">Distance cible (m)</label>
+            <input id="targetDist" type="number" step="1" min="0" value="100" required />
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="analyzeBtn" class="primary" type="button" style="width:100%;" disabled>
+            🧠 Analyser l’image
+          </button>
+        </div>
+      </div>
+    </div>
+
+        <div class="row result hidden" id="resultCard">
+      <h3>Distances</h3>
+
+      <div class="kv">
+        <div>Date</div>
+        <div id="rDate">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Club</div>
+        <div id="rClub">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Distance cible</div>
+        <div id="rTarget">—</div>
+      </div>
+
+      <div class="kv">
+        <div>Radar</div>
+        <div id="rRadar">—</div>
+      </div>
+
+      <div class="result-subtitle">Détail des coups</div>
+      <div id="shotsList" class="shots-list"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
+          📊 Ajouter à mon historique
+        </button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
+          🧹 Effacer ce résultat
+        </button>
+      </div>
+    </div>
+  </main>
+
+    <div id="clubModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal-club">
+      <div class="modal-header">
+        <div class="modal-title">Sélectionner un club</div>
+        <button id="closeClubModal" type="button" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <input id="clubSearch" type="text" class="modal-search" placeholder="Rechercher un club…" />
+        <div id="clubList" class="modal-list"></div>
+      </div>
+    </div>
+  </div>
+
+    <div id="cropperModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal-cropper">
+      <div class="modal-header">
+        <div class="modal-title">Recadrer la photo</div>
+      </div>
+      <div class="modal-body cropper-img-container">
+        <img id="cropperImage" alt="Image à recadrer" />
+      </div>
+      <div class="modal-footer">
+        <button id="validateCropBtn" class="primary" type="button">
+          ✅ Valider le recadrage
+        </button>
+      </div>
+    </div>
+  </div>
+
+    <div id="savePopup" class="save-popup hidden">
+    Données enregistrées ✔️
+  </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" integrity="sha512-9KkIqDNIvD1B8Gj7jqsGf2N1zxTGFVSaaUljL5lMmiGJCalBpb5SGzuSAzD1KdeQG5sWNpdkkBEXsXsWsAADvA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script>
+    const API_BASE = "https://todogolf-analyse.onrender.com";
+    const HISTORY_KEY = "todogolf_lab_history";
+
+    function fetchWithTimeout(url, options = {}, timeout = 20000) {
+      return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), timeout)
+        )
+      ]);
+    }
+
+    const $ = id => document.getElementById(id);
+
+    const fileCam    = $("fileCam");
+    const fileGal    = $("fileGal");
+    const preview    = $("preview");
+    const analyzeBtn = $("analyzeBtn");
+    const resultCard = $("resultCard");
+    const shotsList  = $("shotsList");
+
+    const rDate   = $("rDate");
+    const rClub   = $("rClub");
+    const rTarget = $("rTarget");
+    const rRadar  = $("rRadar");
+
+    const dateText    = $("dateText");
+    const club        = $("club");
+    const clubDisplay = $("clubDisplay");
+    const targetDist  = $("targetDist");
+
+    const loaderBox  = $("loaderBox");
+    const loaderText = $("loaderText");
+
+    const step1El    = $("step1");
+    const step2El    = $("step2");
+    const tab1El     = $("tab1");
+    const tab2El     = $("tab2");
+
+    const saveToHistoryBtn = $("saveToHistoryBtn");
+    const clearResultBtn   = $("clearResultBtn");
+    const toStep2Btn       = $("toStep2Btn");
+
+    const clubModalBackdrop = $("clubModalBackdrop");
+    const clubSearch        = $("clubSearch");
+    const clubList          = $("clubList");
+    const closeClubModal    = $("closeClubModal");
+
+    // AJOUT : Éléments du Cropper
+    const cropperModalBackdrop = $("cropperModalBackdrop");
+    const cropperImage   = $("cropperImage");
+    const validateCropBtn = $("validateCropBtn");
+    let cropper = null; // Instance de Cropper.js
+
+    const CLUBS = [
+      "Driver", "Bois 3", "Bois 5", "Bois 7", "Bois 9",
+      "Hybride 2", "Hybride 3", "Hybride 4", "Hybride 5",
+      "Fer 2", "Fer 3", "Fer 4", "Fer 5", "Fer 6", "Fer 7", "Fer 8", "Fer 9",
+      "Wedge 50°", "Wedge 52°", "Wedge 54°", "Wedge 56°", "Wedge 58°", "Wedge 60°", "Wedge 62°", "Wedge 64°",
+      "Putter", "Chipper"
+    ];
+
+    let currentBlob   = null;
+    let lastJson      = null;
+    let maskValidated = false;
+    let activeTab     = 1;
+    let statusTimeoutId = null;
+
+    function setStatus(msg, type = "info") {
+      const box = $("statusBox");
+      if (!box) return;
+      box.innerHTML = msg.replace(/\n/g, "<br>");
+      box.className = "";
+      box.classList.add(type === "error" ? "status--error" : "status--info");
+      box.style.display = "block";
+      if (statusTimeoutId) clearTimeout(statusTimeoutId);
+      statusTimeoutId = setTimeout(() => {
+        box.className = "";
+        box.style.display = "none";
+      }, 10000);
+    }
+
+    function clampSize(w,h,max=1600){
+      if(Math.max(w,h) <= max) return [w,h];
+      const s = max / Math.max(w,h);
+      return [Math.round(w*s), Math.round(h*s)];
+    }
+
+    function refreshSteps(){
+      if (!step1El || !step2El) return;
+      if (activeTab === 1) {
+        step1El.classList.add('step--active');
+        step2El.classList.remove('step--active');
+      } else {
+        step2El.classList.add('step--active');
+        step1El.classList.remove('step--active');
+      }
+    }
+
+    function setActiveTab(n){
+      if (n === 2 && !maskValidated) {
+        setStatus("Validez d'abord une photo (masque) avant de passer à l’étape 2.", "error");
+        return;
+      }
+      activeTab = n;
+      if (activeTab === 1) {
+        tab1El.classList.remove('hidden');
+        tab2El.classList.add('hidden');
+        resultCard.classList.add("hidden");
+      } else {
+        tab1El.classList.add('hidden');
+        tab2El.classList.remove('hidden');
+        if (lastJson) {
+          resultCard.classList.remove("hidden");
+        }
+      }
+      refreshSteps();
+    }
+
+    function setLoading(isLoading, text) {
+      if (!loaderBox) return;
+      if (isLoading) {
+        if (loaderText && text) loaderText.textContent = text;
+        loaderBox.classList.remove("hidden");
+      } else {
+        loaderBox.classList.add("hidden");
+      }
+    }
+
+    function todayStr(){
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    if(dateText && !dateText.value) dateText.value = todayStr();
+
+    dateText?.addEventListener('input', e=>{
+      let v = e.target.value.replace(/\D/g,'').slice(0,8);
+      if(v.length>=5) v=v.replace(/^(\d{2})(\d{2})(\d{1,4})$/,'$1/$2/$3');
+      else if(v.length>=3) v=v.replace(/^(\d{2})(\d{1,2})$/,'$1/$2');
+      e.target.value=v;
+    });
+
+    function showPreview(fileOrBlob){
+      if(!fileOrBlob){
+        preview.classList.add("hidden");
+        return;
+      }
+      const url = URL.createObjectURL(fileOrBlob);
+      preview.src = url;
+      preview.onload = ()=> URL.revokeObjectURL(url);
+      preview.classList.remove("hidden");
+    }
+
+    async function ensureJpegFile(fileOrBlob){
+      // AJOUT : createImageBitmap gère l'orientation EXIF, ce qui est crucial
+      try{
+        const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
+        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
+        const canvas = document.createElement('canvas');
+        canvas.width = tw;
+        canvas.height = th;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bmp,0,0,tw,th);
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        return new File([blob], 'capture.jpg', {type:'image/jpeg'});
+      } catch(e) {
+        // Fallback pour les navigateurs plus anciens (ne gère pas l'EXIF aussi bien)
+        console.warn("createImageBitmap a échoué, utilisation du fallback Image()", e);
+        return await new Promise(async (resolve)=>{
+          const img = new Image();
+          img.src = URL.createObjectURL(fileOrBlob);
+          await img.decode();
+          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
+          const canvas=document.createElement('canvas');
+          canvas.width = tw;
+          canvas.height= th;
+          const ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,tw,th);
+          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+          URL.revokeObjectURL(img.src);
+          resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
+        });
+      }
+    }
+
+    function safe(v){
+      if(v==null) return '';
+      if(typeof v==='number' && !Number.isFinite(v)) return '';
+      return String(v).replace(/[\n\r,]/g,' ');
+    }
+
+    function getRadarInfoFromJson(json){
+      const dbg = json && json.debug ? json.debug : {};
+      const ringReason   = (dbg.ring_reason || '').toLowerCase();
+      const circleReason = (dbg.circle_reason || '').toLowerCase();
+      const step         = dbg.ring_step_m;
+
+      let usage = null;
+      if (ringReason.includes('triangle')) {
+        usage = 'Putting';
+      } else if (ringReason.includes('carre') || ringReason.includes('square')) {
+        usage = 'Petit jeu';
+      } else if (circleReason) {
+        usage = 'Long jeu';
+      }
+
+      if (!usage && (step === undefined || step === null || step === '')) {
+        return '—';
+      }
+      if (usage && (step !== undefined && step !== null && step !== '')) {
+        return usage + ' – ' + step + ' m';
+      }
+      if (usage) return usage;
+      return step + ' m';
+    }
+
+    // AJOUT : Fonctions d'ouverture/fermeture de la modale Cropper
+    function openCropperModal(imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      cropperImage.src = url;
+      cropperModalBackdrop.classList.remove("hidden");
+
+      cropperImage.onload = () => {
+        if (cropper) {
+          cropper.destroy();
+        }
+        cropper = new Cropper(cropperImage, {
+          aspectRatio: 0, // Format libre
+          viewMode: 1,
+          dragMode: 'move',
+          background: false,
+          autoCropArea: 0.9,
+          responsive: true,
+          checkOrientation: false, // Déjà fait dans ensureJpegFile
+        });
+        URL.revokeObjectURL(url); // Libère la mémoire
+      };
+    }
+
+    function closeCropperModalFn() {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      cropperImage.src = "";
+      cropperModalBackdrop.classList.add("hidden");
+    }
+
+    // AJOUT : Gestion de la validation du recadrage
+    async function handleCrop() {
+      if (!cropper) return;
+
+      setLoading(true, "Recadrage en cours…");
+      try {
+        const canvas = cropper.getCroppedCanvas();
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+        
+        // C'est ce blob recadré qui devient notre image de travail
+        currentBlob = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+        
+        setStatus('Image recadrée prête : ' + Math.round(currentBlob.size / 1024) + ' KB');
+        showPreview(currentBlob); // Affiche le *résultat* recadré
+        closeCropperModalFn();
+        
+        // On lance l'étape de masquage SEULEMENT MAINTENANT
+        await generateMask(); 
+      } catch (err) {
+        setStatus('Erreur lors du recadrage : ' + err.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function onPick(e){
+      const file=e.target.files && e.target.files[0];
+      if(!file) return;
+
+      // Réinitialisation de l'état
+      lastJson = null;
+      maskValidated = false;
+      analyzeBtn.disabled = true;
+      resultCard.classList.add("hidden");
+      shotsList.innerHTML = "";
+      rDate.textContent   = "—";
+      rClub.textContent   = "—";
+      rTarget.textContent = "—";
+      rRadar.textContent  = "—";
+      toStep2Btn.classList.add("hidden");
+      preview.classList.add("hidden"); // Cache l'ancien aperçu
+
+      // MODIFICATION : On ne génère plus le masque tout de suite.
+      // On prépare l'image et on ouvre le cropper.
+      ensureJpegFile(file).then(fileToCrop => {
+        setStatus('Image chargée. Veuillez la recadrer.');
+        setActiveTab(1);
+        openCropperModal(fileToCrop); // Ouvre la modale de recadrage
+      }).catch(err=> setStatus('Erreur image : '+err.message, "error"));
+    }
+
+    fileCam.addEventListener('change', onPick);
+    fileGal.addEventListener('change', onPick);
+    validateCropBtn.addEventListener('click', handleCrop); // AJOUT
+
+    async function generateMask(){
+      // MODIFICATION : la fonction utilise maintenant `currentBlob`
+      // qui a été défini par la fonction `handleCrop`.
+      if(!currentBlob){
+        setStatus("Image recadrée non trouvée.", "error");
+        return;
+      }
+      const url = API_BASE + '/mask';
+      const fd  = new FormData();
+      // currentBlob est déjà un File
+      fd.append('image', currentBlob, currentBlob.name);
+      fd.append('file', currentBlob, currentBlob.name);
+      fd.append('image_file', currentBlob, currentBlob.name);
+
+      try{
+        setLoading(true, "Génération du masque…");
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        if(!res.ok){
+          let t='';
+          try{ t = await res.text(); }catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
+        }
+        const blob = await res.blob();
+        showPreview(blob); // Affiche le masque
+        maskValidated = true;
+      |   analyzeBtn.disabled = false;
+        toStep2Btn.classList.remove("hidden");
+        setStatus(
+          "Masque généré ✅\n\n" +
+          "Vérifiez la détection :\n" +
+          "• le cercle extérieur rouge passe bien par les trois repères\n" +
+          "• chaque repère est marqué par une icône au centre\n\n" +
+          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
+          "info"
+        );
+      }catch(err){
+        maskValidated = false;
+        analyzeBtn.disabled = true;
+        toStep2Btn.classList.add("hidden");
+
+        const msg = (err && err.message) ? err.message : "";
+        if (msg === "Timeout") {
+          setStatus(
+            "🟡 Le service d’analyse ne répond pas.\n" +
+            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
+            "Réessayez dans quelques secondes.",
+            "error"
+          );
+        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+          setStatus(
+            "🟡 Le service d’analyse est en cours de démarrage.\n" +
+            "Patientez quelques secondes puis réessayez.",
+            "error"
+          );
+        } else {
+          setStatus('Erreur dans le traitement de la photo, merci de la recharger.', "error");
+        }
+      }finally{
+        setLoading(false);
+      }
+    }
+
+    async function analyze(){
+      if(!maskValidated){
+        setStatus('Validez d\'abord une photo avant de lancer l’analyse.', "error");
+        return;
+      }
+      if(!dateText.value || !club.value || !targetDist.value){
+        setStatus('Remplissez la date, le club et la distance cible.', "error");
+        return;
+      }
+      // MODIFICATION : la fonction utilise `currentBlob`
+s     if(!currentBlob){
+        setStatus("Ajoutez et recadrez une photo d'abord.", "error");
+        return;
+      }
+
+      const url = API_BASE + '/analyze';
+      const fd  = new FormData();
+      // currentBlob est déjà un File
+      fd.append('image', currentBlob, currentBlob.name);
+      fd.append('file', currentBlob, currentBlob.name);
+      fd.append('image_file', currentBlob, currentBlob.name);
+      fd.append('date_text', dateText.value);
+      fd.append('club', club.value);
+      fd.append('centre_distance', targetDist.value);
+
+      try{
+        setLoading(true, "Analyse en cours…");
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        if(!res.ok){
+          let t='';
+          try{ t = await res.text(); }catch(_){}
+          throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
+        }
+        const data = await res.json();
+        lastJson = data;
+
+        const coups = Array.isArray(data.coups) ? data.coups : [];
+
+        rDate.textContent   = dateText.value;
+        rClub.textContent   = club.value || "—";
+        rTarget.textContent = targetDist.value + ' m';
+
+        const radarInfo = getRadarInfoFromJson(data);
+        rRadar.textContent = radarInfo;
+
+        shotsList.innerHTML = '';
+        if (coups.length === 0) {
+          const line = document.createElement('div');
+          line.textContent = 'Aucun coup détecté.';
+          shotsList.appendChild(line);
+        } else {
+          coups.forEach((c, idx)=>{
+            const row = document.createElement('div');
+            row.className = 'shot-row';
+
+            const left = document.createElement('div');
+            left.className = 'shot-left';
+            left.textContent = 'Coup ' + (idx+1);
+
+            const right = document.createElement('div');
+            right.className = 'shot-right';
+
+            const parts = [];
+            if (c.distance_totale_m !== undefined && c.distance_totale_m !== null) parts.push('Dist. ' + c.distance_totale_m + ' m');
+            if (c.ecart_lateral_m  !== undefined && c.ecart_lateral_m  !== null)   parts.push('Lat. '  + c.ecart_lateral_m  + ' m');
+            if (c.ecart_profondeur_m !== undefined && c.ecart_profondeur_m !== null) parts.push('Prof. ' + c.ecart_profondeur_m + ' m');
+
+            right.textContent = parts.join(' · ') || '—';
+            row.appendChild(left);
+            row.appendChild(right);
+            shotsList.appendChild(row);
+          });
+        }
+
+        resultCard.classList.remove("hidden");
+        setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
+        setActiveTab(2);
+      }catch(err){
+        const msg = (err && err.message) ? err.message : "";
+        if (msg === "Timeout") {
+          setStatus(
+            "🟡 Le service d’analyse ne répond pas.\n" +
+            "Il est peut-être en cours de démarrage ou temporairement indisponible.\n" +
+            "Réessayez dans quelques secondes.",
+            "error"
+          );
+        } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+          setStatus(
+            "🟡 Service d’analyse en cours de démarrage…\n" +
+            "Attendez quelques secondes et relancez l’analyse.",
+  _           "error"
+          );
+        } else {
+          setStatus("Analyse impossible : " + msg, "error");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    analyzeBtn.addEventListener('click', analyze);
+
+    function showSavePopup(){
+      const pop = $("savePopup");
+      if(!pop) return;
+      pop.classList.remove("hidden");
+      setTimeout(()=>{ pop.classList.add("hidden"); }, 1200);
+    }
+
+    function addCurrentResultToHistory() {
+      if (!lastJson) {
+        setStatus("Aucun résultat à enregistrer. Faites d’abord une analyse.", "error");
+        return;
+      }
+      const coups = Array.isArray(lastJson.coups) ? lastJson.coups : [];
+      if (coups.length === 0) {
+    t     setStatus("Aucun coup détecté, rien à ajouter à l’historique.", "error");
+        return;
+      }
+
+      let history = [];
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (raw) history = JSON.parse(raw) || [];
+      } catch (e) {
+        history = [];
+      }
+
+      const radarInfo = getRadarInfoFromJson(lastJson);
+      const dateVal   = dateText.value;
+      const clubVal   = club.value;
+      const cibleVal  = Number(targetDist.value);
+
+      coups.forEach(c => {
+        history.push({
+          date_text: dateVal,
+          club: clubVal,
+          distance_cible_m: cibleVal,
+          radar_info: radarInfo,
+          distance_totale_m: c.distance_totale_m,
+          ecart_lateral_m: c.ecart_lateral_m,
+          ecart_profondeur_m: c.ecart_profondeur_m
+        });
+      });
+
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        showSavePopup();
+        setTimeout(()=> {
+          window.location.href = "index.html";
+        }, 1300);
+      } catch (e) {
+        setStatus("Impossible d’enregistrer dans l’historique (quota navigateur atteint ?).", "error");
+      }
+    }
+
+    function clearCurrentResult() {
+      lastJson = null;
+      resultCard.classList.add("hidden");
+      shotsList.innerHTML = "";
+      rDate.textContent   = "—";
+      rClub.textContent   = "—";
+      rTarget.textContent = "—";
+      rRadar.textContent  = "—";
+      setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 1000);
+    }
+
+    saveToHistoryBtn.addEventListener('click', addCurrentResultToHistory);
+    clearResultBtn.addEventListener('click', clearCurrentResult);
+
+    step1El.addEventListener('click', ()=> setActiveTab(1));
+    step2El.addEventListener('click', ()=> setActiveTab(2));
+    toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
+
+    function renderClubList(query) {
+      const q = (query || "").trim().toLowerCase();
+      clubList.innerHTML = "";
+      const filtered = CLUBS.filter(name => !q || name.toLowerCase().includes(q));
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "modal-empty";
+        empty.textContent = "Aucun club trouvé.";
+        clubList.appendChild(empty);
+        return;
+      }
+      filtered.forEach(name => {
+        const item = document.createElement("div");
+        item.className = "modal-item";
+        item.textContent = name;
+        item.addEventListener("click", () => {
+          club.value = name;
+          clubDisplay.textContent = name;
+          clubDisplay.classList.add("select-club-btn--filled");
+          closeClubModalFn();
+        });
+        clubList.appendChild(item);
+ci   });
+    }
+
+    function openClubModal() {
+      clubModalBackdrop.classList.remove("hidden");
+      clubSearch.value = "";
+      renderClubList("");
+    }
+
+    function closeClubModalFn() {
+      clubModalBackdrop.classList.add("hidden");
+    }
+
+    clubDisplay.addEventListener("click", openClubModal);
+    closeClubModal.addEventListener("click", closeClubModalFn);
+    clubModalBackdrop.addEventListener("click", (e)=>{
+      if (e.target === clubModalBackdrop) {
+        closeClubModalFn();
+      }
+    });
+    clubSearch.addEventListener("input", (e)=>{
+      renderClubList(e.target.value);
+    });
+
+    setActiveTab(1);
+    refreshSteps();
+  </script>
+
+    <script>
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+
+    function pingRender() {
+      try {
+        fetch(RENDER_URL, {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
 </body>
 </html>
