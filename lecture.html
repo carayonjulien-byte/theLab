@@ -351,7 +351,7 @@
       color:var(--text);
     }
 
-    /* Modal clubs (verre dépoli) */
+    /* Modal (verre dépoli) */
     .modal-backdrop {
       position:fixed;
       inset:0;
@@ -440,6 +440,16 @@
       padding:10px 12px;
       font-size:13px;
       color:#9ca3af;
+    }
+
+    /* Canvas de recadrage */
+    #cropCanvas {
+      width:100%;
+      max-height:60vh;
+      background:#000;
+      border-radius:12px;
+      border:1px solid #1b232c;
+      touch-action:none;
     }
 
     /* Popup sauvegarde */
@@ -553,6 +563,13 @@
           <img id="preview" class="hidden" alt="aperçu image" />
         </div>
 
+        <!-- Bouton recadrage -->
+        <div class="row">
+          <button id="openCropModalBtn" class="ghost hidden" type="button" style="width:100%;">
+            ✂️ Recadrer la photo
+          </button>
+        </div>
+
         <div class="row">
           <button id="toStep2Btn" class="primary hidden" type="button" style="width:100%;">
             ➡️ Analyser les coups (Étape 2)
@@ -647,6 +664,27 @@
     </div>
   </div>
 
+  <!-- Modal recadrage -->
+  <div id="cropModalBackdrop" class="modal-backdrop hidden">
+    <div class="modal-club">
+      <div class="modal-header">
+        <div class="modal-title">Recadrer la photo</div>
+        <button id="closeCropModal" type="button" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="hint">
+          Tracez un rectangle sur la zone utile (feuille + repères).<br>
+          Relâchez pour fixer le cadre, puis validez le recadrage.
+        </div>
+        <canvas id="cropCanvas"></canvas>
+        <div class="btn-row-2" style="margin-top:10px;">
+          <button id="cancelCropBtn" type="button" class="ghost">Annuler</button>
+          <button id="validateCropBtn" type="button" class="primary">Valider le recadrage</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Popup -->
   <div id="savePopup" class="save-popup hidden">
     Données enregistrées ✔️
@@ -701,6 +739,13 @@
     const clubList          = $("clubList");
     const closeClubModal    = $("closeClubModal");
 
+    const openCropModalBtn  = $("openCropModalBtn");
+    const cropModalBackdrop = $("cropModalBackdrop");
+    const cropCanvas        = $("cropCanvas");
+    const closeCropModalBtn = $("closeCropModal");
+    const cancelCropBtn     = $("cancelCropBtn");
+    const validateCropBtn   = $("validateCropBtn");
+
     const CLUBS = [
       "Driver",
       "Bois 3",
@@ -736,6 +781,15 @@
     let maskValidated = false;
     let activeTab     = 1;
     let statusTimeoutId = null;
+
+    /* État recadrage */
+    let cropImg = null;
+    let cropScaleX = 1;
+    let cropScaleY = 1;
+    let cropRect = null;
+    let isCropping = false;
+    let cropStartX = 0;
+    let cropStartY = 0;
 
     function setStatus(msg, type = "info") {
       const box = $("statusBox");
@@ -823,6 +877,7 @@
       preview.src = url;
       preview.onload = ()=> URL.revokeObjectURL(url);
       preview.classList.remove("hidden");
+      openCropModalBtn.classList.remove("hidden");
     }
 
     async function ensureJpegFile(fileOrBlob){
@@ -888,20 +943,25 @@
       return step + ' m';
     }
 
-    function onPick(e){
-      const file=e.target.files && e.target.files[0];
-      if(!file) return;
-
+    function resetResultState() {
       lastJson = null;
-      maskValidated = false;
-      analyzeBtn.disabled = true;
       resultCard.classList.add("hidden");
       shotsList.innerHTML = "";
       rDate.textContent   = "—";
       rClub.textContent   = "—";
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
+    }
+
+    function onPick(e){
+      const file=e.target.files && e.target.files[0];
+      if(!file) return;
+
+      resetResultState();
+      maskValidated = false;
+      analyzeBtn.disabled = true;
       toStep2Btn.classList.add("hidden");
+      openCropModalBtn.classList.add("hidden");
 
       ensureJpegFile(file).then(f=>{
         currentBlob = f;
@@ -1133,13 +1193,7 @@
     }
 
     function clearCurrentResult() {
-      lastJson = null;
-      resultCard.classList.add("hidden");
-      shotsList.innerHTML = "";
-      rDate.textContent   = "—";
-      rClub.textContent   = "—";
-      rTarget.textContent = "—";
-      rRadar.textContent  = "—";
+      resetResultState();
       setStatus("Résultat effacé.\nVous pouvez refaire une analyse avec une nouvelle photo.", "info");
       setTimeout(() => {
         window.location.href = "index.html";
@@ -1153,6 +1207,7 @@
     step2El.addEventListener('click', ()=> setActiveTab(2));
     toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
 
+    /* Sélecteur de clubs */
     function renderClubList(query) {
       const q = (query || "").trim().toLowerCase();
       clubList.innerHTML = "";
@@ -1199,6 +1254,203 @@
       renderClubList(e.target.value);
     });
 
+    /* Recadrage : ouverture / fermeture modal */
+
+    function resetCropState() {
+      cropImg = null;
+      cropScaleX = 1;
+      cropScaleY = 1;
+      cropRect = null;
+      isCropping = false;
+      cropStartX = 0;
+      cropStartY = 0;
+      if (cropCanvas) {
+        const ctx = cropCanvas.getContext("2d");
+        ctx && ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+      }
+    }
+
+    async function openCropModal() {
+      if (!currentBlob) {
+        setStatus("Ajoutez ou choisissez une photo d'abord.", "error");
+        return;
+      }
+      resetCropState();
+      cropModalBackdrop.classList.remove("hidden");
+
+      try {
+        const img = new Image();
+        img.src = URL.createObjectURL(currentBlob);
+        await img.decode();
+        cropImg = img;
+
+        const maxCanvasWidth = Math.min(800, window.innerWidth - 60);
+        const ratio = img.naturalWidth / img.naturalHeight;
+        let canvasWidth = maxCanvasWidth;
+        let canvasHeight = Math.round(canvasWidth / ratio);
+
+        const maxCanvasHeight = Math.min(500, window.innerHeight - 220);
+        if (canvasHeight > maxCanvasHeight) {
+          canvasHeight = maxCanvasHeight;
+          canvasWidth = Math.round(canvasHeight * ratio);
+        }
+
+        cropCanvas.width = canvasWidth;
+        cropCanvas.height = canvasHeight;
+
+        cropScaleX = canvasWidth / img.naturalWidth;
+        cropScaleY = canvasHeight / img.naturalHeight;
+
+        const ctx = cropCanvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+      } catch (e) {
+        setStatus("Impossible d’ouvrir la photo pour recadrage.", "error");
+        cropModalBackdrop.classList.add("hidden");
+      }
+    }
+
+    function closeCropModalFn() {
+      cropModalBackdrop.classList.add("hidden");
+    }
+
+    openCropModalBtn.addEventListener("click", openCropModal);
+    closeCropModalBtn.addEventListener("click", closeCropModalFn);
+    cancelCropBtn.addEventListener("click", closeCropModalFn);
+    cropModalBackdrop.addEventListener("click", (e)=>{
+      if (e.target === cropModalBackdrop) {
+        closeCropModalFn();
+      }
+    });
+
+    /* Recadrage : dessin du rectangle */
+
+    function redrawCropCanvas() {
+      if (!cropImg || !cropCanvas) return;
+      const ctx = cropCanvas.getContext("2d");
+      ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+      ctx.drawImage(cropImg, 0, 0, cropCanvas.width, cropCanvas.height);
+
+      if (cropRect) {
+        ctx.save();
+        // voile sombre
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
+        // trou clair
+        ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        // bordure
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cropRect.x+1, cropRect.y+1, cropRect.w-2, cropRect.h-2);
+        ctx.restore();
+      }
+    }
+
+    function getCanvasCoords(evt) {
+      const rect = cropCanvas.getBoundingClientRect();
+      const scaleX = cropCanvas.width / rect.width;
+      const scaleY = cropCanvas.height / rect.height;
+      const x = (evt.clientX - rect.left) * scaleX;
+      const y = (evt.clientY - rect.top) * scaleY;
+      return { x, y };
+    }
+
+    if (cropCanvas) {
+      cropCanvas.addEventListener("pointerdown", (e)=>{
+        if (!cropImg) return;
+        cropCanvas.setPointerCapture(e.pointerId);
+        const {x,y} = getCanvasCoords(e);
+        isCropping = true;
+        cropStartX = x;
+        cropStartY = y;
+        cropRect = { x, y, w: 0, h: 0 };
+        redrawCropCanvas();
+      });
+
+      cropCanvas.addEventListener("pointermove", (e)=>{
+        if (!isCropping || !cropImg) return;
+        const {x,y} = getCanvasCoords(e);
+        const x0 = Math.min(cropStartX, x);
+        const y0 = Math.min(cropStartY, y);
+        const w  = Math.abs(x - cropStartX);
+        const h  = Math.abs(y - cropStartY);
+        cropRect = {
+          x: Math.max(0, Math.min(x0, cropCanvas.width)),
+          y: Math.max(0, Math.min(y0, cropCanvas.height)),
+          w: Math.max(0, Math.min(w, cropCanvas.width)),
+          h: Math.max(0, Math.min(h, cropCanvas.height))
+        };
+        redrawCropCanvas();
+      });
+
+      cropCanvas.addEventListener("pointerup", (e)=>{
+        if (!isCropping) return;
+        isCropping = false;
+        cropCanvas.releasePointerCapture(e.pointerId);
+        redrawCropCanvas();
+      });
+
+      cropCanvas.addEventListener("pointercancel", (e)=>{
+        if (!isCropping) return;
+        isCropping = false;
+        cropCanvas.releasePointerCapture(e.pointerId);
+        redrawCropCanvas();
+      });
+    }
+
+    /* Validation du recadrage */
+
+    async function validateCrop() {
+      if (!cropImg || !cropRect || cropRect.w < 20 || cropRect.h < 20) {
+        setStatus("Sélectionnez d’abord une zone suffisamment grande sur la photo.", "error");
+        return;
+      }
+
+      try {
+        const sx = cropRect.x / cropScaleX;
+        const sy = cropRect.y / cropScaleY;
+        const sw = cropRect.w / cropScaleX;
+        const sh = cropRect.h / cropScaleY;
+
+        const outW = Math.round(sw);
+        const outH = Math.round(sh);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(
+          cropImg,
+          sx, sy, sw, sh,
+          0, 0, outW, outH
+        );
+
+        const blob = await new Promise((resolve, reject)=>{
+          canvas.toBlob(b=>{
+            if (!b) reject(new Error("toBlob a échoué"));
+            else resolve(b);
+          }, "image/jpeg", 0.9);
+        });
+
+        currentBlob = new File([blob], "capture_crop.jpg", { type: "image/jpeg" });
+
+        // On reset l’état analyse, puis on relance un masque sur l’image recadrée
+        resetResultState();
+        maskValidated = false;
+        analyzeBtn.disabled = true;
+        toStep2Btn.classList.add("hidden");
+
+        showPreview(currentBlob);
+        closeCropModalFn();
+        setStatus("Photo recadrée ✅\nGénération d’un nouveau masque sur la zone sélectionnée…", "info");
+        generateMask();
+      } catch (e) {
+        setStatus("Erreur pendant le recadrage de l’image.", "error");
+      }
+    }
+
+    validateCropBtn.addEventListener("click", validateCrop);
+
+    /* Init */
     setActiveTab(1);
     refreshSteps();
   </script>
