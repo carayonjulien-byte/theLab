@@ -1006,18 +1006,30 @@
     let cropStartY = 0;
 
     function setStatus(msg, type = "info") {
-      const box = $("statusBox");
-      if (!box) return;
-      box.innerHTML = msg.replace(/\n/g, "<br>");
-      box.className = "";
-      box.classList.add(type === "error" ? "status--error" : "status--info");
-      box.style.display = "block";
-      if (statusTimeoutId) clearTimeout(statusTimeoutId);
-      statusTimeoutId = setTimeout(() => {
-        box.className = "";
-        box.style.display = "none";
-      }, 10000);
-    }
+  const box = $("statusBox");
+  if (!box) return;
+
+  // Masquer le message dès qu'on change d'étape
+  box.style.display = "none"; // Cache le message en cas de changement d'étape
+
+  // Mettre à jour le message et le type
+  box.innerHTML = msg.replace(/\n/g, "<br>");
+  box.className = ""; // Réinitialiser la classe
+  box.classList.add(type === "error" ? "status--error" : "status--info");
+
+  // Afficher le message avec un délai
+  setTimeout(() => {
+    box.style.display = "block"; // Affiche le message après réinitialisation
+  }, 100);
+
+  // Cache le message après un certain temps (10 secondes)
+  if (statusTimeoutId) clearTimeout(statusTimeoutId);
+  statusTimeoutId = setTimeout(() => {
+    box.className = "";
+    box.style.display = "none";
+  }, 10000); // 10 secondes
+}
+
 
     function clampSize(w,h,max=1600){
       if(Math.max(w,h) <= max) return [w,h];
@@ -1045,19 +1057,22 @@
       updateStepHelp();
     }
 
-    function setActiveTab(n){
+    function setActiveTab(n) {
   // Étapes 2 et 3 nécessitent la détection des repères avant
   if ((n === 2 || n === 3) && !maskValidated) {
     setStatus("Lancez d’abord la détection des repères en validant le recadrage (Étape 1).", "error");
     return;
   }
+
   activeTab = n;
 
+  // Masquer toutes les étapes avant d'en afficher une
   tab1El.classList.add('hidden');
   tab2El.classList.add('hidden');
   tab3El.classList.add('hidden');
   resultCard.classList.add("hidden");
 
+  // Afficher l'étape active
   if (activeTab === 1) {
     tab1El.classList.remove('hidden');
   } else if (activeTab === 2) {
@@ -1067,7 +1082,7 @@
     if (lastJson) resultCard.classList.remove("hidden");
   }
 
-  // 🔹 On masque le bloc d’info (vert / rouge / orange) quand on change d’étape
+  // Masquer le message de statut lorsqu'on change d'étape
   const box = document.getElementById("statusBox");
   if (box) {
     if (statusTimeoutId) {
@@ -1078,8 +1093,9 @@
     box.style.display = "none";
   }
 
-  refreshSteps();
+  refreshSteps();  // Mise à jour des étapes visuelles
 }
+
 
 
     function setLoading(isLoading, text) {
