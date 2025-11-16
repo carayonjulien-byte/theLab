@@ -129,12 +129,7 @@
       outline:none;
     }
 
-    input:focus {
-      border-color: rgba(0,80,58,0.9);
-      box-shadow:0 0 0 1px rgba(0,80,58,0.7);
-    }
-
-    /* Select premium */
+    /* Select premium, aligné avec les autres champs */
     select {
       appearance:none;
       -webkit-appearance:none;
@@ -171,7 +166,12 @@
       color:var(--text);
     }
 
-    /* Groupes de champs (étapes 2 & 3) */
+    input:focus {
+      border-color: rgba(0,80,58,0.9);
+      box-shadow:0 0 0 1px rgba(0,80,58,0.7);
+    }
+
+    /* Groupes de champs premium (étapes 2 & 3) */
     .field-group {
       background:#0b1016;
       border-radius:14px;
@@ -186,13 +186,10 @@
       margin-top:4px;
     }
 
-    /* === BOUTONS HARMONISÉS (effet type index) === */
+    /* === BOUTONS HARMONISÉS === */
     button,
-    label[role=button] {
-      appearance:none;
-      border:none;
-      outline:none;
-
+    label[role=button],
+    .select-club-btn {
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -200,9 +197,9 @@
 
       padding:11px 16px;
       border-radius:999px;
+      border:1px solid #26303b;
 
       background:#11171e;
-      border:1px solid #26303b;
       color:var(--text);
 
       font-weight:600;
@@ -211,26 +208,28 @@
 
       cursor:pointer;
       transition:
-        background 0.12s ease,
         transform 0.08s ease,
-        border-color 0.12s ease,
-        box-shadow 0.12s ease;
+        box-shadow 0.08s ease,
+        background 0.1s,
+        border-color 0.1s,
+        color 0.1s;
     }
 
     button:hover:not(:disabled),
-    label[role=button]:hover {
+    label[role=button]:hover,
+    .select-club-btn:hover {
       background:#151c24;
       border-color:#323f4e;
+      box-shadow:0 4px 12px rgba(0,0,0,0.35);
       transform: translateY(-1px);
-      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
     }
 
     button:active,
-    label[role=button]:active {
-      transform:translateY(0);
+    label[role=button]:active,
+    .select-club-btn:active {
+      transform: translateY(0);
       box-shadow:none;
     }
-
     button:disabled {
       opacity:0.55;
       cursor:not-allowed;
@@ -241,21 +240,19 @@
       background:var(--primary);
       border-color:var(--primary);
       color:#fff;
+      box-shadow:0 4px 14px rgba(0,80,58,0.5);
     }
     .primary:hover:not(:disabled) {
       background:#046046;
       border-color:#07a06c;
-      box-shadow:0 4px 16px rgba(0,80,58,0.7);
+      box-shadow:0 8px 20px rgba(0,80,58,0.7);
     }
 
     .ghost {
       background:#0b1016;
     }
-    .ghost:hover:not(:disabled) {
-      background:#151c24;
-    }
 
-    /* Boutons de l'étape 1 */
+    /* Boutons de l'étape 1 : mise en page large */
     .btn-photo {
       width:100%;
       justify-content:center;
@@ -422,7 +419,6 @@
       color:#9aa5b1;
       margin-bottom:4px;
       line-height:1.5;
-      min-height: 34px;
     }
 
     .tab-content { margin-top: var(--gap); }
@@ -481,12 +477,8 @@
       color: #ff9b9b;
     }
 
-    /* Sélecteur de club custom */
+    /* Sélecteur de club custom (hérite du style bouton, mais look champ) */
     .select-club-btn {
-      appearance:none;
-      border:none;
-      outline:none;
-
       width:100%;
       justify-content:space-between;
       text-align:left;
@@ -499,26 +491,6 @@
 
       font-size:15px;
       font-weight:500;
-      color:var(--muted);
-
-      cursor:pointer;
-      transition:
-        background 0.12s ease,
-        transform 0.08s ease,
-        border-color 0.12s ease,
-        box-shadow 0.12s ease,
-        color 0.12s ease;
-    }
-    .select-club-btn:hover {
-      background:#151c24;
-      border-color:#323f4e;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
-      color:var(--text);
-    }
-    .select-club-btn:active {
-      transform:translateY(0);
-      box-shadow:none;
     }
     .select-club-btn::after {
       content:"▾";
@@ -579,7 +551,7 @@
     .modal-close-btn:hover {
       background:#151c24;
       border-color:#323f4e;
-      box-shadow:0 3px 10px rgba(0,0,0,0.35);
+      box-shadow:0 4px 10px rgba(0,0,0,0.35);
     }
     .modal-body {
       padding:10px 14px 14px;
@@ -611,7 +583,6 @@
       justify-content:space-between;
       transition: background 0.08s ease, transform 0.06s ease, border-color 0.08s ease;
       border:1px solid transparent;
-      background:transparent;
     }
     .modal-item:hover {
       background:rgba(0,80,58,0.22);
@@ -713,7 +684,7 @@
 
   <main class="wrap">
     <div class="page-eyebrow">Analyse radar</div>
-    <h1 class="page-title">Lecture & Détection</h1>
+    <h1 class="page-title">Lecture &amp; Détection</h1>
 
     <div class="card">
       <!-- Stepper -->
@@ -741,7 +712,7 @@
         </div>
       </div>
 
-      <!-- Aide dynamique (uniquement Étape 1) -->
+      <!-- Aide dynamique par étape -->
       <div id="stepHelp" class="step-help"></div>
 
       <!-- Loader -->
@@ -1056,11 +1027,14 @@
 
     function updateStepHelp() {
       if (!stepHelp) return;
+
       if (activeTab === 1) {
+        stepHelp.classList.remove("hidden");
         stepHelp.innerHTML =
           'Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille, ' +
           'et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.';
       } else {
+        stepHelp.classList.add("hidden");
         stepHelp.innerHTML = "";
       }
     }
@@ -1821,6 +1795,12 @@
     /* Init */
     setActiveTab(1);
     refreshSteps();
+
+    // Message d’info initial en vert
+    setStatus(
+      "Pour une détection fiable : prenez la photo bien à la verticale au-dessus de la feuille, et vérifiez que les deux repères du bas sont bien visibles et alignés dans l’image.",
+      "info"
+    );
   </script>
 
   <script>
