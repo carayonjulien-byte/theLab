@@ -354,45 +354,52 @@
 
     <div class="layout">
       <!-- Filtres -->
-      <section class="card">
-        <div class="card-title">Filtres</div>
-        <div class="card-subtitle">
-          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
-        </div>
+      <!-- Filtres -->
+<section class="card">
+  <div class="card-title">Filtres</div>
+  <div class="card-subtitle">
+    Commencez par choisir un type de session, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+  </div>
 
-        <!-- Type de radar en premier et obligatoire pour la heatmap -->
-        <label for="fRadarType">Type de radar (obligatoire pour les filtres)</label>
-        <select id="fRadarType">
-          <option value="all">— Choisissez un type —</option>
-          <option value="putting">Putting</option>
-          <option value="petit_jeu">Petit jeu</option>
-          <option value="long_jeu">Long jeu</option>
-        </select>
+  <!-- Type de session (Précision sur Parcours ou Practice) -->
+  <label for="fSessionType">Type de session</label>
+  <select id="fSessionType">
+    <option value="all">— Choisissez un type —</option>
+    <option value="parcours">Parcours</option>
+    <option value="practice">Practice</option>
+  </select>
 
-        <label for="fDateFrom">Date min</label>
-        <input type="date" id="fDateFrom">
+  <!-- Session spécifique (filtrage par session) -->
+  <label for="fSession">Session</label>
+  <select id="fSession">
+    <option value="">— Choisissez une session —</option>
+    <!-- Dynamique : la liste des sessions doit être remplie en fonction des données disponibles -->
+  </select>
 
-        <label for="fDateTo">Date max</label>
-        <input type="date" id="fDateTo">
+  <label for="fDateFrom">Date min</label>
+  <input type="date" id="fDateFrom">
 
-        <label for="fClub">Club</label>
-        <select id="fClub">
-          <option value="">Tous les clubs</option>
-        </select>
+  <label for="fDateTo">Date max</label>
+  <input type="date" id="fDateTo">
 
-        <label for="fDistMin">Distance cible min (m)</label>
-        <input type="number" id="fDistMin" placeholder="ex: 50">
+  <label for="fClub">Club</label>
+  <select id="fClub">
+    <option value="">Tous les clubs</option>
+  </select>
 
-        <label for="fDistMax">Distance cible max (m)</label>
-        <input type="number" id="fDistMax" placeholder="ex: 120">
+  <label for="fDistMin">Distance cible min (m)</label>
+  <input type="number" id="fDistMin" placeholder="ex: 50">
 
-        <div class="filters-actions">
-          <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
-          <button id="btnReset" type="button">Réinitialiser</button>
-        </div>
+  <label for="fDistMax">Distance cible max (m)</label>
+  <input type="number" id="fDistMax" placeholder="ex: 120">
 
-        <div id="filterInfo" class="status-bar"></div>
-      </section>
+  <div class="filters-actions">
+    <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
+    <button id="btnReset" type="button">Réinitialiser</button>
+  </div>
+
+  <div id="filterInfo" class="status-bar"></div>
+</section>
 
       <!-- Résultats -->
       <section class="card">
