@@ -757,7 +757,7 @@
               <option value="practice">Practice</option>
               <option value="parcours">Parcours</option>
             </select>
-            <div class="hint">Practice : radar d’entraînement. Parcours : radar utilisé sur un vrai trou.</div>
+            <div class="hint">Permet de définir l’analyse des coups.</div>
           </div>
           <div class="row field-group">
             <label for="radarScale">Échelle du radar</label>
@@ -809,9 +809,9 @@
     <!-- Résultat -->
     <div class="row result hidden" id="resultCard">
       <div class="result-inner">
-        <h3>Résultat de l’analyse</h3>
+        <h3>Résultat de l’analyse photo</h3>
         <div class="result-intro">
-          Vérifiez les informations de ce coup avant de l’ajouter à votre historique.
+          Vérifiez les informations de cette analyse avant de l’ajouter à votre historique.
         </div>
 
         <div class="result-summary">
@@ -1025,18 +1025,11 @@
       return [Math.round(w*s), Math.round(h*s)];
     }
 
+    // 🔹 On n’affiche plus le texte “Pour une détection fiable…” en dur ici
     function updateStepHelp() {
       if (!stepHelp) return;
-
-      if (activeTab === 1) {
-        stepHelp.classList.remove("hidden");
-        stepHelp.innerHTML =
-          'Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille, ' +
-          'et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.';
-      } else {
-        stepHelp.classList.add("hidden");
-        stepHelp.innerHTML = "";
-      }
+      stepHelp.classList.add("hidden");
+      stepHelp.innerHTML = "";
     }
 
     function refreshSteps(){
@@ -1796,7 +1789,7 @@
     setActiveTab(1);
     refreshSteps();
 
-    // Message d’info initial en vert
+    // Message d’info initial en vert (éphémère 10s) — on le garde
     setStatus(
       "Pour une détection fiable : prenez la photo bien à la verticale au-dessus de la feuille, et vérifiez que les deux repères du bas sont bien visibles et alignés dans l’image.",
       "info"
