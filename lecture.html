@@ -1067,7 +1067,7 @@
     if (lastJson) resultCard.classList.remove("hidden");
   }
 
-  // 🔹 On masque le bloc d’info (vert / rouge / orange) quand on change d’étape
+  // 👇 Ajoute ceci pour cacher le message vert/rouge/orange quand on change d’étape
   const box = document.getElementById("statusBox");
   if (box) {
     if (statusTimeoutId) {
@@ -1080,7 +1080,6 @@
 
   refreshSteps();
 }
-
 
     function setLoading(isLoading, text) {
       if (!loaderBox) return;
