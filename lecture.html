@@ -1081,15 +1081,6 @@
   refreshSteps();
 }
 
-    function setLoading(isLoading, text) {
-      if (!loaderBox) return;
-      if (isLoading) {
-        if (loaderText && text) loaderText.textContent = text;
-        loaderBox.classList.remove("hidden");
-      } else {
-        loaderBox.classList.add("hidden");
-      }
-    }
 
     function todayStr(){
       const d = new Date();
