@@ -268,60 +268,6 @@
       font-size:12px;
     }
 
-    /* Popup suppression */
-    .delete-popup-overlay {
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.6);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:200;
-    }
-    .delete-popup-card {
-      background:#0b1117;
-      border-radius:16px;
-      border:1px solid #374151;
-      padding:16px 18px;
-      max-width:320px;
-      width:90%;
-      box-shadow:0 18px 40px rgba(0,0,0,0.7);
-    }
-    .delete-title {
-      font-size:15px;
-      font-weight:600;
-      margin-bottom:6px;
-    }
-    .delete-text {
-      font-size:13px;
-      color:#d1d5db;
-      margin-bottom:14px;
-    }
-    .delete-actions {
-      display:flex;
-      justify-content:flex-end;
-      gap:8px;
-    }
-    .btn-ghost {
-      background:#020617;
-      border-color:#374151;
-      color:#e5e7eb;
-    }
-    .btn-ghost:hover {
-      background:#111827;
-    }
-
-    /* Heatmap canvas */
-    #heatCanvas {
-      width:100%;
-      max-width:480px;
-      aspect-ratio:1/1;
-      border-radius:16px;
-      background:radial-gradient(circle at center, #020617 0, #020617 55%, #020308 100%);
-      border:1px solid #202833;
-      display:block;
-      margin-top:10px;
-    }
   </style>
 </head>
 <body>
@@ -354,52 +300,48 @@
 
     <div class="layout">
       <!-- Filtres -->
-      <!-- Filtres -->
-<section class="card">
-  <div class="card-title">Filtres</div>
-  <div class="card-subtitle">
-    Commencez par choisir un type de session, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
-  </div>
+      <section class="card">
+        <div class="card-title">Filtres</div>
+        <div class="card-subtitle">
+          Commencez par choisir un type de session, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+        </div>
 
-  <!-- Type de session (Précision sur Parcours ou Practice) -->
-  <label for="fSessionType">Type de session</label>
-  <select id="fSessionType">
-    <option value="all">— Choisissez un type —</option>
-    <option value="parcours">Parcours</option>
-    <option value="practice">Practice</option>
-  </select>
+        <!-- Type de session (Parcours ou Practice) -->
+        <label for="fSessionType">Type de session</label>
+        <select id="fSessionType">
+          <option value="all">— Choisissez un type —</option>
+          <option value="parcours">Parcours</option>
+          <option value="practice">Practice</option>
+        </select>
 
-  <!-- Session spécifique (filtrage par session) -->
-  <label for="fSession">Session</label>
-  <select id="fSession">
-    <option value="">— Choisissez une session —</option>
-    <!-- Dynamique : la liste des sessions doit être remplie en fonction des données disponibles -->
-  </select>
+        <!-- Session spécifique (filtrage par texte libre) -->
+        <label for="fSession">Session</label>
+        <input type="text" id="fSession" placeholder="Rechercher par nom de session">
 
-  <label for="fDateFrom">Date min</label>
-  <input type="date" id="fDateFrom">
+        <label for="fDateFrom">Date min</label>
+        <input type="date" id="fDateFrom">
 
-  <label for="fDateTo">Date max</label>
-  <input type="date" id="fDateTo">
+        <label for="fDateTo">Date max</label>
+        <input type="date" id="fDateTo">
 
-  <label for="fClub">Club</label>
-  <select id="fClub">
-    <option value="">Tous les clubs</option>
-  </select>
+        <label for="fClub">Club</label>
+        <select id="fClub">
+          <option value="">Tous les clubs</option>
+        </select>
 
-  <label for="fDistMin">Distance cible min (m)</label>
-  <input type="number" id="fDistMin" placeholder="ex: 50">
+        <label for="fDistMin">Distance cible min (m)</label>
+        <input type="number" id="fDistMin" placeholder="ex: 50">
 
-  <label for="fDistMax">Distance cible max (m)</label>
-  <input type="number" id="fDistMax" placeholder="ex: 120">
+        <label for="fDistMax">Distance cible max (m)</label>
+        <input type="number" id="fDistMax" placeholder="ex: 120">
 
-  <div class="filters-actions">
-    <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
-    <button id="btnReset" type="button">Réinitialiser</button>
-  </div>
+        <div class="filters-actions">
+          <button id="btnApply" class="primary" type="button">Appliquer les filtres</button>
+          <button id="btnReset" type="button">Réinitialiser</button>
+        </div>
 
-  <div id="filterInfo" class="status-bar"></div>
-</section>
+        <div id="filterInfo" class="status-bar"></div>
+      </section>
 
       <!-- Résultats -->
       <section class="card">
