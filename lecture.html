@@ -136,24 +136,44 @@
       outline:none;
     }
 
-    /* Select premium */
+    /* Select premium, aligné avec les autres champs */
     select {
       appearance:none;
       -webkit-appearance:none;
       -moz-appearance:none;
+
+      background-color:#05080c;
+      border:1px solid #26303b;
+      border-radius:12px;
+
+      padding:12px 38px 12px 14px;
+      font-size:15px;
+      font-weight:500;
+      color:var(--text);
+      line-height:1.3;
+
       background-image:
         linear-gradient(45deg, transparent 50%, #9ca3af 50%),
         linear-gradient(135deg, #9ca3af 50%, transparent 50%);
       background-position:
-        calc(100% - 16px) 50%,
-        calc(100% - 11px) 50%;
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
       background-size:6px 6px, 6px 6px;
       background-repeat:no-repeat;
-      padding-right:30px;
     }
 
-    input:focus,
     select:focus {
+      border-color: rgba(0,80,58,0.9);
+      box-shadow:0 0 0 1px rgba(0,80,58,0.7);
+      background-color:#05080c;
+    }
+
+    select option {
+      background:#020309;
+      color:var(--text);
+    }
+
+    input:focus {
       border-color: rgba(0,80,58,0.9);
       box-shadow:0 0 0 1px rgba(0,80,58,0.7);
     }
@@ -464,13 +484,20 @@
       color: #ff9b9b;
     }
 
-    /* Sélecteur de club custom (hérite du style bouton) */
+    /* Sélecteur de club custom (hérite du style bouton, mais look champ) */
     .select-club-btn {
       width:100%;
       justify-content:space-between;
       text-align:left;
+
       background:#05080c;
       border:1px solid #26303b;
+
+      border-radius:12px;
+      padding:12px 38px 12px 14px;
+
+      font-size:15px;
+      font-weight:500;
     }
     .select-club-btn::after {
       content:"▾";
@@ -626,6 +653,20 @@
       }
       .result-summary {
         grid-template-columns: 1fr;
+      }
+
+      /* Stepper en colonne sur mobile */
+      .stepper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .step {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .step-texts {
+        text-align: left;
       }
     }
   </style>
