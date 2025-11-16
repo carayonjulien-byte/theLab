@@ -6,7 +6,7 @@
   <title>ToDoGolf Lab – Lecture Radar</title>
   <style>
     :root {
-      --gap: 14px;
+      --gap: 18px;
       --primary: #00503a;
       --bg: #050608;
       --card: #0f1419;
@@ -72,8 +72,9 @@
       gap:4px;
       flex-shrink:0;
       white-space:nowrap;
+      transition: background 0.1s, border-color 0.1s;
     }
-    .btn-top:hover { background:#101822; }
+    .btn-top:hover { background:#101822; border-color:#323f4e; }
 
     .wrap {
       max-width: 960px;
@@ -93,13 +94,6 @@
       font-weight:650;
       margin:6px 0 4px;
     }
-    .page-subtitle {
-      font-size:13px;
-      color:#9aa5b1;
-      max-width:520px;
-      line-height:1.5;
-      margin-bottom:10px;
-    }
 
     .card {
       background:var(--card);
@@ -114,38 +108,126 @@
       grid-template-columns:1fr 1fr;
       gap:var(--gap);
     }
+
     label {
       font-size: 13px;
-      color:#b8c0cc;
+      color:#cbd5e1;
       margin-bottom:6px;
       display:block;
+      font-weight:600;
     }
     input[type=text],
-    input[type=number] {
+    input[type=number],
+    select {
       width:100%;
       padding:12px 14px;
       border:1px solid #26303b;
       border-radius:12px;
-      font-size:16px;
+      font-size:15px;
       background:#05080c;
       color:var(--text);
+      outline:none;
     }
+
+    /* Select premium, aligné avec les autres champs */
+    select {
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+
+      background-color:#05080c;
+      border:1px solid #26303b;
+      border-radius:12px;
+
+      padding:12px 38px 12px 14px;
+      font-size:15px;
+      font-weight:500;
+      color:var(--text);
+      line-height:1.3;
+
+      background-image:
+        linear-gradient(45deg, transparent 50%, #9ca3af 50%),
+        linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
+      background-size:6px 6px, 6px 6px;
+      background-repeat:no-repeat;
+    }
+
+    select:focus {
+      border-color: rgba(0,80,58,0.9);
+      box-shadow:0 0 0 1px rgba(0,80,58,0.7);
+      background-color:#05080c;
+    }
+
+    select option {
+      background:#020309;
+      color:var(--text);
+    }
+
+    input:focus {
+      border-color: rgba(0,80,58,0.9);
+      box-shadow:0 0 0 1px rgba(0,80,58,0.7);
+    }
+
+    /* Groupes de champs premium (étapes 2 & 3) */
+    .field-group {
+      background:#0b1016;
+      border-radius:14px;
+      border:1px solid rgba(148,163,184,0.18);
+      padding:12px 14px 14px;
+      box-shadow:0 10px 24px rgba(0,0,0,0.55);
+    }
+    .field-group label {
+      margin-bottom:4px;
+    }
+    .field-group .hint {
+      margin-top:4px;
+    }
+
+    /* === BOUTONS HARMONISÉS === */
     button,
-    label[role=button] {
-      display:inline-block;
-      text-align:center;
-      padding:12px 14px;
+    label[role=button],
+    .select-club-btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+
+      padding:11px 16px;
       border-radius:999px;
       border:1px solid #26303b;
+
       background:#11171e;
       color:var(--text);
+
       font-weight:600;
+      font-size:14px;
+      letter-spacing:0.01em;
+
       cursor:pointer;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s;
+      transition:
+        transform 0.08s ease,
+        box-shadow 0.08s ease,
+        background 0.1s,
+        border-color 0.1s,
+        color 0.1s;
     }
+
+    button:hover:not(:disabled),
+    label[role=button]:hover,
+    .select-club-btn:hover {
+      background:#151c24;
+      border-color:#323f4e;
+      box-shadow:0 4px 12px rgba(0,0,0,0.35);
+      transform: translateY(-1px);
+    }
+
     button:active,
-    label[role=button]:active {
-      transform: scale(0.97);
+    label[role=button]:active,
+    .select-club-btn:active {
+      transform: translateY(0);
       box-shadow:none;
     }
     button:disabled {
@@ -153,18 +235,31 @@
       cursor:not-allowed;
       box-shadow:none;
     }
+
     .primary {
       background:var(--primary);
       border-color:var(--primary);
       color:#fff;
-      box-shadow:0 6px 16px rgba(0,80,58,0.5);
+      box-shadow:0 4px 14px rgba(0,80,58,0.5);
     }
     .primary:hover:not(:disabled) {
       background:#046046;
+      border-color:#07a06c;
+      box-shadow:0 8px 20px rgba(0,80,58,0.7);
     }
+
     .ghost {
       background:#0b1016;
     }
+
+    /* Boutons de l'étape 1 : mise en page large */
+    .btn-photo {
+      width:100%;
+      justify-content:center;
+      padding:14px 18px;
+      font-size:14px;
+    }
+
     img {
       width: 100%;
       max-height: 60vh;
@@ -181,33 +276,77 @@
 
     .result {
       background:var(--card);
-      border:1px solid var(--border);
+      border:1px solid rgba(0,80,58,0.55);
       border-radius:18px;
-      padding:16px;
+      padding:18px 16px 16px;
       line-height:1.45;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.55);
+      position:relative;
+      overflow:hidden;
     }
-    .result h3 { margin: 0 0 8px 0; font-size: 18px; }
-    .result .kv {
+    .result::before {
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle at top left, rgba(0,80,58,0.18), transparent 60%);
+      opacity:0.9;
+      pointer-events:none;
+    }
+    .result-inner {
+      position:relative;
+      z-index:1;
+    }
+    .result h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight:650;
+    }
+    .result-intro {
+      font-size:12px;
+      color:#9aa5b1;
+      margin-bottom:10px;
+    }
+
+    .result-summary {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-bottom:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(8,12,16,0.95);
+      border:1px solid rgba(0,80,58,0.5);
+    }
+    .result-summary-item {
       display:flex;
-      justify-content:space-between;
-      padding:8px 0;
-      border-top:1px dashed #26303b;
-      font-size:14px;
+      flex-direction:column;
+      gap:3px;
+      font-size:13px;
     }
-    .result .kv:first-of-type { border-top: none; }
+    .result-summary-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:#94a3b8;
+    }
+    .result-summary-value {
+      font-size:13px;
+      font-weight:500;
+      color:#e5e7eb;
+      word-break:break-word;
+    }
+
     .result-subtitle {
-      margin-top: 10px;
+      margin-top: 6px;
       font-size: 13px;
       color:#9aa5b1;
     }
     .shots-list {
       margin-top: 8px;
-      border-top:1px dashed #26303b;
-      padding-top:8px;
+      padding-top:4px;
       display:flex;
       flex-direction:column;
-      gap:4px;
+      gap:6px;
       font-size:13px;
     }
     .shot-row {
@@ -215,15 +354,26 @@
       justify-content:space-between;
       gap:8px;
       flex-wrap:wrap;
+      padding:8px 10px;
+      border-radius:10px;
+      background:#101820;
+      border:1px solid #1f2937;
     }
-    .shot-left { font-weight:600; }
-    .shot-right { opacity:0.9; }
+    .shot-left {
+      font-weight:600;
+      font-size:13px;
+    }
+    .shot-right {
+      opacity:0.95;
+      font-size:13px;
+      text-align:right;
+    }
 
     /* Stepper */
     .stepper {
       display:flex;
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-size: 12px;
     }
     .step {
@@ -327,20 +477,20 @@
       color: #ff9b9b;
     }
 
-    /* Sélecteur de club custom */
+    /* Sélecteur de club custom (hérite du style bouton, mais look champ) */
     .select-club-btn {
       width:100%;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid #26303b;
-      background:#05080c;
-      color:#6b7280;
-      font-size:15px;
-      text-align:left;
-      display:flex;
-      align-items:center;
       justify-content:space-between;
-      cursor:pointer;
+      text-align:left;
+
+      background:#05080c;
+      border:1px solid #26303b;
+
+      border-radius:12px;
+      padding:12px 38px 12px 14px;
+
+      font-size:15px;
+      font-weight:500;
     }
     .select-club-btn::after {
       content:"▾";
@@ -391,16 +541,17 @@
       font-weight:600;
     }
     .modal-close-btn {
+      font-size:12px;
+      padding:5px 10px;
       border-radius:999px;
-      border:1px solid #374151;
-      background:#111827;
-      color:#e5e7eb;
-      font-size:13px;
-      padding:4px 8px;
-      cursor:pointer;
+      background:#0b1016;
+      border:1px solid #26303b;
+      box-shadow:none;
     }
     .modal-close-btn:hover {
-      background:#1f2933;
+      background:#151c24;
+      border-color:#323f4e;
+      box-shadow:0 4px 10px rgba(0,0,0,0.35);
     }
     .modal-body {
       padding:10px 14px 14px;
@@ -430,10 +581,12 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      transition: background 0.08s ease, transform 0.06s ease;
+      transition: background 0.08s ease, transform 0.06s ease, border-color 0.08s ease;
+      border:1px solid transparent;
     }
     .modal-item:hover {
       background:rgba(0,80,58,0.22);
+      border-color:rgba(0,80,58,0.6);
       transform:translateY(-1px);
     }
     .modal-empty {
@@ -466,6 +619,11 @@
       font-weight: 600;
       box-shadow: 0 8px 22px rgba(0,0,0,0.55);
       z-index: 200;
+
+      max-width: calc(100% - 32px);
+      text-align: center;
+      box-sizing: border-box;
+      white-space: normal;
     }
 
     @media (max-width:720px){
@@ -491,6 +649,23 @@
         display:flex;
         flex-direction:column;
       }
+      .result-summary {
+        grid-template-columns: 1fr;
+      }
+
+      /* Stepper en colonne sur mobile */
+      .stepper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .step {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .step-texts {
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -508,12 +683,8 @@
   </header>
 
   <main class="wrap">
-    <div class="page-eyebrow">Lecture</div>
-    <h1 class="page-title">Lecture Radar</h1>
-    <p class="page-subtitle">
-      Étape 1 : prenez une photo de votre feuille vue du dessus avec les repères bien visibles. Étape 2 :
-      renseignez les informations de votre coup et lancez l’analyse.
-    </p>
+    <div class="page-eyebrow">Analyse radar</div>
+    <h1 class="page-title">Lecture &amp; Détection</h1>
 
     <div class="card">
       <!-- Stepper -->
@@ -529,15 +700,20 @@
           <div class="step-index">2</div>
           <div class="step-texts">
             <div class="step-label">Étape 2</div>
+            <div class="step-sub">Radar</div>
+          </div>
+        </div>
+        <div id="step3" class="step">
+          <div class="step-index">3</div>
+          <div class="step-texts">
+            <div class="step-label">Étape 3</div>
             <div class="step-sub">Analyse</div>
           </div>
         </div>
       </div>
 
-      <div class="step-help">
-        Pour une détection fiable : prenez la photo <strong>bien à la verticale</strong> au-dessus de la feuille,
-        et vérifiez que les <strong>deux repères du bas</strong> sont bien visibles et alignés dans l’image.
-      </div>
+      <!-- Aide dynamique par étape -->
+      <div id="stepHelp" class="step-help"></div>
 
       <!-- Loader -->
       <div class="row hidden" id="loaderBox">
@@ -550,11 +726,11 @@
       <!-- Status -->
       <div id="statusBox"></div>
 
-      <!-- Onglet 1 -->
+      <!-- Onglet 1 : Photo -->
       <div id="tab1" class="tab-content">
         <div class="row btn-row-2">
-          <label role="button" for="fileCam" class="ghost">📷 Prendre une photo</label>
-          <label role="button" for="fileGal" class="ghost">🖼️ Depuis la galerie</label>
+          <label role="button" for="fileCam" class="ghost btn-photo">📷 Prendre une photo</label>
+          <label role="button" for="fileGal" class="ghost btn-photo">🖼️ Depuis la galerie</label>
           <input id="fileCam" type="file" accept="image/*" capture="environment" style="display:none;" />
           <input id="fileGal" type="file" accept="image/*" style="display:none;" />
         </div>
@@ -565,27 +741,46 @@
 
         <!-- Bouton recadrage -->
         <div class="row">
-          <button id="openCropModalBtn" class="ghost hidden" type="button" style="width:100%;">
+          <button id="openCropModalBtn" class="ghost btn-photo hidden" type="button">
             ✂️ Recadrer la photo (avant détection)
-          </button>
-        </div>
-
-        <div class="row">
-          <button id="toStep2Btn" class="primary hidden" type="button" style="width:100%;">
-            ➡️ Analyser les coups (Étape 2)
           </button>
         </div>
       </div>
 
-      <!-- Onglet 2 -->
+      <!-- Onglet 2 : Radar -->
       <div id="tab2" class="tab-content hidden">
         <div class="grid-2">
-          <div class="row">
+          <div class="row field-group">
+            <label for="radarUsage">Condition de jeu</label>
+            <select id="radarUsage">
+              <option value="">Sélectionner…</option>
+              <option value="practice">Practice</option>
+              <option value="parcours">Parcours</option>
+            </select>
+            <div class="hint">Permet de définir l’analyse des coups.</div>
+          </div>
+          <div class="row field-group">
+            <label for="radarScale">Échelle du radar</label>
+            <select id="radarScale">
+              <option value="">Sélectionner…</option>
+              <option value="grand-jeu">Grand jeu – 5 m / anneau</option>
+              <option value="petit-jeu">Petit jeu – 1 m / anneau</option>
+              <option value="putting">Putting – 0,3 m / anneau</option>
+            </select>
+            <div class="hint">Définit combien de mètres représente chaque anneau du radar.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet 3 : Analyse -->
+      <div id="tab3" class="tab-content hidden">
+        <div class="grid-2">
+          <div class="row field-group">
             <label for="dateText">Date (JJ/MM/AAAA)</label>
             <input id="dateText" type="text" inputmode="numeric" placeholder="JJ/MM/AAAA" maxlength="10" required />
             <div class="hint">Préremplie à aujourd'hui</div>
           </div>
-          <div class="row">
+          <div class="row field-group">
             <label for="clubDisplay">Club</label>
             <button id="clubDisplay" type="button" class="select-club-btn">
               Sélectionner un club…
@@ -596,9 +791,10 @@
         </div>
 
         <div class="grid-2">
-          <div class="row">
+          <div class="row field-group" id="targetRow">
             <label for="targetDist">Distance cible (m)</label>
             <input id="targetDist" type="number" step="1" min="0" value="100" required />
+            <div class="hint">Utilisée uniquement en mode Practice.</div>
           </div>
         </div>
 
@@ -612,40 +808,44 @@
 
     <!-- Résultat -->
     <div class="row result hidden" id="resultCard">
-      <h3>Distances</h3>
+      <div class="result-inner">
+        <h3>Résultat de l’analyse photo</h3>
+        <div class="result-intro">
+          Vérifiez les informations de cette analyse avant de l’ajouter à votre historique.
+        </div>
 
-      <div class="kv">
-        <div>Date</div>
-        <div id="rDate">—</div>
-      </div>
+        <div class="result-summary">
+          <div class="result-summary-item">
+            <div class="result-summary-label">📅 Date</div>
+            <div class="result-summary-value" id="rDate">—</div>
+          </div>
+          <div class="result-summary-item">
+            <div class="result-summary-label">🏌️ Club</div>
+            <div class="result-summary-value" id="rClub">—</div>
+          </div>
+          <div class="result-summary-item">
+            <div class="result-summary-label">🎯 Distance cible</div>
+            <div class="result-summary-value" id="rTarget">—</div>
+          </div>
+          <div class="result-summary-item">
+            <div class="result-summary-label">📍 Condition</div>
+            <div class="result-summary-value" id="rRadar">—</div>
+          </div>
+        </div>
 
-      <div class="kv">
-        <div>Club</div>
-        <div id="rClub">—</div>
-      </div>
+        <div class="result-subtitle">Détail des coups</div>
+        <div id="shotsList" class="shots-list"></div>
 
-      <div class="kv">
-        <div>Distance cible</div>
-        <div id="rTarget">—</div>
-      </div>
-
-      <div class="kv">
-        <div>Radar</div>
-        <div id="rRadar">—</div>
-      </div>
-
-      <div class="result-subtitle">Détail des coups</div>
-      <div id="shotsList" class="shots-list"></div>
-
-      <div class="row" style="margin-top:12px;">
-        <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
-          📊 Ajouter à mon historique
-        </button>
-      </div>
-      <div class="row" style="margin-top:6px;">
-        <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
-          🧹 Effacer ce résultat
-        </button>
+        <div class="row" style="margin-top:12px;">
+          <button id="saveToHistoryBtn" class="primary" type="button" style="width:100%;">
+            📊 Ajouter à mon historique
+          </button>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button id="clearResultBtn" class="ghost" type="button" style="width:100%;">
+            🧹 Effacer ce résultat
+          </button>
+        </div>
       </div>
     </div>
   </main>
@@ -694,6 +894,13 @@
     const API_BASE = "https://todogolf-analyse.onrender.com";
     const HISTORY_KEY = "todogolf_lab_history";
 
+    const RADAR_SCALES = {
+      "grand-jeu": 5.0,
+      "petit-jeu": 1.0,
+      "putting": 0.3
+    };
+    const NB_RINGS = 4;
+
     function fetchWithTimeout(url, options = {}, timeout = 20000) {
       return Promise.race([
         fetch(url, options),
@@ -721,18 +928,25 @@
     const club        = $("club");
     const clubDisplay = $("clubDisplay");
     const targetDist  = $("targetDist");
+    const targetRow   = $("targetRow");
+
+    const radarUsageSel = $("radarUsage");
+    const radarScaleSel = $("radarScale");
 
     const loaderBox  = $("loaderBox");
     const loaderText = $("loaderText");
 
     const step1El    = $("step1");
     const step2El    = $("step2");
+    const step3El    = $("step3");
     const tab1El     = $("tab1");
     const tab2El     = $("tab2");
+    const tab3El     = $("tab3");
+
+    const stepHelp   = $("stepHelp");
 
     const saveToHistoryBtn = $("saveToHistoryBtn");
     const clearResultBtn   = $("clearResultBtn");
-    const toStep2Btn       = $("toStep2Btn");
 
     const clubModalBackdrop = $("clubModalBackdrop");
     const clubSearch        = $("clubSearch");
@@ -811,36 +1025,61 @@
       return [Math.round(w*s), Math.round(h*s)];
     }
 
+    // 🔹 On n’affiche plus le texte “Pour une détection fiable…” en dur ici
+    function updateStepHelp() {
+      if (!stepHelp) return;
+      stepHelp.classList.add("hidden");
+      stepHelp.innerHTML = "";
+    }
+
     function refreshSteps(){
-      if (!step1El || !step2El) return;
-      if (activeTab === 1) {
-        step1El.classList.add('step--active');
-        step2El.classList.remove('step--active');
-      } else {
-        step2El.classList.add('step--active');
-        step1El.classList.remove('step--active');
-      }
+      if (!step1El || !step2El || !step3El) return;
+
+      step1El.classList.remove('step--active');
+      step2El.classList.remove('step--active');
+      step3El.classList.remove('step--active');
+      if (activeTab === 1) step1El.classList.add('step--active');
+      else if (activeTab === 2) step2El.classList.add('step--active');
+      else if (activeTab === 3) step3El.classList.add('step--active');
+
+      updateStepHelp();
     }
 
     function setActiveTab(n){
-      if (n === 2 && !maskValidated) {
-        setStatus("Lancez d’abord la détection des repères (recadrage + masque) avant de passer à l’étape 2.", "error");
-        return;
-      }
-      activeTab = n;
-      if (activeTab === 1) {
-        tab1El.classList.remove('hidden');
-        tab2El.classList.add('hidden');
-        resultCard.classList.add("hidden");
-      } else {
-        tab1El.classList.add('hidden');
-        tab2El.classList.remove('hidden');
-        if (lastJson) {
-          resultCard.classList.remove("hidden");
-        }
-      }
-      refreshSteps();
+  // Étapes 2 et 3 nécessitent la détection des repères avant
+  if ((n === 2 || n === 3) && !maskValidated) {
+    setStatus("Lancez d’abord la détection des repères en validant le recadrage (Étape 1).", "error");
+    return;
+  }
+  activeTab = n;
+
+  tab1El.classList.add('hidden');
+  tab2El.classList.add('hidden');
+  tab3El.classList.add('hidden');
+  resultCard.classList.add("hidden");
+
+  if (activeTab === 1) {
+    tab1El.classList.remove('hidden');
+  } else if (activeTab === 2) {
+    tab2El.classList.remove('hidden');
+  } else {
+    tab3El.classList.remove('hidden');
+    if (lastJson) resultCard.classList.remove("hidden");
+  }
+
+  // 🔹 On masque le bloc d’info (vert / rouge / orange) quand on change d’étape
+  const box = document.getElementById("statusBox");
+  if (box) {
+    if (statusTimeoutId) {
+      clearTimeout(statusTimeoutId);
+      statusTimeoutId = null;
     }
+    box.className = "";
+    box.style.display = "none";
+  }
+
+  refreshSteps();
+}
 
     function setLoading(isLoading, text) {
       if (!loaderBox) return;
@@ -913,31 +1152,6 @@
       }
     }
 
-    function getRadarInfoFromJson(json){
-      const dbg = json && json.debug ? json.debug : {};
-      const ringReason   = (dbg.ring_reason || '').toLowerCase();
-      const circleReason = (dbg.circle_reason || '').toLowerCase();
-      const step         = dbg.ring_step_m;
-
-      let usage = null;
-      if (ringReason.includes('triangle')) {
-        usage = 'Putting';
-      } else if (ringReason.includes('carre') || ringReason.includes('square')) {
-        usage = 'Petit jeu';
-      } else if (circleReason) {
-        usage = 'Long jeu';
-      }
-
-      if (!usage && (step === undefined || step === null || step === '')) {
-        return '—';
-      }
-      if (usage && (step !== undefined && step !== null && step !== '')) {
-        return usage + ' – ' + step + ' m';
-      }
-      if (usage) return usage;
-      return step + ' m';
-    }
-
     function resetResultState() {
       lastJson = null;
       resultCard.classList.add("hidden");
@@ -955,17 +1169,16 @@
       resetResultState();
       maskValidated = false;
       analyzeBtn.disabled = true;
-      toStep2Btn.classList.add("hidden");
-      openCropModalBtn.classList.add("hidden");
 
       ensureJpegFile(file).then(f=>{
         currentBlob = f;
         setStatus(
           'Image prête : '+Math.round(currentBlob.size/1024)+' KB\n' +
-          'Recadrez la photo pour centrer la feuille avant la détection des repères.',
+          'Recadrez la photo pour centrer la feuille avant la détection des repères, ou validez directement.',
           "info"
         );
         showPreview(currentBlob);
+        activeTab = 1;
         setActiveTab(1);
       }).catch(err=> setStatus('Erreur image : '+err.message, "error"));
     }
@@ -998,19 +1211,17 @@
         showPreview(blob);
         maskValidated = true;
         analyzeBtn.disabled = false;
-        toStep2Btn.classList.remove("hidden");
         setStatus(
           "Repères détectés ✅\n\n" +
           "Vérifiez la détection :\n" +
-          "• le cercle extérieur rouge passe bien par les trois repères\n" +
+          "• le cercle extérieur passe bien par les trois repères\n" +
           "• chaque repère est marqué par une icône au centre\n\n" +
-          "Si tout est correct, passez à l’étape 2 pour analyser les coups.",
+          "Ensuite : passez à l’étape 2 pour définir la condition de jeu et l’échelle.",
           "info"
         );
       }catch(err){
         maskValidated = false;
         analyzeBtn.disabled = true;
-        toStep2Btn.classList.add("hidden");
 
         const msg = (err && err.message) ? err.message : "";
         if (msg === "Timeout") {
@@ -1034,13 +1245,92 @@
       }
     }
 
+    function getRadarInfoLabel(usage, scaleKey) {
+      if (!usage && !scaleKey) return "—";
+      let usageLabel = "";
+      if (usage === "practice") usageLabel = "Practice";
+      else if (usage === "parcours") usageLabel = "Parcours";
+      else usageLabel = usage || "";
+
+      let scaleLabel = "";
+      if (scaleKey === "grand-jeu") scaleLabel = "Grand jeu – 5 m / anneau";
+      else if (scaleKey === "petit-jeu") scaleLabel = "Petit jeu – 1 m / anneau";
+      else if (scaleKey === "putting")  scaleLabel = "Putting – 0,3 m / anneau";
+
+      if (usageLabel && scaleLabel) return usageLabel + " – " + scaleLabel;
+      if (usageLabel) return usageLabel;
+      if (scaleLabel) return scaleLabel;
+      return "—";
+    }
+
+    function computeShotsWithMeters(data, usage, scaleKey, centreDistanceM) {
+      const raw = Array.isArray(data.coups) ? data.coups : [];
+      if (!raw.length) return [];
+
+      const dbg = data.debug || {};
+      const outerRadiusPx = dbg.outer_radius_px;
+      if (!outerRadiusPx || outerRadiusPx <= 0) {
+        return raw; // fallback
+      }
+
+      const ringStepM = RADAR_SCALES[scaleKey];
+      if (!ringStepM) {
+        return raw;
+      }
+
+      const maxDistanceM = NB_RINGS * ringStepM;
+      const metersPerPixel = maxDistanceM / outerRadiusPx;
+
+      const isPractice = (usage === "practice");
+      const centreBase = isPractice ? (Number(centreDistanceM) || 0) : 0;
+
+      return raw.map((c) => {
+        if (c.dx_px === undefined || c.dy_px === undefined) {
+          return c;
+        }
+
+        const dx_px = c.dx_px;
+        const dy_px = c.dy_px;
+
+        const ecart_lateral_m = dx_px * metersPerPixel;
+        const ecart_profondeur_m = -dy_px * metersPerPixel; // haut = plus long
+
+        let distance_totale_m = null;
+        if (isPractice) {
+          const distance_dans_laxe = centreBase + ecart_profondeur_m;
+          distance_totale_m = Math.sqrt(
+            distance_dans_laxe * distance_dans_laxe +
+            ecart_lateral_m * ecart_lateral_m
+          );
+          distance_totale_m = Math.round(distance_totale_m * 2) / 2;
+          distance_totale_m = Number(distance_totale_m.toFixed(1));
+        }
+
+        return {
+          ...c,
+          distance_totale_m: distance_totale_m,
+          ecart_lateral_m: Number(ecart_lateral_m.toFixed(1)),
+          ecart_profondeur_m: Number(ecart_profondeur_m.toFixed(1))
+        };
+      });
+    }
+
     async function analyze(){
       if(!maskValidated){
-        setStatus('Lancez d\'abord la détection des repères (recadrage + masque).', "error");
+        setStatus('Lancez d\'abord la détection des repères en validant le recadrage (Étape 1).', "error");
         return;
       }
-      if(!dateText.value || !club.value || !targetDist.value){
-        setStatus('Remplissez la date, le club et la distance cible.', "error");
+      const radarUsage = radarUsageSel.value;
+      const radarScaleKey = radarScaleSel.value;
+      if (!radarUsage || !radarScaleKey) {
+        setStatus('Sélectionnez la condition de jeu et l’échelle du radar (Étape 2) avant de lancer l’analyse.', "error");
+        return;
+      }
+
+      const isPractice = (radarUsage === "practice");
+
+      if(!dateText.value || !club.value || (isPractice && !targetDist.value)){
+        setStatus('Remplissez la date, le club et, en mode Practice, la distance cible.', "error");
         return;
       }
       const file=currentBlob || fileCam.files?.[0] || fileGal.files?.[0];
@@ -1058,7 +1348,7 @@
       fd.append('image_file', imgFile, imgFile.name);
       fd.append('date_text', dateText.value);
       fd.append('club', club.value);
-      fd.append('centre_distance', targetDist.value);
+      fd.append('centre_distance', isPractice ? (targetDist.value || "0") : "");
 
       try{
         setLoading(true, "Analyse des coups…");
@@ -1069,19 +1359,28 @@
           throw new Error('HTTP '+res.status+(t?' – '+t:'')); 
         }
         const data = await res.json();
-        lastJson = data;
 
-        const coups = Array.isArray(data.coups) ? data.coups : [];
+        const centreDistanceM = isPractice ? Number(targetDist.value) || 0 : 0;
+        const coups = computeShotsWithMeters(data, radarUsage, radarScaleKey, centreDistanceM);
+
+        lastJson = {
+          raw: data,
+          coups,
+          radarUsage,
+          radarScaleKey,
+          radarScaleM: RADAR_SCALES[radarScaleKey] || null,
+          centreDistanceM
+        };
 
         rDate.textContent   = dateText.value;
         rClub.textContent   = club.value || "—";
-        rTarget.textContent = targetDist.value + ' m';
+        rTarget.textContent = isPractice && targetDist.value ? (targetDist.value + " m") : "—";
 
-        const radarInfo = getRadarInfoFromJson(data);
+        const radarInfo = getRadarInfoLabel(radarUsage, radarScaleKey);
         rRadar.textContent = radarInfo;
 
         shotsList.innerHTML = '';
-        if (coups.length === 0) {
+        if (!coups.length) {
           const line = document.createElement('div');
           line.textContent = 'Aucun coup détecté.';
           shotsList.appendChild(line);
@@ -1111,7 +1410,7 @@
 
         resultCard.classList.remove("hidden");
         setStatus('Analyse terminée ✅\nVérifiez les coups avant de les ajouter à votre historique.', "info");
-        setActiveTab(2);
+        setActiveTab(3);
       }catch(err){
         const msg = (err && err.message) ? err.message : "";
         if (msg === "Timeout") {
@@ -1143,6 +1442,18 @@
       setTimeout(()=>{ pop.classList.add("hidden"); }, 1200);
     }
 
+    function generateSessionId(usage) {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm   = String(d.getMonth()+1).padStart(2,'0');
+      const dd   = String(d.getDate()).padStart(2,'0');
+      const hh   = String(d.getHours()).padStart(2,'0');
+      const mi   = String(d.getMinutes()).padStart(2,'0');
+      const suffix = Math.random().toString(36).slice(2,5);
+      const u = usage || "unknown";
+      return `${yyyy}${mm}${dd}-${hh}${mi}-${u}-${suffix}`;
+    }
+
     function addCurrentResultToHistory() {
       if (!lastJson) {
         setStatus("Aucun résultat à enregistrer. Faites d’abord une analyse.", "error");
@@ -1162,14 +1473,24 @@
         history = [];
       }
 
-      const radarInfo = getRadarInfoFromJson(lastJson);
+      const radarUsage   = radarUsageSel.value || lastJson.radarUsage || null;
+      const radarScaleKey = radarScaleSel.value || lastJson.radarScaleKey || null;
+      const radarScaleM  = RADAR_SCALES[radarScaleKey] || lastJson.radarScaleM || null;
+
+      const radarInfo = getRadarInfoLabel(radarUsage, radarScaleKey);
       const dateVal   = dateText.value;
       const clubVal   = club.value;
-      const cibleVal  = Number(targetDist.value);
+      const cibleVal  = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
+
+      const sessionId = generateSessionId(radarUsage);
 
       coups.forEach(c => {
         history.push({
+          session_id: sessionId,
           date_text: dateVal,
+          radar_usage: radarUsage,
+          radar_scale_key: radarScaleKey,
+          radar_scale_m: radarScaleM,
           club: clubVal,
           distance_cible_m: cibleVal,
           radar_info: radarInfo,
@@ -1203,7 +1524,7 @@
 
     step1El.addEventListener('click', ()=> setActiveTab(1));
     step2El.addEventListener('click', ()=> setActiveTab(2));
-    toStep2Btn.addEventListener('click', ()=> setActiveTab(2));
+    step3El.addEventListener('click', ()=> setActiveTab(3));
 
     /* Sélecteur de clubs */
     function renderClubList(query) {
@@ -1250,6 +1571,16 @@
     });
     clubSearch.addEventListener("input", (e)=>{
       renderClubList(e.target.value);
+    });
+
+    /* Changement type radar : gestion du champ distance cible */
+    radarUsageSel.addEventListener("change", () => {
+      const usage = radarUsageSel.value;
+      if (usage === "practice") {
+        targetRow.classList.remove("hidden");
+      } else {
+        targetRow.classList.add("hidden");
+      }
     });
 
     /* Recadrage */
@@ -1299,8 +1630,7 @@
         cropScaleX = canvasWidth / img.naturalWidth;
         cropScaleY = canvasHeight / img.naturalHeight;
 
-        // Par défaut : rectangle = toute l’image
-        cropRect = { x: 0, y: 0, w: canvasWidth, h: canvasHeight };
+        cropRect = null;
         redrawCropCanvas();
       } catch (e) {
         setStatus("Impossible d’ouvrir la photo pour recadrage.", "error");
@@ -1324,17 +1654,22 @@
     function redrawCropCanvas() {
       if (!cropImg || !cropCanvas) return;
       const ctx = cropCanvas.getContext("2d");
-      ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+
+      ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
       ctx.drawImage(cropImg, 0, 0, cropCanvas.width, cropCanvas.height);
 
-      if (cropRect) {
+      if (cropRect && cropRect.w > 2 && cropRect.h > 2) {
         ctx.save();
-        ctx.fillStyle = "rgba(0,0,0,0.45)";
-        ctx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
-        ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        ctx.fillStyle = "rgba(0,0,0,0.20)";
+        ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
         ctx.strokeStyle = "rgba(255,255,255,0.9)";
         ctx.lineWidth = 2;
-        ctx.strokeRect(cropRect.x+1, cropRect.y+1, cropRect.w-2, cropRect.h-2);
+        ctx.strokeRect(
+          cropRect.x + 1,
+          cropRect.y + 1,
+          cropRect.w - 2,
+          cropRect.h - 2
+        );
         ctx.restore();
       }
     }
@@ -1392,48 +1727,69 @@
     }
 
     async function validateCrop() {
-      if (!cropImg || !cropRect || cropRect.w < 5 || cropRect.h < 5) {
-        setStatus("Sélectionnez d’abord une zone suffisamment grande sur la photo.", "error");
+      if (!cropImg) {
+        setStatus("Impossible de recadrer : image introuvable.", "error");
         return;
       }
 
       try {
-        const sx = cropRect.x / cropScaleX;
-        const sy = cropRect.y / cropScaleY;
-        const sw = cropRect.w / cropScaleX;
-        const sh = cropRect.h / cropScaleY;
+        let blob;
 
-        const outW = Math.round(sw);
-        const outH = Math.round(sh);
+        if (!cropRect || cropRect.w < 5 || cropRect.h < 5) {
+          // Pas de sélection : on utilise toute l’image
+          const canvas = document.createElement("canvas");
+          canvas.width = cropImg.naturalWidth;
+          canvas.height = cropImg.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(cropImg, 0, 0, canvas.width, canvas.height);
 
-        const canvas = document.createElement("canvas");
-        canvas.width = outW;
-        canvas.height = outH;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          cropImg,
-          sx, sy, sw, sh,
-          0, 0, outW, outH
-        );
+          blob = await new Promise((resolve, reject)=>{
+            canvas.toBlob(b=>{
+              if (!b) reject(new Error("toBlob a échoué"));
+              else resolve(b);
+            }, "image/jpeg", 0.9);
+          });
 
-        const blob = await new Promise((resolve, reject)=>{
-          canvas.toBlob(b=>{
-            if (!b) reject(new Error("toBlob a échoué"));
-            else resolve(b);
-          }, "image/jpeg", 0.9);
-        });
+          setStatus("Recadrage non dessiné : l’image entière sera utilisée.\nLancement de la détection des repères…", "info");
+        } else {
+          // Utilisation de la zone sélectionnée
+          const sx = cropRect.x / cropScaleX;
+          const sy = cropRect.y / cropScaleY;
+          const sw = cropRect.w / cropScaleX;
+          const sh = cropRect.h / cropScaleY;
+
+          const outW = Math.round(sw);
+          const outH = Math.round(sh);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = outW;
+          canvas.height = outH;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(
+            cropImg,
+            sx, sy, sw, sh,
+            0, 0, outW, outH
+          );
+
+          blob = await new Promise((resolve, reject)=>{
+            canvas.toBlob(b=>{
+              if (!b) reject(new Error("toBlob a échoué"));
+              else resolve(b);
+            }, "image/jpeg", 0.9);
+          });
+
+          setStatus("Photo recadrée ✅\nLancement de la détection des repères…", "info");
+        }
 
         currentBlob = new File([blob], "capture_crop.jpg", { type: "image/jpeg" });
 
         resetResultState();
         maskValidated = false;
         analyzeBtn.disabled = true;
-        toStep2Btn.classList.add("hidden");
 
         showPreview(currentBlob);
         closeCropModalFn();
-        setStatus("Photo recadrée ✅\nLancement de la détection des repères…", "info");
-        generateMask();
+        await generateMask();
       } catch (e) {
         setStatus("Erreur pendant le recadrage de l’image.", "error");
       }
@@ -1444,9 +1800,14 @@
     /* Init */
     setActiveTab(1);
     refreshSteps();
+
+    // Message d’info initial en vert (éphémère 10s) — on le garde
+    setStatus(
+      "Pour une détection fiable : prenez la photo bien à la verticale au-dessus de la feuille, et vérifiez que les deux repères du bas sont bien visibles et alignés dans l’image.",
+      "info"
+    );
   </script>
 
-  <!-- Script keep-alive Render -->
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
 
