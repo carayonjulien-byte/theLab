@@ -1046,41 +1046,38 @@
     }
 
     function setActiveTab(n){
-  // Étapes 2 et 3 nécessitent la détection des repères avant
-  if ((n === 2 || n === 3) && !maskValidated) {
-    setStatus("Lancez d’abord la détection des repères en validant le recadrage (Étape 1).", "error");
-    return;
-  }
-  activeTab = n;
+      // Étapes 2 et 3 nécessitent la détection des repères avant
+      if ((n === 2 || n === 3) && !maskValidated) {
+        setStatus("Lancez d’abord la détection des repères en validant le recadrage (Étape 1).", "error");
+        return;
+      }
+      activeTab = n;
 
-  tab1El.classList.add('hidden');
-  tab2El.classList.add('hidden');
-  tab3El.classList.add('hidden');
-  resultCard.classList.add("hidden");
+      tab1El.classList.add('hidden');
+      tab2El.classList.add('hidden');
+      tab3El.classList.add('hidden');
+      resultCard.classList.add("hidden");
 
-  if (activeTab === 1) {
-    tab1El.classList.remove('hidden');
-  } else if (activeTab === 2) {
-    tab2El.classList.remove('hidden');
-  } else {
-    tab3El.classList.remove('hidden');
-    if (lastJson) resultCard.classList.remove("hidden");
-  }
-
-  // 🔹 On masque le bloc d’info (vert / rouge / orange) quand on change d’étape
-  const box = document.getElementById("statusBox");
-  if (box) {
-    if (statusTimeoutId) {
-      clearTimeout(statusTimeoutId);
-      statusTimeoutId = null;
+      if (activeTab === 1) {
+        tab1El.classList.remove('hidden');
+      } else if (activeTab === 2) {
+        tab2El.classList.remove('hidden');
+      } else {
+        tab3El.classList.remove('hidden');
+        if (lastJson) resultCard.classList.remove("hidden");
+      }
+      refreshSteps();
     }
-    box.className = "";
-    box.style.display = "none";
-  }
 
-  refreshSteps();
-}
-
+    function setLoading(isLoading, text) {
+      if (!loaderBox) return;
+      if (isLoading) {
+        if (loaderText && text) loaderText.textContent = text;
+        loaderBox.classList.remove("hidden");
+      } else {
+        loaderBox.classList.add("hidden");
+      }
+    }
 
     function todayStr(){
       const d = new Date();
