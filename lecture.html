@@ -72,8 +72,9 @@
       gap:4px;
       flex-shrink:0;
       white-space:nowrap;
+      transition: background 0.1s, border-color 0.1s;
     }
-    .btn-top:hover { background:#101822; }
+    .btn-top:hover { background:#101822; border-color:#323f4e; }
 
     .wrap {
       max-width: 960px;
@@ -172,21 +173,46 @@
       margin-top:4px;
     }
 
+    /* === BOUTONS HARMONISÉS === */
     button,
-    label[role=button] {
-      display:inline-block;
-      text-align:center;
-      padding:12px 14px;
+    label[role=button],
+    .select-club-btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+
+      padding:11px 16px;
       border-radius:999px;
       border:1px solid #26303b;
+
       background:#11171e;
       color:var(--text);
+
       font-weight:600;
+      font-size:14px;
+      letter-spacing:0.01em;
+
       cursor:pointer;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s, border-color 0.1s;
+      transition:
+        transform 0.08s ease,
+        box-shadow 0.08s ease,
+        background 0.1s,
+        border-color 0.1s,
+        color 0.1s;
     }
+
+    button:hover:not(:disabled),
+    label[role=button]:hover,
+    .select-club-btn:hover {
+      background:#151c24;
+      border-color:#323f4e;
+      box-shadow:0 8px 20px rgba(0,0,0,0.45);
+    }
+
     button:active,
-    label[role=button]:active {
+    label[role=button]:active,
+    .select-club-btn:active {
       transform: scale(0.97);
       box-shadow:none;
     }
@@ -195,6 +221,7 @@
       cursor:not-allowed;
       box-shadow:none;
     }
+
     .primary {
       background:var(--primary);
       border-color:var(--primary);
@@ -203,26 +230,20 @@
     }
     .primary:hover:not(:disabled) {
       background:#046046;
+      border-color:#07a06c;
+      box-shadow:0 10px 24px rgba(0,80,58,0.7);
     }
+
     .ghost {
       background:#0b1016;
     }
 
-    /* Boutons de l'étape 1 style "carte" */
+    /* Boutons de l'étape 1 : mise en page large */
     .btn-photo {
-      display:flex;
-      align-items:center;
+      width:100%;
       justify-content:center;
-      gap:8px;
+      padding:14px 18px;
       font-size:14px;
-      border-radius:16px;
-      border:1px solid rgba(148,163,184,0.25);
-      background: radial-gradient(circle at top left, rgba(15,23,42,0.9), #020617);
-      box-shadow:0 14px 30px rgba(0,0,0,0.7);
-    }
-    .btn-photo:hover {
-      background: radial-gradient(circle at top left, rgba(30,64,175,0.9), #020617);
-      border-color:rgba(191,219,254,0.6);
     }
 
     img {
@@ -443,20 +464,13 @@
       color: #ff9b9b;
     }
 
-    /* Sélecteur de club custom */
+    /* Sélecteur de club custom (hérite du style bouton) */
     .select-club-btn {
       width:100%;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid #26303b;
-      background:#05080c;
-      color:#6b7280;
-      font-size:15px;
-      text-align:left;
-      display:flex;
-      align-items:center;
       justify-content:space-between;
-      cursor:pointer;
+      text-align:left;
+      background:#05080c;
+      border:1px solid #26303b;
     }
     .select-club-btn::after {
       content:"▾";
@@ -507,16 +521,17 @@
       font-weight:600;
     }
     .modal-close-btn {
+      font-size:12px;
+      padding:5px 10px;
       border-radius:999px;
-      border:1px solid #374151;
-      background:#111827;
-      color:#e5e7eb;
-      font-size:13px;
-      padding:4px 8px;
-      cursor:pointer;
+      background:#0b1016;
+      border:1px solid #26303b;
+      box-shadow:none;
     }
     .modal-close-btn:hover {
-      background:#1f2933;
+      background:#151c24;
+      border-color:#323f4e;
+      box-shadow:0 4px 10px rgba(0,0,0,0.35);
     }
     .modal-body {
       padding:10px 14px 14px;
@@ -546,10 +561,12 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      transition: background 0.08s ease, transform 0.06s ease;
+      transition: background 0.08s ease, transform 0.06s ease, border-color 0.08s ease;
+      border:1px solid transparent;
     }
     .modal-item:hover {
       background:rgba(0,80,58,0.22);
+      border-color:rgba(0,80,58,0.6);
       transform:translateY(-1px);
     }
     .modal-empty {
@@ -690,7 +707,7 @@
 
         <!-- Bouton recadrage -->
         <div class="row">
-          <button id="openCropModalBtn" class="ghost btn-photo hidden" type="button" style="width:100%;">
+          <button id="openCropModalBtn" class="ghost btn-photo hidden" type="button">
             ✂️ Recadrer la photo (avant détection)
           </button>
         </div>
