@@ -249,6 +249,47 @@
       padding:8px 0;
     }
 
+    /* Tabs (brutes / heatmap) */
+    .view-tabs {
+      display:inline-flex;
+      border-radius:999px;
+      background:#05080c;
+      border:1px solid #202533;
+      padding:2px;
+      margin-bottom:10px;
+    }
+    .view-tab {
+      border:none;
+      background:transparent;
+      padding:6px 12px;
+      font-size:12px;
+      border-radius:999px;
+      color:#9aa5b1;
+      cursor:pointer;
+    }
+    .view-tab--active {
+      background:#0f172a;
+      color:#e5f0ff;
+    }
+
+    /* Bouton suppression */
+    .delete-btn {
+      border-radius:999px;
+      border:1px solid #4b5563;
+      background:#111827;
+      color:#fca5a5;
+      font-size:11px;
+      padding:3px 8px;
+      cursor:pointer;
+      line-height:1;
+    }
+    .delete-btn:hover {
+      background:#7f1d1d;
+      border-color:#fca5a5;
+      color:#fee2e2;
+    }
+
+    /* Pagination */
     .pagination {
       margin-top:8px;
       display:flex;
@@ -268,6 +309,95 @@
       font-size:12px;
     }
 
+    /* Popup suppression */
+    .delete-popup-overlay {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:200;
+    }
+    .delete-popup-card {
+      background:#0b1117;
+      border-radius:16px;
+      border:1px solid #374151;
+      padding:16px 18px;
+      max-width:320px;
+      width:90%;
+      box-shadow:0 18px 40px rgba(0,0,0,0.7);
+    }
+    .delete-title {
+      font-size:15px;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+    .delete-text {
+      font-size:13px;
+      color:#d1d5db;
+      margin-bottom:14px;
+    }
+    .delete-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+    }
+    .btn-ghost {
+      background:#020617;
+      border-color:#374151;
+      color:#e5e7eb;
+    }
+    .btn-ghost:hover {
+      background:#111827;
+    }
+
+    /* Heatmap canvas */
+    #heatCanvas {
+      width:100%;
+      max-width:480px;
+      aspect-ratio:1/1;
+      border-radius:16px;
+      background:radial-gradient(circle at center, #020617 0, #020617 55%, #020308 100%);
+      border:1px solid #202833;
+      display:block;
+      margin-top:10px;
+    }
+    .heat-controls {
+      margin-top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:12px;
+      color:#9aa5b1;
+    }
+    .heat-controls-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .heat-controls-row input[type=range] {
+      flex:1;
+    }
+
+    @media (max-width:900px){
+      .layout {
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:720px){
+      .topbar {
+        flex-direction:column;
+        align-items:flex-start;
+        gap:6px;
+      }
+      .top-actions {
+        width:100%;
+        justify-content:flex-start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -303,20 +433,17 @@
       <section class="card">
         <div class="card-title">Filtres</div>
         <div class="card-subtitle">
-          Commencez par choisir un type de session, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
         </div>
 
-        <!-- Type de session (Parcours ou Practice) -->
-        <label for="fSessionType">Type de session</label>
-        <select id="fSessionType">
+        <!-- Type de radar en premier et obligatoire pour la heatmap -->
+        <label for="fRadarType">Type de radar (obligatoire pour la heatmap)</label>
+        <select id="fRadarType">
           <option value="all">— Choisissez un type —</option>
-          <option value="parcours">Parcours</option>
-          <option value="practice">Practice</option>
+          <option value="putting">Putting</option>
+          <option value="petit_jeu">Petit jeu</option>
+          <option value="long_jeu">Long jeu</option>
         </select>
-
-        <!-- Session spécifique (filtrage par texte libre) -->
-        <label for="fSession">Session</label>
-        <input type="text" id="fSession" placeholder="Rechercher par nom de session">
 
         <label for="fDateFrom">Date min</label>
         <input type="date" id="fDateFrom">
@@ -346,6 +473,10 @@
       <!-- Résultats -->
       <section class="card">
         <div class="card-title">Vue des données</div>
+        <div class="view-tabs">
+          <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
+          <button id="tabHeatBtn" class="view-tab" type="button">Heatmap</button>
+        </div>
 
         <!-- Vue Données brutes -->
         <div id="viewRaw">
@@ -381,6 +512,29 @@
             </div>
           </div>
         </div>
+
+        <!-- Vue Heatmap -->
+        <div id="viewHeat" class="hidden">
+          <div class="card-subtitle">
+            Répartition de vos coups autour de la cible : écarts latéraux (gauche / droite)
+            et en profondeur (court / long), visualisés sur un radar de dispersion à 4 anneaux.
+          </div>
+
+          <div class="heat-controls">
+            <div class="heat-controls-row">
+              <span>Distance cible filtrée :</span>
+              <span id="heatDistanceLabel">Toutes distances</span>
+            </div>
+            <div class="heat-controls-row">
+              <input id="heatRange" type="range" min="0" max="0" value="0" disabled>
+            </div>
+            <div class="heat-controls-row">
+              <span id="heatInfo" style="flex:1;">Choisissez un type de radar pour afficher la heatmap.</span>
+            </div>
+          </div>
+
+          <canvas id="heatCanvas"></canvas>
+        </div>
       </section>
     </div>
   </main>
@@ -399,6 +553,807 @@
       </div>
     </div>
   </div>
+
+  <script>
+    const HISTORY_KEY = "todogolf_lab_history";
+    const LAST_EXPORT_COUNT_KEY = "todogolf_lab_last_export_count";
+
+    const $ = id => document.getElementById(id);
+
+    const rawBody   = $("rawBody");
+    const filterInfo = $("filterInfo");
+    const exportWarning = $("exportWarning");
+
+    const fDateFrom = $("fDateFrom");
+    const fDateTo   = $("fDateTo");
+    const fClub     = $("fClub");
+    const fDistMin  = $("fDistMin");
+    const fDistMax  = $("fDistMax");
+    const fRadarType= $("fRadarType");
+
+    const btnApply  = $("btnApply");
+    const btnReset  = $("btnReset");
+    const btnImport = $("btnImport");
+    const btnExport = $("btnExport");
+    const importInput = $("importInput");
+
+    const tabRawBtn  = $("tabRawBtn");
+    const tabHeatBtn = $("tabHeatBtn");
+    const viewRaw    = $("viewRaw");
+    const viewHeat   = $("viewHeat");
+
+    const deletePopup      = $("deletePopup");
+    const deleteCancelBtn  = $("deleteCancelBtn");
+    const deleteConfirmBtn = $("deleteConfirmBtn");
+
+    const paginationInfo = $("paginationInfo");
+    const prevPageBtn = $("prevPageBtn");
+    const nextPageBtn = $("nextPageBtn");
+
+    const heatCanvas = $("heatCanvas");
+    const heatRange = $("heatRange");
+    const heatDistanceLabel = $("heatDistanceLabel");
+    const heatInfo = $("heatInfo");
+
+    const ROWS_PER_PAGE = 30;
+
+    let allRows = [];
+    let filteredRows = [];
+    let currentPage = 1;
+    let totalPages = 1;
+
+    let sortState = { column: "date", direction: "asc" };
+
+    let pendingDeleteIndex = null;
+
+    function parseStoredHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch(e) {
+        console.error("Erreur parse history", e);
+        return [];
+      }
+    }
+
+    function formatDateTextToISO(dateText) {
+      if (!dateText || typeof dateText !== "string") return null;
+      const parts = dateText.split("/");
+      if (parts.length !== 3) return null;
+      const [dd, mm, yyyy] = parts;
+      if (!dd || !mm || !yyyy) return null;
+      return `${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`;
+    }
+
+    function parseISODate(str) {
+      if (!str) return null;
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function getRadarTypeKey(radarInfo) {
+      if (!radarInfo) return null;
+      const s = String(radarInfo).toLowerCase();
+      if (s.startsWith("putting")) return "putting";
+      if (s.startsWith("petit jeu")) return "petit_jeu";
+      if (s.startsWith("long jeu")) return "long_jeu";
+      return null;
+    }
+
+    function loadHistory() {
+      allRows = parseStoredHistory();
+      populateClubFilter();
+      applyFilters(); // initial
+      updateExportWarning();
+    }
+
+    function populateClubFilter() {
+      const clubs = new Set();
+      allRows.forEach(r => {
+        if (r.club) clubs.add(String(r.club));
+      });
+      const current = fClub.value;
+      fClub.innerHTML = '<option value="">Tous les clubs</option>';
+      Array.from(clubs).sort().forEach(club => {
+        const opt = document.createElement("option");
+        opt.value = club;
+        opt.textContent = club;
+        fClub.appendChild(opt);
+      });
+      if (current && clubs.has(current)) {
+        fClub.value = current;
+      }
+    }
+
+    function applyFilters() {
+      const dfStr = fDateFrom.value;
+      const dtStr = fDateTo.value;
+      const df = parseISODate(dfStr);
+      const dt = parseISODate(dtStr);
+      const club = fClub.value;
+      const radarType = fRadarType.value;
+
+      const distMin = fDistMin.value ? Number(fDistMin.value) : null;
+      const distMax = fDistMax.value ? Number(fDistMax.value) : null;
+
+      filteredRows = allRows.filter(r => {
+        if (df || dt) {
+          const iso = formatDateTextToISO(r.date_text);
+          const d = parseISODate(iso);
+          if (!d) return false;
+          if (df && d < df) return false;
+          if (dt && d > dt) return false;
+        }
+
+        if (club && r.club !== club) return false;
+
+        if (distMin !== null && Number(r.distance_cible_m) < distMin) return false;
+        if (distMax !== null && Number(r.distance_cible_m) > distMax) return false;
+
+        if (radarType && radarType !== "all") {
+          const key = getRadarTypeKey(r.radar_info);
+          if (key !== radarType) return false;
+        }
+
+        return true;
+      });
+
+      currentPage = 1;
+      sortFilteredRows();
+      renderRawTable();
+      renderHeatmap();
+      updateFilterInfo();
+    }
+
+    function updateFilterInfo() {
+      const total = allRows.length;
+      const n = filteredRows.length;
+      if (!total) {
+        filterInfo.textContent = "Aucune donnée enregistrée pour le moment.";
+        return;
+      }
+      if (n === total) {
+        filterInfo.textContent = `${n} coup(s) affiché(s) – aucun filtre appliqué.`;
+      } else {
+        filterInfo.textContent = `${n} coup(s) affiché(s) sur ${total} au total (filtres actifs).`;
+      }
+    }
+
+    function compareValues(a, b) {
+      if (a == null && b == null) return 0;
+      if (a == null) return -1;
+      if (b == null) return 1;
+      if (typeof a === "number" && typeof b === "number") {
+        return a - b;
+      }
+      const sa = String(a);
+      const sb = String(b);
+      return sa.localeCompare(sb);
+    }
+
+    function sortFilteredRows() {
+      const col = sortState.column;
+      const dir = sortState.direction === "asc" ? 1 : -1;
+      filteredRows.sort((r1, r2) => {
+        let v1, v2;
+        switch(col) {
+          case "date":
+            v1 = parseISODate(formatDateTextToISO(r1.date_text));
+            v2 = parseISODate(formatDateTextToISO(r2.date_text));
+            break;
+          case "club":
+            v1 = r1.club || "";
+            v2 = r2.club || "";
+            break;
+          case "dist_cible":
+            v1 = Number(r1.distance_cible_m);
+            v2 = Number(r2.distance_cible_m);
+            break;
+          case "radar":
+            v1 = r1.radar_info || "";
+            v2 = r2.radar_info || "";
+            break;
+          case "dist_totale":
+            v1 = Number(r1.distance_totale_m);
+            v2 = Number(r2.distance_totale_m);
+            break;
+          case "lat":
+            v1 = Number(r1.ecart_lateral_m);
+            v2 = Number(r2.ecart_lateral_m);
+            break;
+          case "prof":
+            v1 = Number(r1.ecart_profondeur_m);
+            v2 = Number(r2.ecart_profondeur_m);
+            break;
+          default:
+            v1 = 0; v2 = 0;
+        }
+        return compareValues(v1, v2) * dir;
+      });
+    }
+
+    function renderRawTable() {
+      rawBody.innerHTML = "";
+      if (!filteredRows.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 8;
+        td.className = "empty-state";
+        td.textContent = "Aucun coup ne correspond aux filtres actuels.";
+        tr.appendChild(td);
+        rawBody.appendChild(tr);
+        paginationInfo.textContent = "Page 0 / 0";
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
+        return;
+      }
+
+      totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      const end = start + ROWS_PER_PAGE;
+      const pageRows = filteredRows.slice(start, end);
+
+      pageRows.forEach(r => {
+        const tr = document.createElement("tr");
+
+        const cDate = document.createElement("td");
+        cDate.textContent = r.date_text || "—";
+
+        const cClub = document.createElement("td");
+        cClub.textContent = r.club || "—";
+
+        const cDistCible = document.createElement("td");
+        cDistCible.textContent = (r.distance_cible_m != null ? r.distance_cible_m + " m" : "—");
+
+        const cRadar = document.createElement("td");
+        if (r.radar_info) {
+          const span = document.createElement("span");
+          span.className = "tag";
+          span.textContent = r.radar_info;
+          cRadar.appendChild(span);
+        } else {
+          cRadar.textContent = "—";
+        }
+
+        const cDistTot = document.createElement("td");
+        cDistTot.textContent = (r.distance_totale_m != null ? r.distance_totale_m + " m" : "—");
+
+        const cLat = document.createElement("td");
+        cLat.textContent = (r.ecart_lateral_m != null ? r.ecart_lateral_m + " m" : "—");
+
+        const cProf = document.createElement("td");
+        cProf.textContent = (r.ecart_profondeur_m != null ? r.ecart_profondeur_m + " m" : "—");
+
+        const cDel = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "delete-btn";
+        btn.textContent = "✕";
+        const idxGlobal = allRows.indexOf(r);
+        btn.dataset.index = idxGlobal >= 0 ? String(idxGlobal) : "";
+        cDel.appendChild(btn);
+
+        tr.appendChild(cDate);
+        tr.appendChild(cClub);
+        tr.appendChild(cDistCible);
+        tr.appendChild(cRadar);
+        tr.appendChild(cDistTot);
+        tr.appendChild(cLat);
+        tr.appendChild(cProf);
+        tr.appendChild(cDel);
+
+        rawBody.appendChild(tr);
+      });
+
+      paginationInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+      updateSortHeaders();
+    }
+
+    function setView(view) {
+      if (view === "raw") {
+        viewRaw.classList.remove("hidden");
+        viewHeat.classList.add("hidden");
+        tabRawBtn.classList.add("view-tab--active");
+        tabHeatBtn.classList.remove("view-tab--active");
+      } else {
+        viewRaw.classList.add("hidden");
+        viewHeat.classList.remove("hidden");
+        tabHeatBtn.classList.add("view-tab--active");
+        tabRawBtn.classList.remove("view-tab--active");
+        renderHeatmap();
+      }
+    }
+
+    function resetFilters() {
+      fRadarType.value = "all";
+      fDateFrom.value = "";
+      fDateTo.value   = "";
+      fClub.value     = "";
+      fDistMin.value  = "";
+      fDistMax.value  = "";
+      applyFilters();
+    }
+
+    function downloadCSV(filename, content) {
+      const blob = new Blob([content], {type: "text/csv;charset=utf-8;"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportHistory() {
+      if (!allRows.length) {
+        alert("Aucune donnée à exporter.");
+        return;
+      }
+      const headers = [
+        "date_text",
+        "club",
+        "distance_cible_m",
+        "radar_info",
+        "distance_totale_m",
+        "ecart_lateral_m",
+        "ecart_profondeur_m"
+      ];
+
+      const rows = [headers.join(",")];
+      allRows.forEach(r => {
+        const line = headers.map(h => {
+          const v = r[h] != null ? String(r[h]) : "";
+          return v.replace(/"/g,'""');
+        }).join(",");
+        rows.push(line);
+      });
+
+      const csv = rows.join("\n");
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      downloadCSV(`todogolf-historique-${yyyy}-${mm}-${dd}.csv`, csv);
+
+      try {
+        localStorage.setItem(LAST_EXPORT_COUNT_KEY, String(allRows.length));
+        updateExportWarning();
+      } catch(e) {}
+    }
+
+    function importCSVText(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+      if (!lines.length) return;
+      const headerLine = lines[0];
+      const headers = headerLine.split(",");
+      const idx = {
+        date_text: headers.indexOf("date_text"),
+        club: headers.indexOf("club"),
+        distance_cible_m: headers.indexOf("distance_cible_m"),
+        radar_info: headers.indexOf("radar_info"),
+        distance_totale_m: headers.indexOf("distance_totale_m"),
+        ecart_lateral_m: headers.indexOf("ecart_lateral_m"),
+        ecart_profondeur_m: headers.indexOf("ecart_profondeur_m")
+      };
+
+      if (idx.date_text === -1 || idx.club === -1) {
+        alert("Le fichier CSV ne contient pas les colonnes attendues (au minimum date_text et club).");
+        return;
+      }
+
+      const imported = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const cols = line.split(",");
+        if (!cols.length || cols.every(c => !c.trim())) continue;
+
+        const row = {
+          date_text: cols[idx.date_text] || "",
+          club: cols[idx.club] || "",
+          distance_cible_m: idx.distance_cible_m >= 0 ? Number(cols[idx.distance_cible_m] || "") : null,
+          radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
+          distance_totale_m: idx.distance_totale_m >= 0 ? Number(cols[idx.distance_totale_m] || "") : null,
+          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? Number(cols[idx.ecart_lateral_m] || "") : null,
+          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? Number(cols[idx.ecart_profondeur_m] || "") : null
+        };
+        imported.push(row);
+      }
+
+      if (!imported.length) {
+        alert("Aucune donnée exploitable trouvée dans ce CSV.");
+        return;
+      }
+
+      const existing = parseStoredHistory();
+      const existingKeys = new Set(
+        existing.map(r => {
+          return [
+            r.date_text || "",
+            r.club || "",
+            r.distance_cible_m ?? "",
+            r.radar_info || "",
+            r.distance_totale_m ?? "",
+            r.ecart_lateral_m ?? "",
+            r.ecart_profondeur_m ?? ""
+          ].join("|");
+        })
+      );
+
+      const merged = [...existing];
+      let added = 0;
+      imported.forEach(r => {
+        const key = [
+          r.date_text || "",
+          r.club || "",
+          r.distance_cible_m ?? "",
+          r.radar_info || "",
+          r.distance_totale_m ?? "",
+          r.ecart_lateral_m ?? "",
+          r.ecart_profondeur_m ?? ""
+        ].join("|");
+        if (!existingKeys.has(key)) {
+          existingKeys.add(key);
+          merged.push(r);
+          added++;
+        }
+      });
+
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      loadHistory();
+      alert(`${added} ligne(s) ajoutée(s) à votre historique (doublons ignorés).`);
+    }
+
+    function openDeletePopup(globalIndex) {
+      if (globalIndex == null || globalIndex < 0 || globalIndex >= allRows.length) return;
+      pendingDeleteIndex = globalIndex;
+      deletePopup.classList.remove("hidden");
+    }
+
+    function closeDeletePopup() {
+      pendingDeleteIndex = null;
+      deletePopup.classList.add("hidden");
+    }
+
+    function confirmDelete() {
+      if (pendingDeleteIndex == null || pendingDeleteIndex < 0 || pendingDeleteIndex >= allRows.length) {
+        closeDeletePopup();
+        return;
+      }
+      allRows.splice(pendingDeleteIndex, 1);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
+      closeDeletePopup();
+      loadHistory();
+      updateExportWarning();
+    }
+
+    function updateExportWarning() {
+      const total = allRows.length;
+      let last = 0;
+      try {
+        const raw = localStorage.getItem(LAST_EXPORT_COUNT_KEY);
+        if (raw) last = Number(raw) || 0;
+      } catch(e) {}
+      const diff = total - last;
+      if (diff > 0) {
+        exportWarning.textContent = `⚠️ ${diff} coup(s) ajouté(s) depuis le dernier export`;
+        exportWarning.classList.remove("hidden");
+      } else {
+        exportWarning.classList.add("hidden");
+      }
+    }
+
+    function updateSortHeaders() {
+      const ths = document.querySelectorAll("thead th[data-sort]");
+      ths.forEach(th => {
+        th.classList.remove("sort-asc","sort-desc");
+        const col = th.getAttribute("data-sort");
+        if (col === sortState.column) {
+          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
+        }
+      });
+    }
+
+    // Heatmap (4 anneaux fixes + halo rouge/orange/vert)
+    function renderHeatmap() {
+      if (!heatCanvas) return;
+      const ctx = heatCanvas.getContext("2d");
+
+      const radarTypeVal = fRadarType.value;
+      if (!radarTypeVal || radarTypeVal === "all") {
+        // Pas de type -> pas de heatmap exploitable
+        const w0 = heatCanvas.clientWidth || 300;
+        const h0 = heatCanvas.clientHeight || 300;
+        const ratio = window.devicePixelRatio || 1;
+        heatCanvas.width = w0 * ratio;
+        heatCanvas.height = h0 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,heatCanvas.width,heatCanvas.height);
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        heatInfo.textContent = "Choisissez un type de radar pour afficher la heatmap.";
+        return;
+      }
+
+      const ratio = window.devicePixelRatio || 1;
+      const w = heatCanvas.clientWidth || 300;
+      const h = heatCanvas.clientHeight || 300;
+      heatCanvas.width = w * ratio;
+      heatCanvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (!filteredRows.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
+        heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        return;
+      }
+
+      // Distances cibles disponibles
+      const distances = Array.from(
+        new Set(
+          filteredRows
+            .map(r => r.distance_cible_m)
+            .filter(v => v != null && !isNaN(v))
+        )
+      ).sort((a,b)=>a-b);
+
+      if (!distances.length) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0,0,w,h);
+        heatInfo.textContent = "Aucune distance cible renseignée pour ce filtre.";
+        heatDistanceLabel.textContent = "Toutes distances";
+        heatRange.disabled = true;
+        return;
+      }
+
+      // Curseur aligné sur les valeurs existantes
+      if (heatRange.max != String(distances.length - 1)) {
+        heatRange.min = "0";
+        heatRange.max = String(distances.length - 1);
+        heatRange.value = "0";
+      }
+      let idx = Number(heatRange.value) || 0;
+      if (idx < 0) idx = 0;
+      if (idx > distances.length - 1) idx = distances.length - 1;
+      const centerDist = distances[idx];
+
+      // Fenêtre selon type de radar
+      let windowHalf;
+      if (radarTypeVal === "putting") {
+        windowHalf = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        windowHalf = 2;
+      } else {
+        windowHalf = 5; // long jeu
+      }
+
+      const minD = centerDist - windowHalf;
+      const maxD = centerDist + windowHalf;
+
+      heatDistanceLabel.textContent = `Cible ${centerDist} m (±${windowHalf} m)`;
+      heatRange.disabled = false;
+
+      // Shots dans cette plage de distance cible
+      const shots = filteredRows.filter(r => {
+        const d = Number(r.distance_cible_m);
+        return !isNaN(d) && d >= minD && d <= maxD;
+      });
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) * 0.42;
+
+      // Fond
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0,0,w,h);
+
+      if (!shots.length) {
+        heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
+        // On dessine quand même le radar vide
+        drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+        return;
+      }
+
+      // Dessin du radar (4 anneaux)
+      drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
+
+      // Échelle fixe selon le type de radar (mètres par anneau)
+      let metersPerRing;
+      if (radarTypeVal === "putting") {
+        metersPerRing = 1;
+      } else if (radarTypeVal === "petit_jeu") {
+        metersPerRing = 2;
+      } else {
+        metersPerRing = 5;
+      }
+      const maxMetric = 4 * metersPerRing;
+      const scale = radius / maxMetric;
+
+      // Densité locale (distance <= 2 m pour counting)
+      const densities = shots.map((s, i) => {
+        const x = Number(s.ecart_lateral_m) || 0;
+        const y = Number(s.ecart_profondeur_m) || 0;
+        let count = 0;
+        for (let j = 0; j < shots.length; j++) {
+          const s2 = shots[j];
+          const x2 = Number(s2.ecart_lateral_m) || 0;
+          const y2 = Number(s2.ecart_profondeur_m) || 0;
+          const dx = x2 - x;
+          const dy = y2 - y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist <= 2) count++;
+        }
+        return count;
+      });
+      const maxDensity = Math.max(...densities, 1);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      for (let i = 0; i < shots.length; i++) {
+        const s = shots[i];
+        let xVal = Number(s.ecart_lateral_m) || 0;
+        let yVal = Number(s.ecart_profondeur_m) || 0;
+
+        // Conversion m -> px + clamp au bord du radar
+        let px = xVal * scale;
+        let py = yVal * scale;
+        const distPix = Math.sqrt(px*px + py*py);
+        if (distPix > radius) {
+          const f = radius / distPix;
+          px *= f;
+          py *= f;
+        }
+
+        const x = cx + px;
+        const y = cy - py;
+
+        const density = densities[i];
+        const t = density / maxDensity; // 0 = isolé, 1 = zone dense
+
+        // 0 -> vert, ~0.5 -> orange, 1 -> rouge
+        const hue = 120 - 120 * t; // 120=vert, 0=rouge
+        const saturation = 80;
+        const lightness = 50;
+
+        const rPix = Math.max(16, radius * 0.16); // halo plus large
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, rPix);
+        grad.addColorStop(0,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0.95)`);
+        grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+        grad.addColorStop(1,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, rPix, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      heatInfo.textContent = `${shots.length} coup(s) affiché(s) pour cette plage de distance.`;
+    }
+
+    // Dessine le radar à 4 anneaux (sans lire les coups)
+    function drawRadarBackground(ctx, cx, cy, radius, radarTypeVal) {
+      ctx.save();
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 1.1;
+
+      // 4 anneaux
+      for (let i = 1; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, (radius * i) / 4, 0, Math.PI*2);
+        if (i === 4) {
+          ctx.strokeStyle = "#1f2937";
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = "#111827";
+          ctx.setLineDash([4,4]);
+        }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // Axes
+      ctx.strokeStyle = "#1f2937";
+      ctx.beginPath();
+      ctx.moveTo(cx - radius, cy);
+      ctx.lineTo(cx + radius, cy);
+      ctx.moveTo(cx, cy - radius);
+      ctx.lineTo(cx, cy + radius);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Listeners
+    btnApply.addEventListener("click", applyFilters);
+    btnReset.addEventListener("click", resetFilters);
+
+    btnExport.addEventListener("click", exportHistory);
+    btnImport.addEventListener("click", () => importInput.click());
+    importInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        importCSVText(ev.target.result);
+        importInput.value = "";
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    tabRawBtn.addEventListener("click", () => setView("raw"));
+    tabHeatBtn.addEventListener("click", () => setView("heat"));
+
+    rawBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".delete-btn");
+      if (!btn) return;
+      const idxStr = btn.dataset.index;
+      if (idxStr === undefined || idxStr === "") return;
+      const idx = Number(idxStr);
+      if (Number.isNaN(idx)) return;
+      openDeletePopup(idx);
+    });
+
+    deleteCancelBtn.addEventListener("click", closeDeletePopup);
+    deleteConfirmBtn.addEventListener("click", confirmDelete);
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRawTable();
+      }
+    });
+    nextPageBtn.addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRawTable();
+      }
+    });
+
+    document.querySelectorAll("thead th[data-sort]").forEach(th => {
+      const col = th.getAttribute("data-sort");
+      if (col === "none") return;
+      th.addEventListener("click", () => {
+        if (sortState.column === col) {
+          sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+        } else {
+          sortState.column = col;
+          sortState.direction = "asc";
+        }
+        sortFilteredRows();
+        currentPage = 1;
+        renderRawTable();
+      });
+    });
+
+    function onHeatRangeChange() {
+      renderHeatmap();
+    }
+    heatRange.addEventListener("input", onHeatRangeChange);
+    heatRange.addEventListener("change", onHeatRangeChange);
+
+    window.addEventListener("resize", () => {
+      if (!viewHeat.classList.contains("hidden")) {
+        renderHeatmap();
+      }
+    });
+
+    loadHistory();
+  </script>
 
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
