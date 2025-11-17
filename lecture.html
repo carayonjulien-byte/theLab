@@ -1465,6 +1465,7 @@
         return;
       }
 
+      // 1. On charge l'existant
       let history = [];
       try {
         const raw = localStorage.getItem(HISTORY_KEY);
@@ -1473,19 +1474,22 @@
         history = [];
       }
 
-      const radarUsage   = radarUsageSel.value || lastJson.radarUsage || null;
+      // 2. Préparation des données communes
+      const radarUsage    = radarUsageSel.value || lastJson.radarUsage || null;
       const radarScaleKey = radarScaleSel.value || lastJson.radarScaleKey || null;
-      const radarScaleM  = RADAR_SCALES[radarScaleKey] || lastJson.radarScaleM || null;
+      const radarScaleM   = RADAR_SCALES[radarScaleKey] || lastJson.radarScaleM || null;
+      const radarInfo     = getRadarInfoLabel(radarUsage, radarScaleKey);
+      const dateVal       = dateText.value;
+      const clubVal       = club.value;
+      const cibleVal      = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
+      
+      // Cet ID de session est UNIQUE à chaque sauvegarde
+      const sessionId     = generateSessionId(radarUsage);
 
-      const radarInfo = getRadarInfoLabel(radarUsage, radarScaleKey);
-      const dateVal   = dateText.value;
-      const clubVal   = club.value;
-      const cibleVal  = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
-
-      const sessionId = generateSessionId(radarUsage);
-
-      coups.forEach(c => {
+      // 3. Boucle simple : on numérote de 1 à N pour cette session
+      coups.forEach((c, index) => {
         history.push({
+          id: index + 1, // Simplement 1, 2, 3... pour cette série de coups
           session_id: sessionId,
           date_text: dateVal,
           radar_usage: radarUsage,
