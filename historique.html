@@ -818,42 +818,38 @@
         return;
       }
 
-      // 1. On crée un ensemble (Set) pour stocker toutes les clés uniques trouvées
-      // On parcourt TOUTES les lignes pour ne rien rater
+      // 1. Récupérer toutes les colonnes possibles
       const allKeys = new Set();
       allRows.forEach(row => {
         Object.keys(row).forEach(key => allKeys.add(key));
       });
-      
-      // On transforme le Set en tableau pour avoir nos en-têtes
       const headers = Array.from(allKeys);
 
-      // 2. On écrit la ligne d'en-tête
-      const csvRows = [headers.join(",")];
+      // 2. En-tête avec Point-Virgule
+      const csvRows = [headers.join(";")];
 
-      // 3. On parcourt les données
+      // 3. Données
       allRows.forEach(row => {
         const values = headers.map(header => {
-          // On récupère la valeur, même si cette ligne ne l'a pas (ça mettra vide)
           const val = row[header];
-          
           if (val === null || val === undefined) return "";
           
-          const stringVal = String(val);
-          // On gère les guillemets pour le CSV
-          return stringVal.replace(/"/g, '""');
+          let stringVal = String(val);
+          // Nettoyage : on enlève les retours à la ligne qui cassent les CSV
+          stringVal = stringVal.replace(/(\r\n|\n|\r)/gm, " ");
+          // On échappe les points-virgules s'il y en a dans le texte
+          return stringVal.replace(/;/g, ","); 
         });
-        csvRows.push(values.join(","));
+        csvRows.push(values.join(";"));
       });
 
-      // 4. Téléchargement
-      const csv = csvRows.join("\n");
+      const csv = "\ufeff" + csvRows.join("\n"); // \ufeff force l'encodage UTF-8 (accents)
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
       
-      downloadCSV(`todogolf-backup-${yyyy}-${mm}-${dd}.csv`, csv);
+      downloadCSV(`todogolf-export-${yyyy}-${mm}-${dd}.csv`, csv);
 
       try {
         localStorage.setItem(LAST_EXPORT_COUNT_KEY, String(allRows.length));
@@ -866,24 +862,34 @@
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
 
-      const headers = lines[0].split(",");
+      // 1. Détection automatique du séparateur (Virgule ou Point-Virgule)
+      const headerLine = lines[0];
+      const separator = headerLine.includes(";") ? ";" : ",";
+
+      const headers = headerLine.split(separator);
       
       const imported = [];
 
       const parseValue = (val) => {
         if (!val || val.trim() === "") return null;
-        const n = Number(val);
+        // On remplace la virgule par un point pour convertir "0,3" en nombre 0.3
+        const cleanVal = val.replace(",", "."); 
+        const n = Number(cleanVal);
         return isNaN(n) ? val : n; 
       };
 
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        if (cols.length < headers.length) continue;
+        const cols = lines[i].split(separator);
+        
+        // On accepte la ligne même s'il manque une colonne vide à la fin
+        if (cols.length < headers.length - 1) continue;
 
         const row = {};
         headers.forEach((header, index) => {
           const key = header.trim();
-          row[key] = parseValue(cols[index]);
+          // Protection contre le décalage si la ligne est plus courte
+          const rawVal = cols[index] !== undefined ? cols[index] : "";
+          row[key] = parseValue(rawVal);
         });
         imported.push(row);
       }
@@ -892,6 +898,35 @@
         alert("Fichier vide ou illisible.");
         return;
       }
+
+      // Check doublons
+      const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
+      const existingSet = new Set(currentHistoryJSON);
+      
+      const newRows = [];
+      let duplicatesCount = 0;
+
+      imported.forEach(row => {
+        const rowStr = JSON.stringify(row);
+        if (!existingSet.has(rowStr)) {
+          newRows.push(row);
+          existingSet.add(rowStr); 
+        } else {
+          duplicatesCount++;
+        }
+      });
+
+      if (newRows.length === 0) {
+        alert("Aucune nouvelle donnée : tous les coups existent déjà.");
+        return;
+      }
+
+      const merged = [...parseStoredHistory(), ...newRows];
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      
+      loadHistory();
+      alert(`${newRows.length} coups importés.\n(${duplicatesCount} doublons ignorés).`);
+    }
 
       // Détection de doublons stricte
       const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
