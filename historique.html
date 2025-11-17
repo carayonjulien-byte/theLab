@@ -837,13 +837,8 @@
         alert("Aucune donnée à exporter.");
         return;
       }
-
       const headers = [
-        "session_id",
         "date_text",
-        "radar_usage",
-        "radar_scale_key",
-        "radar_scale_m",
         "club",
         "distance_cible_m",
         "radar_info",
@@ -853,7 +848,6 @@
       ];
 
       const rows = [headers.join(",")];
-
       allRows.forEach(r => {
         const line = headers.map(h => {
           const v = r[h] != null ? String(r[h]) : "";
@@ -874,6 +868,215 @@
         updateExportWarning();
       } catch(e) {}
     }
+
+    function importCSVText(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+      if (!lines.length) return;
+      const headerLine = lines[0];
+      const headers = headerLine.split(",");
+      const idx = {
+        date_text: headers.indexOf("date_text"),
+        club: headers.indexOf("club"),
+        distance_cible_m: headers.indexOf("distance_cible_m"),
+        radar_info: headers.indexOf("radar_info"),
+        distance_totale_m: headers.indexOf("distance_totale_m"),
+        ecart_lateral_m: headers.indexOf("ecart_lateral_m"),
+        ecart_profondeur_m: headers.indexOf("ecart_profondeur_m")
+      };
+
+      if (idx.date_text === -1 || idx.club === -1) {
+        alert("Le fichier CSV ne contient pas les colonnes attendues (au minimum date_text et club).");
+        return;
+      }
+
+      const imported = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const cols = line.split(",");
+        if (!cols.length || cols.every(c => !c.trim())) continue;
+
+        const row = {
+          date_text: cols[idx.date_text] || "",
+          club: cols[idx.club] || "",
+          distance_cible_m: idx.distance_cible_m >= 0 ? Number(cols[idx.distance_cible_m] || "") : null,
+          radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
+          distance_totale_m: idx.distance_totale_m >= 0 ? Number(cols[idx.distance_totale_m] || "") : null,
+          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? Number(cols[idx.ecart_lateral_m] || "") : null,
+          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? Number(cols[idx.ecart_profondeur_m] || "") : null
+        };
+        imported.push(row);
+      }
+
+      if (!imported.length) {
+        alert("Aucune donnée exploitable trouvée dans ce CSV.");
+        return;
+      }
+
+      const existing = parseStoredHistory();
+      const existingKeys = new Set(
+        existing.map(r => {
+          return [
+            r.date_text || "",
+            r.club || "",
+            r.distance_cible_m ?? "",
+            r.radar_info || "",
+            r.distance_totale_m ?? "",
+            r.ecart_lateral_m ?? "",
+            r.ecart_profondeur_m ?? ""
+          ].join("|");
+        })
+      );
+
+      const merged = [...existing];
+      let added = 0;
+      imported.forEach(r => {
+        const key = [
+          r.date_text || "",
+          r.club || "",
+          r.distance_cible_m ?? "",
+          r.radar_info || "",
+          r.distance_totale_m ?? "",
+          r.ecart_lateral_m ?? "",
+          r.ecart_profondeur_m ?? ""
+        ].join("|");
+        if (!existingKeys.has(key)) {
+          existingKeys.add(key);
+          merged.push(r);
+          added++;
+        }
+      });
+
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      loadHistory();
+      alert(`${added} ligne(s) ajoutée(s) à votre historique (doublons ignorés).`);
+    }
+
+    function openDeletePopup(globalIndex) {
+      if (globalIndex == null || globalIndex < 0 || globalIndex >= allRows.length) return;
+      pendingDeleteIndex = globalIndex;
+      deletePopup.classList.remove("hidden");
+    }
+
+    function closeDeletePopup() {
+      pendingDeleteIndex = null;
+      deletePopup.classList.add("hidden");
+    }
+
+    function confirmDelete() {
+      if (pendingDeleteIndex == null || pendingDeleteIndex < 0 || pendingDeleteIndex >= allRows.length) {
+        closeDeletePopup();
+        return;
+      }
+      allRows.splice(pendingDeleteIndex, 1);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
+      closeDeletePopup();
+      loadHistory();
+      updateExportWarning();
+    }
+
+    function updateExportWarning() {
+      const total = allRows.length;
+      let last = 0;
+      try {
+        const raw = localStorage.getItem(LAST_EXPORT_COUNT_KEY);
+        if (raw) last = Number(raw) || 0;
+      } catch(e) {}
+      const diff = total - last;
+      if (diff > 0) {
+        exportWarning.textContent = `⚠️ ${diff} coup(s) ajouté(s) depuis le dernier export`;
+        exportWarning.classList.remove("hidden");
+      } else {
+        exportWarning.classList.add("hidden");
+      }
+    }
+
+    function updateSortHeaders() {
+      const ths = document.querySelectorAll("thead th[data-sort]");
+      ths.forEach(th => {
+        th.classList.remove("sort-asc","sort-desc");
+        const col = th.getAttribute("data-sort");
+        if (col === sortState.column) {
+          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
+        }
+      });
+    }
+
+    // Listeners
+    btnApply.addEventListener("click", applyFilters);
+    btnReset.addEventListener("click", resetFilters);
+
+    btnExport.addEventListener("click", exportHistory);
+    btnImport.addEventListener("click", () => importInput.click());
+    importInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        importCSVText(ev.target.result);
+        importInput.value = "";
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    rawBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".delete-btn");
+      if (!btn) return;
+      const idxStr = btn.dataset.index;
+      if (idxStr === undefined || idxStr === "") return;
+      const idx = Number(idxStr);
+      if (Number.isNaN(idx)) return;
+      openDeletePopup(idx);
+    });
+
+    deleteCancelBtn.addEventListener("click", closeDeletePopup);
+    deleteConfirmBtn.addEventListener("click", confirmDelete);
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRawTable();
+      }
+    });
+    nextPageBtn.addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRawTable();
+      }
+    });
+
+    document.querySelectorAll("thead th[data-sort]").forEach(th => {
+      const col = th.getAttribute("data-sort");
+      if (col === "none") return;
+      th.addEventListener("click", () => {
+        if (sortState.column === col) {
+          sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+        } else {
+          sortState.column = col;
+          sortState.direction = "asc";
+        }
+        sortFilteredRows();
+        currentPage = 1;
+        renderRawTable();
+      });
+    });
+
+    loadHistory();
+  </script>
+
+  <script>
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+
+    function pingRender() {
+      try {
+        fetch(RENDER_URL, {
+          method: "HEAD",
+          mode: "no-cors"
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
   </script>
 </body>
 </html>
