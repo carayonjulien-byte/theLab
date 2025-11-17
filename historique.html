@@ -250,7 +250,7 @@
       padding:8px 0;
     }
 
-    /* Tabs (brutes / heatmap) */
+    /* Tabs */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -403,12 +403,12 @@
       <section class="card">
         <div class="card-title">Filtres</div>
         <div class="card-subtitle">
-          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+          Commencez par choisir un radar, puis ajustez les autres critères.
         </div>
 
-        <label for="fRadarType">Condition</label>
+        <label for="fRadarType">Radar utilisé</label>
         <select id="fRadarType">
-          <option value="">— Toutes —</option>
+          <option value="">— Tous les radars —</option>
         </select>
 
         <label for="fDateFrom">Date min</label>
@@ -450,7 +450,7 @@
                   <th data-sort="date">Date</th>
                   <th data-sort="club">Club</th>
                   <th data-sort="dist_cible">Dist. cible</th>
-                  <th data-sort="radar">Condition</th>
+                  <th data-sort="radar">Radar</th>
                   <th data-sort="dist_totale">Dist. totale</th>
                   <th data-sort="lat">Écart lat.</th>
                   <th data-sort="prof">Écart prof.</th>
@@ -561,7 +561,7 @@
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      populateRadarFilter(); // AJOUTÉ : Charge les radars disponibles
+      populateRadarFilter(); 
       applyFilters(); 
       updateExportWarning();
     }
@@ -584,7 +584,6 @@
       }
     }
 
-    // NOUVELLE FONCTION : Remplit la liste des radars
     function populateRadarFilter() {
       const radars = new Set();
       allRows.forEach(r => {
@@ -631,7 +630,7 @@
         if (distMin !== null && Number(r.distance_cible_m) < distMin) return false;
         if (distMax !== null && Number(r.distance_cible_m) > distMax) return false;
 
-        // MODIFIÉ : Comparaison directe avec radar_info
+        // Filtrage exact du nom de radar
         if (radarType && r.radar_info !== radarType) return false;
 
         return true;
@@ -791,7 +790,7 @@
     }
 
     function resetFilters() {
-      fRadarType.value = ""; // Reset à vide pour 'tous les radars'
+      fRadarType.value = ""; 
       fDateFrom.value = "";
       fDateTo.value   = "";
       fClub.value     = "";
@@ -812,31 +811,35 @@
       URL.revokeObjectURL(url);
     }
 
+    // --- EXPORT DYNAMIQUE ---
     function exportHistory() {
       if (!allRows.length) {
         alert("Aucune donnée à exporter.");
         return;
       }
-      const headers = [
-        "session_id", "date_text", "club", "distance_cible_m",
-        "radar_info", "distance_totale_m", "ecart_lateral_m", "ecart_profondeur_m"
-      ];
 
-      const rows = [headers.join(",")];
-      allRows.forEach(r => {
-        const line = headers.map(h => {
-          const v = r[h] != null ? String(r[h]) : "";
-          return v.replace(/"/g,'""');
-        }).join(",");
-        rows.push(line);
+      // 1. On récupère dynamiquement les colonnes
+      const headers = Object.keys(allRows[0]);
+
+      const csvRows = [headers.join(",")];
+
+      allRows.forEach(row => {
+        const values = headers.map(header => {
+          const val = row[header];
+          if (val === null || val === undefined) return "";
+          const stringVal = String(val);
+          return stringVal.replace(/"/g, '""');
+        });
+        csvRows.push(values.join(","));
       });
 
-      const csv = rows.join("\n");
+      const csv = csvRows.join("\n");
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
-      downloadCSV(`todogolf-historique-${yyyy}-${mm}-${dd}.csv`, csv);
+      
+      downloadCSV(`todogolf-backup-${yyyy}-${mm}-${dd}.csv`, csv);
 
       try {
         localStorage.setItem(LAST_EXPORT_COUNT_KEY, String(allRows.length));
@@ -844,102 +847,67 @@
       } catch(e) {}
     }
 
+    // --- IMPORT DYNAMIQUE (AVEC CHECK DOUBLONS STRICT) ---
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
+
+      const headers = lines[0].split(",");
       
-      const headerLine = lines[0];
-      const headers = headerLine.split(",");
-      
-      // On map les index des colonnes
-      const idx = {
-        session_id: headers.indexOf("session_id"),
-        date_text: headers.indexOf("date_text"),
-        club: headers.indexOf("club"),
-        distance_cible_m: headers.indexOf("distance_cible_m"),
-        radar_info: headers.indexOf("radar_info"),
-        distance_totale_m: headers.indexOf("distance_totale_m"),
-        ecart_lateral_m: headers.indexOf("ecart_lateral_m"),
-        ecart_profondeur_m: headers.indexOf("ecart_profondeur_m")
-      };
-
-      if (Object.values(idx).includes(-1)) {
-        alert("Le fichier CSV ne contient pas les colonnes attendues.");
-        return;
-      }
-
-      // Petite fonction pour éviter que "vide" devienne 0
-      const parseNum = (val) => {
-        if (!val || val.trim() === "") return null;
-        const n = Number(val);
-        return isNaN(n) ? null : n;
-      };
-
       const imported = [];
 
+      const parseValue = (val) => {
+        if (!val || val.trim() === "") return null;
+        const n = Number(val);
+        return isNaN(n) ? val : n; 
+      };
+
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const cols = line.split(",");
-        
-        if (!cols.length || cols.every(c => !c.trim())) continue;
+        const cols = lines[i].split(",");
+        if (cols.length < headers.length) continue;
 
-        const row = {
-          session_id: cols[idx.session_id] || "",
-          date_text: cols[idx.date_text] || "",
-          club: cols[idx.club] || "",
-          distance_cible_m: idx.distance_cible_m >= 0 ? parseNum(cols[idx.distance_cible_m]) : null,
-          radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
-          distance_totale_m: idx.distance_totale_m >= 0 ? parseNum(cols[idx.distance_totale_m]) : null,
-          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? parseNum(cols[idx.ecart_lateral_m]) : null,
-          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? parseNum(cols[idx.ecart_profondeur_m]) : null
-        };
-
-        const uniqueKey = [
-          row.session_id, 
-          row.date_text, 
-          row.club, 
-          row.distance_cible_m,
-          row.radar_info, 
-          row.distance_totale_m, 
-          row.ecart_lateral_m, 
-          row.ecart_profondeur_m
-        ].join("|");
-
-        const existing = parseStoredHistory();
-        const existingKeys = new Set(
-          existing.map(r => {
-            return [
-              r.session_id, 
-              r.date_text, 
-              r.club, 
-              r.distance_cible_m,
-              r.radar_info, 
-              r.distance_totale_m, 
-              r.ecart_lateral_m, 
-              r.ecart_profondeur_m
-            ].join("|");
-          })
-        );
-
-        if (!existingKeys.has(uniqueKey)) {
-          imported.push(row);
-        }
+        const row = {};
+        headers.forEach((header, index) => {
+          const key = header.trim();
+          row[key] = parseValue(cols[index]);
+        });
+        imported.push(row);
       }
 
       if (!imported.length) {
-        alert("Aucune nouvelle donnée détectée (les doublons sont ignorés).");
+        alert("Fichier vide ou illisible.");
         return;
       }
 
-      const existing = parseStoredHistory();
-      const merged = [...existing, ...imported];
+      // Détection de doublons stricte
+      const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
+      const existingSet = new Set(currentHistoryJSON);
+      
+      const newRows = [];
+      let duplicatesCount = 0;
 
+      imported.forEach(row => {
+        const rowStr = JSON.stringify(row);
+        if (!existingSet.has(rowStr)) {
+          newRows.push(row);
+          existingSet.add(rowStr); 
+        } else {
+          duplicatesCount++;
+        }
+      });
+
+      if (newRows.length === 0) {
+        alert("Aucune nouvelle donnée : tous les coups de ce fichier existent déjà.");
+        return;
+      }
+
+      const merged = [...parseStoredHistory(), ...newRows];
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      
       loadHistory();
-      alert(`${imported.length} ligne(s) ajoutée(s) à votre historique.`);
+      alert(`${newRows.length} coups importés avec succès.\n(${duplicatesCount} doublons ignorés).`);
     }
 
-    // Listeners
     function openDeletePopup(index) {
       pendingDeleteIndex = index;
       deletePopup.classList.remove("hidden");
