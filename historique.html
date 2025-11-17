@@ -940,10 +940,21 @@
 
     function confirmDelete() {
       if (pendingDeleteIndex === null) return;
+
+      // 1. On supprime la ligne
       allRows.splice(pendingDeleteIndex, 1);
+
+      // 2. On sauvegarde le nouvel état
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
+
+      // 3. On rafraîchit le tableau visuel
       applyFilters(); 
+
+      // 4. IMPORTANT : On actualise l'alerte jaune
+      // (C'est souvent cette ligne qui manque)
       updateExportWarning();
+
+      // 5. On ferme la popup
       closeDeletePopup();
     }
 
