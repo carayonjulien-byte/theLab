@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ToDoGolf Lab – Historique</title>
   <style>
+    /* --- CSS D'ORIGINE CONSERVÉ --- */
     :root {
       --gap: 14px;
       --primary: #00503a;
@@ -249,7 +250,7 @@
       padding:8px 0;
     }
 
-    /* Tabs (brutes / heatmap) */
+    /* Tabs (brutes / heatmap) - GARDÉ pour l'apparence, même si vide dans le HTML */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -351,8 +352,8 @@
     .btn-ghost:hover {
       background:#111827;
     }
-
-    /* Heatmap canvas */
+    
+    /* Styles liés au canvas (Gardés pour ne pas casser le CSS si jamais) */
     #heatCanvas {
       width:100%;
       max-width:480px;
@@ -401,7 +402,6 @@
   </style>
 </head>
 <body>
-  <!-- Topbar -->
   <header class="topbar">
     <div class="top-left">
       <div class="brand-dot"></div>
@@ -429,17 +429,15 @@
     </div>
 
     <div class="layout">
-      <!-- Filtres -->
       <section class="card">
         <div class="card-title">Filtres</div>
         <div class="card-subtitle">
           Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
         </div>
 
-        <!-- Type de radar en premier et obligatoire pour la heatmap -->
-        <label for="fRadarType">Type de radar (obligatoire pour la heatmap)</label>
+        <label for="fRadarType">Type de radar</label>
         <select id="fRadarType">
-          <option value="all">— Choisissez un type —</option>
+          <option value="all">— Tous les types —</option>
           <option value="putting">Putting</option>
           <option value="petit_jeu">Petit jeu</option>
           <option value="long_jeu">Long jeu</option>
@@ -470,15 +468,8 @@
         <div id="filterInfo" class="status-bar"></div>
       </section>
 
-      <!-- Résultats -->
       <section class="card">
         <div class="card-title">Vue des données</div>
-        <div class="view-tabs">
-          <button id="tabRawBtn"  class="view-tab view-tab--active" type="button">Données brutes</button>
-          <button id="tabHeatBtn" class="view-tab" type="button">Heatmap</button>
-        </div>
-
-        <!-- Vue Données brutes -->
         <div id="viewRaw">
           <div class="card-subtitle">
             Chaque ligne correspond à un coup enregistré dans votre historique.
@@ -512,34 +503,10 @@
             </div>
           </div>
         </div>
-
-        <!-- Vue Heatmap -->
-        <div id="viewHeat" class="hidden">
-          <div class="card-subtitle">
-            Répartition de vos coups autour de la cible : écarts latéraux (gauche / droite)
-            et en profondeur (court / long), visualisés sur un radar de dispersion à 4 anneaux.
-          </div>
-
-          <div class="heat-controls">
-            <div class="heat-controls-row">
-              <span>Distance cible filtrée :</span>
-              <span id="heatDistanceLabel">Toutes distances</span>
-            </div>
-            <div class="heat-controls-row">
-              <input id="heatRange" type="range" min="0" max="0" value="0" disabled>
-            </div>
-            <div class="heat-controls-row">
-              <span id="heatInfo" style="flex:1;">Choisissez un type de radar pour afficher la heatmap.</span>
-            </div>
-          </div>
-
-          <canvas id="heatCanvas"></canvas>
-        </div>
       </section>
     </div>
   </main>
 
-  <!-- Popup suppression -->
   <div id="deletePopup" class="delete-popup-overlay hidden">
     <div class="delete-popup-card">
       <div class="delete-title">Supprimer ce coup ?</div>
@@ -577,23 +544,13 @@
     const btnExport = $("btnExport");
     const importInput = $("importInput");
 
-    const tabRawBtn  = $("tabRawBtn");
-    const tabHeatBtn = $("tabHeatBtn");
-    const viewRaw    = $("viewRaw");
-    const viewHeat   = $("viewHeat");
-
-    const deletePopup      = $("deletePopup");
-    const deleteCancelBtn  = $("deleteCancelBtn");
+    const deletePopup       = $("deletePopup");
+    const deleteCancelBtn   = $("deleteCancelBtn");
     const deleteConfirmBtn = $("deleteConfirmBtn");
 
     const paginationInfo = $("paginationInfo");
     const prevPageBtn = $("prevPageBtn");
     const nextPageBtn = $("nextPageBtn");
-
-    const heatCanvas = $("heatCanvas");
-    const heatRange = $("heatRange");
-    const heatDistanceLabel = $("heatDistanceLabel");
-    const heatInfo = $("heatInfo");
 
     const ROWS_PER_PAGE = 30;
 
@@ -703,7 +660,6 @@
       currentPage = 1;
       sortFilteredRows();
       renderRawTable();
-      renderHeatmap();
       updateFilterInfo();
     }
 
@@ -852,21 +808,6 @@
       prevPageBtn.disabled = currentPage <= 1;
       nextPageBtn.disabled = currentPage >= totalPages;
       updateSortHeaders();
-    }
-
-    function setView(view) {
-      if (view === "raw") {
-        viewRaw.classList.remove("hidden");
-        viewHeat.classList.add("hidden");
-        tabRawBtn.classList.add("view-tab--active");
-        tabHeatBtn.classList.remove("view-tab--active");
-      } else {
-        viewRaw.classList.add("hidden");
-        viewHeat.classList.remove("hidden");
-        tabHeatBtn.classList.add("view-tab--active");
-        tabRawBtn.classList.remove("view-tab--active");
-        renderHeatmap();
-      }
     }
 
     function resetFilters() {
@@ -1060,224 +1001,6 @@
       });
     }
 
-    // Heatmap (4 anneaux fixes + halo rouge/orange/vert)
-    function renderHeatmap() {
-      if (!heatCanvas) return;
-      const ctx = heatCanvas.getContext("2d");
-
-      const radarTypeVal = fRadarType.value;
-      if (!radarTypeVal || radarTypeVal === "all") {
-        // Pas de type -> pas de heatmap exploitable
-        const w0 = heatCanvas.clientWidth || 300;
-        const h0 = heatCanvas.clientHeight || 300;
-        const ratio = window.devicePixelRatio || 1;
-        heatCanvas.width = w0 * ratio;
-        heatCanvas.height = h0 * ratio;
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        ctx.fillStyle = "#020617";
-        ctx.fillRect(0,0,heatCanvas.width,heatCanvas.height);
-        heatDistanceLabel.textContent = "Toutes distances";
-        heatRange.disabled = true;
-        heatInfo.textContent = "Choisissez un type de radar pour afficher la heatmap.";
-        return;
-      }
-
-      const ratio = window.devicePixelRatio || 1;
-      const w = heatCanvas.clientWidth || 300;
-      const h = heatCanvas.clientHeight || 300;
-      heatCanvas.width = w * ratio;
-      heatCanvas.height = h * ratio;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-      ctx.clearRect(0, 0, w, h);
-
-      if (!filteredRows.length) {
-        ctx.fillStyle = "#020617";
-        ctx.fillRect(0,0,w,h);
-        heatInfo.textContent = "Aucune donnée pour construire la heatmap.";
-        heatDistanceLabel.textContent = "Toutes distances";
-        heatRange.disabled = true;
-        return;
-      }
-
-      // Distances cibles disponibles
-      const distances = Array.from(
-        new Set(
-          filteredRows
-            .map(r => r.distance_cible_m)
-            .filter(v => v != null && !isNaN(v))
-        )
-      ).sort((a,b)=>a-b);
-
-      if (!distances.length) {
-        ctx.fillStyle = "#020617";
-        ctx.fillRect(0,0,w,h);
-        heatInfo.textContent = "Aucune distance cible renseignée pour ce filtre.";
-        heatDistanceLabel.textContent = "Toutes distances";
-        heatRange.disabled = true;
-        return;
-      }
-
-      // Curseur aligné sur les valeurs existantes
-      if (heatRange.max != String(distances.length - 1)) {
-        heatRange.min = "0";
-        heatRange.max = String(distances.length - 1);
-        heatRange.value = "0";
-      }
-      let idx = Number(heatRange.value) || 0;
-      if (idx < 0) idx = 0;
-      if (idx > distances.length - 1) idx = distances.length - 1;
-      const centerDist = distances[idx];
-
-      // Fenêtre selon type de radar
-      let windowHalf;
-      if (radarTypeVal === "putting") {
-        windowHalf = 1;
-      } else if (radarTypeVal === "petit_jeu") {
-        windowHalf = 2;
-      } else {
-        windowHalf = 5; // long jeu
-      }
-
-      const minD = centerDist - windowHalf;
-      const maxD = centerDist + windowHalf;
-
-      heatDistanceLabel.textContent = `Cible ${centerDist} m (±${windowHalf} m)`;
-      heatRange.disabled = false;
-
-      // Shots dans cette plage de distance cible
-      const shots = filteredRows.filter(r => {
-        const d = Number(r.distance_cible_m);
-        return !isNaN(d) && d >= minD && d <= maxD;
-      });
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const radius = Math.min(w, h) * 0.42;
-
-      // Fond
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0,0,w,h);
-
-      if (!shots.length) {
-        heatInfo.textContent = "Aucun coup dans cette plage de distance cible.";
-        // On dessine quand même le radar vide
-        drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
-        return;
-      }
-
-      // Dessin du radar (4 anneaux)
-      drawRadarBackground(ctx, cx, cy, radius, radarTypeVal);
-
-      // Échelle fixe selon le type de radar (mètres par anneau)
-      let metersPerRing;
-      if (radarTypeVal === "putting") {
-        metersPerRing = 1;
-      } else if (radarTypeVal === "petit_jeu") {
-        metersPerRing = 2;
-      } else {
-        metersPerRing = 5;
-      }
-      const maxMetric = 4 * metersPerRing;
-      const scale = radius / maxMetric;
-
-      // Densité locale (distance <= 2 m pour counting)
-      const densities = shots.map((s, i) => {
-        const x = Number(s.ecart_lateral_m) || 0;
-        const y = Number(s.ecart_profondeur_m) || 0;
-        let count = 0;
-        for (let j = 0; j < shots.length; j++) {
-          const s2 = shots[j];
-          const x2 = Number(s2.ecart_lateral_m) || 0;
-          const y2 = Number(s2.ecart_profondeur_m) || 0;
-          const dx = x2 - x;
-          const dy = y2 - y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist <= 2) count++;
-        }
-        return count;
-      });
-      const maxDensity = Math.max(...densities, 1);
-
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-
-      for (let i = 0; i < shots.length; i++) {
-        const s = shots[i];
-        let xVal = Number(s.ecart_lateral_m) || 0;
-        let yVal = Number(s.ecart_profondeur_m) || 0;
-
-        // Conversion m -> px + clamp au bord du radar
-        let px = xVal * scale;
-        let py = yVal * scale;
-        const distPix = Math.sqrt(px*px + py*py);
-        if (distPix > radius) {
-          const f = radius / distPix;
-          px *= f;
-          py *= f;
-        }
-
-        const x = cx + px;
-        const y = cy - py;
-
-        const density = densities[i];
-        const t = density / maxDensity; // 0 = isolé, 1 = zone dense
-
-        // 0 -> vert, ~0.5 -> orange, 1 -> rouge
-        const hue = 120 - 120 * t; // 120=vert, 0=rouge
-        const saturation = 80;
-        const lightness = 50;
-
-        const rPix = Math.max(16, radius * 0.16); // halo plus large
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, rPix);
-        grad.addColorStop(0,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0.95)`);
-        grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
-        grad.addColorStop(1,   `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(x, y, rPix, 0, Math.PI*2);
-        ctx.fill();
-      }
-
-      ctx.restore();
-
-      heatInfo.textContent = `${shots.length} coup(s) affiché(s) pour cette plage de distance.`;
-    }
-
-    // Dessine le radar à 4 anneaux (sans lire les coups)
-    function drawRadarBackground(ctx, cx, cy, radius, radarTypeVal) {
-      ctx.save();
-      ctx.strokeStyle = "#1f2937";
-      ctx.lineWidth = 1.1;
-
-      // 4 anneaux
-      for (let i = 1; i <= 4; i++) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, (radius * i) / 4, 0, Math.PI*2);
-        if (i === 4) {
-          ctx.strokeStyle = "#1f2937";
-          ctx.setLineDash([]);
-        } else {
-          ctx.strokeStyle = "#111827";
-          ctx.setLineDash([4,4]);
-        }
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-
-      // Axes
-      ctx.strokeStyle = "#1f2937";
-      ctx.beginPath();
-      ctx.moveTo(cx - radius, cy);
-      ctx.lineTo(cx + radius, cy);
-      ctx.moveTo(cx, cy - radius);
-      ctx.lineTo(cx, cy + radius);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
     // Listeners
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
@@ -1294,9 +1017,6 @@
       };
       reader.readAsText(file, "utf-8");
     });
-
-    tabRawBtn.addEventListener("click", () => setView("raw"));
-    tabHeatBtn.addEventListener("click", () => setView("heat"));
 
     rawBody.addEventListener("click", (e) => {
       const btn = e.target.closest(".delete-btn");
@@ -1338,18 +1058,6 @@
         currentPage = 1;
         renderRawTable();
       });
-    });
-
-    function onHeatRangeChange() {
-      renderHeatmap();
-    }
-    heatRange.addEventListener("input", onHeatRangeChange);
-    heatRange.addEventListener("change", onHeatRangeChange);
-
-    window.addEventListener("resize", () => {
-      if (!viewHeat.classList.contains("hidden")) {
-        renderHeatmap();
-      }
     });
 
     loadHistory();
