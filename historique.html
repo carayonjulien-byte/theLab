@@ -384,7 +384,7 @@
     <div class="top-actions">
       <a href="index.html" class="btn-top">← Accueil</a>
       <span id="exportWarning" class="export-warning hidden">
-        ⚠️ Des coups n’ont pas encore été exportés
+        ⚠️ Modifications non exportées
       </span>
       <button id="btnImport" class="btn-top">⬆️ Importer CSV</button>
       <button id="btnExport" class="btn-top">⬇️ Exporter CSV</button>
@@ -951,7 +951,9 @@
       try {
         const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
         const currentCount = allRows.length;
-        if (currentCount > lastCount) {
+        
+        // Si le nombre actuel est DIFFERENT du dernier nombre connu (en plus ou en moins)
+        if (currentCount !== lastCount) {
           exportWarning.classList.remove("hidden");
         } else {
           exportWarning.classList.add("hidden");
