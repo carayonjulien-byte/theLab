@@ -937,6 +937,60 @@
     }
 
     // Listeners
+    // 1. Gestion de la Popup de suppression
+    function openDeletePopup(index) {
+      pendingDeleteIndex = index;
+      deletePopup.classList.remove("hidden");
+    }
+
+    function closeDeletePopup() {
+      pendingDeleteIndex = null;
+      deletePopup.classList.add("hidden");
+    }
+
+    function confirmDelete() {
+      if (pendingDeleteIndex === null) return;
+
+      // Suppression de la ligne dans le tableau en mémoire
+      allRows.splice(pendingDeleteIndex, 1);
+
+      // Mise à jour du localStorage
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
+
+      // Mise à jour de l'affichage
+      applyFilters(); 
+      updateExportWarning();
+
+      // Fermeture de la popup
+      closeDeletePopup();
+    }
+
+    // 2. Gestion de l'avertissement d'export (manquante aussi)
+    function updateExportWarning() {
+      try {
+        const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
+        const currentCount = allRows.length;
+        // Si on a plus de lignes que lors du dernier export, on affiche l'alerte
+        if (currentCount > lastCount) {
+          exportWarning.classList.remove("hidden");
+        } else {
+          exportWarning.classList.add("hidden");
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    // 3. Gestion des flèches de tri (manquante aussi)
+    function updateSortHeaders() {
+      document.querySelectorAll("thead th[data-sort]").forEach(th => {
+        th.classList.remove("sort-asc", "sort-desc");
+        const col = th.getAttribute("data-sort");
+        if (col === sortState.column) {
+          th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
+        }
+      });
+    }
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
 
