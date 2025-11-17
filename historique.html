@@ -250,7 +250,7 @@
       padding:8px 0;
     }
 
-    /* Tabs (brutes / heatmap) - GARDÉ pour l'apparence, même si vide dans le HTML */
+    /* Tabs (brutes / heatmap) */
     .view-tabs {
       display:inline-flex;
       border-radius:999px;
@@ -353,35 +353,6 @@
       background:#111827;
     }
     
-    /* Styles liés au canvas (Gardés pour ne pas casser le CSS si jamais) */
-    #heatCanvas {
-      width:100%;
-      max-width:480px;
-      aspect-ratio:1/1;
-      border-radius:16px;
-      background:radial-gradient(circle at center, #020617 0, #020617 55%, #020308 100%);
-      border:1px solid #202833;
-      display:block;
-      margin-top:10px;
-    }
-    .heat-controls {
-      margin-top:8px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      font-size:12px;
-      color:#9aa5b1;
-    }
-    .heat-controls-row {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .heat-controls-row input[type=range] {
-      flex:1;
-    }
-
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -435,12 +406,9 @@
           Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
         </div>
 
-        <label for="fRadarType">Type de radar</label>
+        <label for="fRadarType">Radar utilisé</label>
         <select id="fRadarType">
-          <option value="all">— Tous les types —</option>
-          <option value="putting">Putting</option>
-          <option value="petit_jeu">Petit jeu</option>
-          <option value="long_jeu">Long jeu</option>
+          <option value="">— Tous les radars —</option>
         </select>
 
         <label for="fDateFrom">Date min</label>
@@ -590,19 +558,11 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
-    function getRadarTypeKey(radarInfo) {
-      if (!radarInfo) return null;
-      const s = String(radarInfo).toLowerCase();
-      if (s.startsWith("putting")) return "putting";
-      if (s.startsWith("petit jeu")) return "petit_jeu";
-      if (s.startsWith("long jeu")) return "long_jeu";
-      return null;
-    }
-
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      applyFilters(); // initial
+      populateRadarFilter(); // AJOUTÉ : Charge les radars disponibles
+      applyFilters(); 
       updateExportWarning();
     }
 
@@ -621,6 +581,28 @@
       });
       if (current && clubs.has(current)) {
         fClub.value = current;
+      }
+    }
+
+    // NOUVELLE FONCTION : Remplit la liste des radars
+    function populateRadarFilter() {
+      const radars = new Set();
+      allRows.forEach(r => {
+        if (r.radar_info) radars.add(String(r.radar_info));
+      });
+      
+      const current = fRadarType.value;
+      fRadarType.innerHTML = '<option value="">— Tous les radars —</option>';
+      
+      Array.from(radars).sort().forEach(info => {
+        const opt = document.createElement("option");
+        opt.value = info;
+        opt.textContent = info;
+        fRadarType.appendChild(opt);
+      });
+
+      if (current && radars.has(current)) {
+        fRadarType.value = current;
       }
     }
 
@@ -649,10 +631,8 @@
         if (distMin !== null && Number(r.distance_cible_m) < distMin) return false;
         if (distMax !== null && Number(r.distance_cible_m) > distMax) return false;
 
-        if (radarType && radarType !== "all") {
-          const key = getRadarTypeKey(r.radar_info);
-          if (key !== radarType) return false;
-        }
+        // MODIFIÉ : Comparaison directe avec radar_info
+        if (radarType && r.radar_info !== radarType) return false;
 
         return true;
       });
@@ -811,7 +791,7 @@
     }
 
     function resetFilters() {
-      fRadarType.value = "all";
+      fRadarType.value = ""; // Reset à vide pour 'tous les radars'
       fDateFrom.value = "";
       fDateTo.value   = "";
       fClub.value     = "";
@@ -899,17 +879,14 @@
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
-        // On gère les virgules dans les guillemets si besoin, mais ici split simple
         const cols = line.split(",");
         
-        // Si la ligne est vide ou mal formée, on saute
         if (!cols.length || cols.every(c => !c.trim())) continue;
 
         const row = {
           session_id: cols[idx.session_id] || "",
           date_text: cols[idx.date_text] || "",
           club: cols[idx.club] || "",
-          // Utilisation de parseNum ici pour corriger le bug des doublons
           distance_cible_m: idx.distance_cible_m >= 0 ? parseNum(cols[idx.distance_cible_m]) : null,
           radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
           distance_totale_m: idx.distance_totale_m >= 0 ? parseNum(cols[idx.distance_totale_m]) : null,
@@ -917,7 +894,6 @@
           ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? parseNum(cols[idx.ecart_profondeur_m]) : null
         };
 
-        // Création de la clé unique pour comparer
         const uniqueKey = [
           row.session_id, 
           row.date_text, 
@@ -929,7 +905,6 @@
           row.ecart_profondeur_m
         ].join("|");
 
-        // Comparaison avec l'existant
         const existing = parseStoredHistory();
         const existingKeys = new Set(
           existing.map(r => {
@@ -965,7 +940,6 @@
     }
 
     // Listeners
-    // 1. Gestion de la Popup de suppression
     function openDeletePopup(index) {
       pendingDeleteIndex = index;
       deletePopup.classList.remove("hidden");
@@ -978,27 +952,17 @@
 
     function confirmDelete() {
       if (pendingDeleteIndex === null) return;
-
-      // Suppression de la ligne dans le tableau en mémoire
       allRows.splice(pendingDeleteIndex, 1);
-
-      // Mise à jour du localStorage
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
-
-      // Mise à jour de l'affichage
       applyFilters(); 
       updateExportWarning();
-
-      // Fermeture de la popup
       closeDeletePopup();
     }
 
-    // 2. Gestion de l'avertissement d'export (manquante aussi)
     function updateExportWarning() {
       try {
         const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
         const currentCount = allRows.length;
-        // Si on a plus de lignes que lors du dernier export, on affiche l'alerte
         if (currentCount > lastCount) {
           exportWarning.classList.remove("hidden");
         } else {
@@ -1009,7 +973,6 @@
       }
     }
 
-    // 3. Gestion des flèches de tri (manquante aussi)
     function updateSortHeaders() {
       document.querySelectorAll("thead th[data-sort]").forEach(th => {
         th.classList.remove("sort-asc", "sort-desc");
@@ -1019,6 +982,7 @@
         }
       });
     }
+
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
 
