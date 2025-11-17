@@ -838,13 +838,8 @@
         return;
       }
       const headers = [
-        "date_text",
-        "club",
-        "distance_cible_m",
-        "radar_info",
-        "distance_totale_m",
-        "ecart_lateral_m",
-        "ecart_profondeur_m"
+        "session_id", "date_text", "club", "distance_cible_m",
+        "radar_info", "distance_totale_m", "ecart_lateral_m", "ecart_profondeur_m"
       ];
 
       const rows = [headers.join(",")];
@@ -872,9 +867,13 @@
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
+      
       const headerLine = lines[0];
       const headers = headerLine.split(",");
+      
+      // On map les index des colonnes
       const idx = {
+        session_id: headers.indexOf("session_id"),
         date_text: headers.indexOf("date_text"),
         club: headers.indexOf("club"),
         distance_cible_m: headers.indexOf("distance_cible_m"),
@@ -884,76 +883,91 @@
         ecart_profondeur_m: headers.indexOf("ecart_profondeur_m")
       };
 
-      if (idx.date_text === -1 || idx.club === -1) {
-        alert("Le fichier CSV ne contient pas les colonnes attendues (au minimum date_text et club).");
+      if (Object.values(idx).includes(-1)) {
+        alert("Le fichier CSV ne contient pas les colonnes attendues.");
         return;
       }
 
+      // Petite fonction pour éviter que "vide" devienne 0
+      const parseNum = (val) => {
+        if (!val || val.trim() === "") return null;
+        const n = Number(val);
+        return isNaN(n) ? null : n;
+      };
+
       const imported = [];
+
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
+        // On gère les virgules dans les guillemets si besoin, mais ici split simple
         const cols = line.split(",");
+        
+        // Si la ligne est vide ou mal formée, on saute
         if (!cols.length || cols.every(c => !c.trim())) continue;
 
         const row = {
+          session_id: cols[idx.session_id] || "",
           date_text: cols[idx.date_text] || "",
           club: cols[idx.club] || "",
-          distance_cible_m: idx.distance_cible_m >= 0 ? Number(cols[idx.distance_cible_m] || "") : null,
+          // Utilisation de parseNum ici pour corriger le bug des doublons
+          distance_cible_m: idx.distance_cible_m >= 0 ? parseNum(cols[idx.distance_cible_m]) : null,
           radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
-          distance_totale_m: idx.distance_totale_m >= 0 ? Number(cols[idx.distance_totale_m] || "") : null,
-          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? Number(cols[idx.ecart_lateral_m] || "") : null,
-          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? Number(cols[idx.ecart_profondeur_m] || "") : null
+          distance_totale_m: idx.distance_totale_m >= 0 ? parseNum(cols[idx.distance_totale_m]) : null,
+          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? parseNum(cols[idx.ecart_lateral_m]) : null,
+          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? parseNum(cols[idx.ecart_profondeur_m]) : null
         };
-        imported.push(row);
+
+        // Création de la clé unique pour comparer
+        const uniqueKey = [
+          row.session_id, 
+          row.date_text, 
+          row.club, 
+          row.distance_cible_m,
+          row.radar_info, 
+          row.distance_totale_m, 
+          row.ecart_lateral_m, 
+          row.ecart_profondeur_m
+        ].join("|");
+
+        // Comparaison avec l'existant
+        const existing = parseStoredHistory();
+        const existingKeys = new Set(
+          existing.map(r => {
+            return [
+              r.session_id, 
+              r.date_text, 
+              r.club, 
+              r.distance_cible_m,
+              r.radar_info, 
+              r.distance_totale_m, 
+              r.ecart_lateral_m, 
+              r.ecart_profondeur_m
+            ].join("|");
+          })
+        );
+
+        if (!existingKeys.has(uniqueKey)) {
+          imported.push(row);
+        }
       }
 
       if (!imported.length) {
-        alert("Aucune donnée exploitable trouvée dans ce CSV.");
+        alert("Aucune nouvelle donnée détectée (les doublons sont ignorés).");
         return;
       }
 
       const existing = parseStoredHistory();
-      const existingKeys = new Set(
-        existing.map(r => {
-          return [
-            r.date_text || "",
-            r.club || "",
-            r.distance_cible_m ?? "",
-            r.radar_info || "",
-            r.distance_totale_m ?? "",
-            r.ecart_lateral_m ?? "",
-            r.ecart_profondeur_m ?? ""
-          ].join("|");
-        })
-      );
-
-      const merged = [...existing];
-      let added = 0;
-      imported.forEach(r => {
-        const key = [
-          r.date_text || "",
-          r.club || "",
-          r.distance_cible_m ?? "",
-          r.radar_info || "",
-          r.distance_totale_m ?? "",
-          r.ecart_lateral_m ?? "",
-          r.ecart_profondeur_m ?? ""
-        ].join("|");
-        if (!existingKeys.has(key)) {
-          existingKeys.add(key);
-          merged.push(r);
-          added++;
-        }
-      });
+      const merged = [...existing, ...imported];
 
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
       loadHistory();
-      alert(`${added} ligne(s) ajoutée(s) à votre historique (doublons ignorés).`);
+      alert(`${imported.length} ligne(s) ajoutée(s) à votre historique.`);
     }
 
-    function openDeletePopup(globalIndex) {
-      if (globalIndex == null || globalIndex < 0 || globalIndex >= allRows.length) return;
-      pendingDeleteIndex = globalIndex;
+    // Listeners
+    // 1. Gestion de la Popup de suppression
+    function openDeletePopup(index) {
+      pendingDeleteIndex = index;
       deletePopup.classList.remove("hidden");
     }
 
@@ -963,45 +977,48 @@
     }
 
     function confirmDelete() {
-      if (pendingDeleteIndex == null || pendingDeleteIndex < 0 || pendingDeleteIndex >= allRows.length) {
-        closeDeletePopup();
-        return;
-      }
+      if (pendingDeleteIndex === null) return;
+
+      // Suppression de la ligne dans le tableau en mémoire
       allRows.splice(pendingDeleteIndex, 1);
+
+      // Mise à jour du localStorage
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
-      closeDeletePopup();
-      loadHistory();
+
+      // Mise à jour de l'affichage
+      applyFilters(); 
       updateExportWarning();
+
+      // Fermeture de la popup
+      closeDeletePopup();
     }
 
+    // 2. Gestion de l'avertissement d'export (manquante aussi)
     function updateExportWarning() {
-      const total = allRows.length;
-      let last = 0;
       try {
-        const raw = localStorage.getItem(LAST_EXPORT_COUNT_KEY);
-        if (raw) last = Number(raw) || 0;
-      } catch(e) {}
-      const diff = total - last;
-      if (diff > 0) {
-        exportWarning.textContent = `⚠️ ${diff} coup(s) ajouté(s) depuis le dernier export`;
-        exportWarning.classList.remove("hidden");
-      } else {
-        exportWarning.classList.add("hidden");
+        const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
+        const currentCount = allRows.length;
+        // Si on a plus de lignes que lors du dernier export, on affiche l'alerte
+        if (currentCount > lastCount) {
+          exportWarning.classList.remove("hidden");
+        } else {
+          exportWarning.classList.add("hidden");
+        }
+      } catch(e) {
+        console.error(e);
       }
     }
 
+    // 3. Gestion des flèches de tri (manquante aussi)
     function updateSortHeaders() {
-      const ths = document.querySelectorAll("thead th[data-sort]");
-      ths.forEach(th => {
-        th.classList.remove("sort-asc","sort-desc");
+      document.querySelectorAll("thead th[data-sort]").forEach(th => {
+        th.classList.remove("sort-asc", "sort-desc");
         const col = th.getAttribute("data-sort");
         if (col === sortState.column) {
           th.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
         }
       });
     }
-
-    // Listeners
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
 
