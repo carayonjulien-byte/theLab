@@ -818,21 +818,35 @@
         return;
       }
 
-      // 1. On récupère dynamiquement les colonnes
-      const headers = Object.keys(allRows[0]);
+      // 1. On crée un ensemble (Set) pour stocker toutes les clés uniques trouvées
+      // On parcourt TOUTES les lignes pour ne rien rater
+      const allKeys = new Set();
+      allRows.forEach(row => {
+        Object.keys(row).forEach(key => allKeys.add(key));
+      });
+      
+      // On transforme le Set en tableau pour avoir nos en-têtes
+      const headers = Array.from(allKeys);
 
+      // 2. On écrit la ligne d'en-tête
       const csvRows = [headers.join(",")];
 
+      // 3. On parcourt les données
       allRows.forEach(row => {
         const values = headers.map(header => {
+          // On récupère la valeur, même si cette ligne ne l'a pas (ça mettra vide)
           const val = row[header];
+          
           if (val === null || val === undefined) return "";
+          
           const stringVal = String(val);
+          // On gère les guillemets pour le CSV
           return stringVal.replace(/"/g, '""');
         });
         csvRows.push(values.join(","));
       });
 
+      // 4. Téléchargement
       const csv = csvRows.join("\n");
       const d = new Date();
       const yyyy = d.getFullYear();
