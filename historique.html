@@ -811,7 +811,7 @@
       URL.revokeObjectURL(url);
     }
 
-    // --- EXPORT DYNAMIQUE ---
+    // --- EXPORT DYNAMIQUE (COMPATIBLE EXCEL & ACCENTS) ---
     function exportHistory() {
       if (!allRows.length) {
         alert("Aucune donnée à exporter.");
@@ -857,7 +857,7 @@
       } catch(e) {}
     }
 
-    // --- IMPORT DYNAMIQUE (AVEC CHECK DOUBLONS STRICT) ---
+    // --- IMPORT DYNAMIQUE (INTELLIGENT & DOUBLONS STRICTS) ---
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
@@ -926,35 +926,6 @@
       
       loadHistory();
       alert(`${newRows.length} coups importés.\n(${duplicatesCount} doublons ignorés).`);
-    }
-
-      // Détection de doublons stricte
-      const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
-      const existingSet = new Set(currentHistoryJSON);
-      
-      const newRows = [];
-      let duplicatesCount = 0;
-
-      imported.forEach(row => {
-        const rowStr = JSON.stringify(row);
-        if (!existingSet.has(rowStr)) {
-          newRows.push(row);
-          existingSet.add(rowStr); 
-        } else {
-          duplicatesCount++;
-        }
-      });
-
-      if (newRows.length === 0) {
-        alert("Aucune nouvelle donnée : tous les coups de ce fichier existent déjà.");
-        return;
-      }
-
-      const merged = [...parseStoredHistory(), ...newRows];
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
-      
-      loadHistory();
-      alert(`${newRows.length} coups importés avec succès.\n(${duplicatesCount} doublons ignorés).`);
     }
 
     function openDeletePopup(index) {
