@@ -867,8 +867,11 @@
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
+      
       const headerLine = lines[0];
       const headers = headerLine.split(",");
+      
+      // On map les index des colonnes
       const idx = {
         session_id: headers.indexOf("session_id"),
         date_text: headers.indexOf("date_text"),
@@ -885,35 +888,60 @@
         return;
       }
 
+      // Petite fonction pour éviter que "vide" devienne 0
+      const parseNum = (val) => {
+        if (!val || val.trim() === "") return null;
+        const n = Number(val);
+        return isNaN(n) ? null : n;
+      };
+
       const imported = [];
 
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
+        // On gère les virgules dans les guillemets si besoin, mais ici split simple
         const cols = line.split(",");
+        
+        // Si la ligne est vide ou mal formée, on saute
         if (!cols.length || cols.every(c => !c.trim())) continue;
 
         const row = {
           session_id: cols[idx.session_id] || "",
           date_text: cols[idx.date_text] || "",
           club: cols[idx.club] || "",
-          distance_cible_m: idx.distance_cible_m >= 0 ? Number(cols[idx.distance_cible_m] || "") : null,
+          // Utilisation de parseNum ici pour corriger le bug des doublons
+          distance_cible_m: idx.distance_cible_m >= 0 ? parseNum(cols[idx.distance_cible_m]) : null,
           radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
-          distance_totale_m: idx.distance_totale_m >= 0 ? Number(cols[idx.distance_totale_m] || "") : null,
-          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? Number(cols[idx.ecart_lateral_m] || "") : null,
-          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? Number(cols[idx.ecart_profondeur_m] || "") : null
+          distance_totale_m: idx.distance_totale_m >= 0 ? parseNum(cols[idx.distance_totale_m]) : null,
+          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? parseNum(cols[idx.ecart_lateral_m]) : null,
+          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? parseNum(cols[idx.ecart_profondeur_m]) : null
         };
 
+        // Création de la clé unique pour comparer
         const uniqueKey = [
-          row.session_id, row.date_text, row.club, row.distance_cible_m,
-          row.radar_info, row.distance_totale_m, row.ecart_lateral_m, row.ecart_profondeur_m
+          row.session_id, 
+          row.date_text, 
+          row.club, 
+          row.distance_cible_m,
+          row.radar_info, 
+          row.distance_totale_m, 
+          row.ecart_lateral_m, 
+          row.ecart_profondeur_m
         ].join("|");
 
+        // Comparaison avec l'existant
         const existing = parseStoredHistory();
         const existingKeys = new Set(
           existing.map(r => {
             return [
-              r.session_id, r.date_text, r.club, r.distance_cible_m,
-              r.radar_info, r.distance_totale_m, r.ecart_lateral_m, r.ecart_profondeur_m
+              r.session_id, 
+              r.date_text, 
+              r.club, 
+              r.distance_cible_m,
+              r.radar_info, 
+              r.distance_totale_m, 
+              r.ecart_lateral_m, 
+              r.ecart_profondeur_m
             ].join("|");
           })
         );
@@ -924,7 +952,7 @@
       }
 
       if (!imported.length) {
-        alert("Aucune donnée exploitable trouvée dans ce CSV.");
+        alert("Aucune nouvelle donnée détectée (les doublons sont ignorés).");
         return;
       }
 
@@ -933,7 +961,7 @@
 
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
       loadHistory();
-      alert(`${imported.length} ligne(s) ajoutée(s) à votre historique (doublons ignorés).`);
+      alert(`${imported.length} ligne(s) ajoutée(s) à votre historique.`);
     }
 
     // Listeners
