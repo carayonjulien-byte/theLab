@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ToDoGolf Lab – Historique</title>
   <style>
-    /* --- CSS D'ORIGINE CONSERVÉ --- */
+    /* --- CSS D'ORIGINE --- */
     :root {
       --gap: 14px;
       --primary: #00503a;
@@ -191,11 +191,21 @@
       margin-top:8px;
     }
 
+    /* --- AJOUT : GESTION RESPONSIVE DU TABLEAU --- */
+    #rawTableContainer {
+      display: block;
+      width: 100%;
+      overflow-x: auto; /* Permet le scroll horizontal si besoin */
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 10px;
+    }
+    
     table {
       width:100%;
       border-collapse: collapse;
       font-size:13px;
-      margin-top:8px;
+      /* Empêche le texte de se casser sur 2 lignes pour garder le tableau compact */
+      white-space: nowrap; 
     }
     thead {
       background:#05080c;
@@ -227,17 +237,6 @@
       background:#0b1117;
     }
 
-    .tag {
-      display:inline-flex;
-      align-items:center;
-      border-radius:999px;
-      padding:2px 8px;
-      font-size:11px;
-      background:#071015;
-      border:1px solid #1c3b2f;
-      color:#d1fae5;
-    }
-
     .status-bar {
       font-size:12px;
       color:#9aa5b1;
@@ -248,29 +247,6 @@
       font-size:13px;
       color:#9aa5b1;
       padding:8px 0;
-    }
-
-    /* Tabs */
-    .view-tabs {
-      display:inline-flex;
-      border-radius:999px;
-      background:#05080c;
-      border:1px solid #202533;
-      padding:2px;
-      margin-bottom:10px;
-    }
-    .view-tab {
-      border:none;
-      background:transparent;
-      padding:6px 12px;
-      font-size:12px;
-      border-radius:999px;
-      color:#9aa5b1;
-      cursor:pointer;
-    }
-    .view-tab--active {
-      background:#0f172a;
-      color:#e5f0ff;
     }
 
     /* Bouton suppression */
@@ -289,20 +265,7 @@
       border-color:#fca5a5;
       color:#fee2e2;
     }
-    
-    /* --- AJOUT : Scroll horizontal pour le tableau sur mobile --- */
-    #rawTableContainer {
-      display: block;
-      width: 100%;
-      overflow-x: auto; /* Active le scroll horizontal si ça dépasse */
-      -webkit-overflow-scrolling: touch; /* Scroll fluide sur iPhone */
-      margin-bottom: 10px;
-    }
 
-    /* Optionnel : Empêche les cellules de se tasser/revenir à la ligne */
-    #rawTableContainer table {
-      white-space: nowrap; 
-    }
     /* Pagination */
     .pagination {
       margin-top:8px;
@@ -365,7 +328,7 @@
     .btn-ghost:hover {
       background:#111827;
     }
-    
+     
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -463,7 +426,6 @@
                   <th data-sort="date">Date</th>
                   <th data-sort="club">Club</th>
                   <th data-sort="dist_cible">Dist. cible</th>
-                  <th data-sort="radar">Radar</th>
                   <th data-sort="dist_totale">Dist. totale</th>
                   <th data-sort="lat">Écart lat.</th>
                   <th data-sort="prof">Écart prof.</th>
@@ -471,7 +433,7 @@
                 </tr>
               </thead>
               <tbody id="rawBody">
-                <tr><td colspan="8" class="empty-state">Chargement…</td></tr>
+                <tr><td colspan="7" class="empty-state">Chargement…</td></tr>
               </tbody>
             </table>
           </div>
@@ -643,7 +605,6 @@
         if (distMin !== null && Number(r.distance_cible_m) < distMin) return false;
         if (distMax !== null && Number(r.distance_cible_m) > distMax) return false;
 
-        // Filtrage exact du nom de radar
         if (radarType && r.radar_info !== radarType) return false;
 
         return true;
@@ -699,10 +660,7 @@
             v1 = Number(r1.distance_cible_m);
             v2 = Number(r2.distance_cible_m);
             break;
-          case "radar":
-            v1 = r1.radar_info || "";
-            v2 = r2.radar_info || "";
-            break;
+          /* CASE RADAR SUPPRIMÉ DU TRI */
           case "dist_totale":
             v1 = Number(r1.distance_totale_m);
             v2 = Number(r2.distance_totale_m);
@@ -727,7 +685,7 @@
       if (!filteredRows.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 8;
+        td.colSpan = 7; // Ajusté de 8 à 7
         td.className = "empty-state";
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
@@ -756,15 +714,7 @@
         const cDistCible = document.createElement("td");
         cDistCible.textContent = (r.distance_cible_m != null ? r.distance_cible_m + " m" : "—");
 
-        const cRadar = document.createElement("td");
-        if (r.radar_info) {
-          const span = document.createElement("span");
-          span.className = "tag";
-          span.textContent = r.radar_info;
-          cRadar.appendChild(span);
-        } else {
-          cRadar.textContent = "—";
-        }
+        // --- COLONNE RADAR SUPPRIMÉE ICI ---
 
         const cDistTot = document.createElement("td");
         cDistTot.textContent = (r.distance_totale_m != null ? r.distance_totale_m + " m" : "—");
@@ -787,7 +737,7 @@
         tr.appendChild(cDate);
         tr.appendChild(cClub);
         tr.appendChild(cDistCible);
-        tr.appendChild(cRadar);
+        // tr.appendChild(cRadar); // Supprimé
         tr.appendChild(cDistTot);
         tr.appendChild(cLat);
         tr.appendChild(cProf);
@@ -824,39 +774,33 @@
       URL.revokeObjectURL(url);
     }
 
-    // --- EXPORT DYNAMIQUE (COMPATIBLE EXCEL & ACCENTS) ---
+    // --- EXPORT ---
     function exportHistory() {
       if (!allRows.length) {
         alert("Aucune donnée à exporter.");
         return;
       }
 
-      // 1. Récupérer toutes les colonnes possibles
       const allKeys = new Set();
       allRows.forEach(row => {
         Object.keys(row).forEach(key => allKeys.add(key));
       });
       const headers = Array.from(allKeys);
 
-      // 2. En-tête avec Point-Virgule
       const csvRows = [headers.join(";")];
 
-      // 3. Données
       allRows.forEach(row => {
         const values = headers.map(header => {
           const val = row[header];
           if (val === null || val === undefined) return "";
-          
           let stringVal = String(val);
-          // Nettoyage : on enlève les retours à la ligne qui cassent les CSV
           stringVal = stringVal.replace(/(\r\n|\n|\r)/gm, " ");
-          // On échappe les points-virgules s'il y en a dans le texte
           return stringVal.replace(/;/g, ","); 
         });
         csvRows.push(values.join(";"));
       });
 
-      const csv = "\ufeff" + csvRows.join("\n"); // \ufeff force l'encodage UTF-8 (accents)
+      const csv = "\ufeff" + csvRows.join("\n");
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
@@ -870,12 +814,11 @@
       } catch(e) {}
     }
 
-    // --- IMPORT DYNAMIQUE (INTELLIGENT & DOUBLONS STRICTS) ---
+    // --- IMPORT ---
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
 
-      // 1. Détection automatique du séparateur (Virgule ou Point-Virgule)
       const headerLine = lines[0];
       const separator = headerLine.includes(";") ? ";" : ",";
 
@@ -885,7 +828,6 @@
 
       const parseValue = (val) => {
         if (!val || val.trim() === "") return null;
-        // On remplace la virgule par un point pour convertir "0,3" en nombre 0.3
         const cleanVal = val.replace(",", "."); 
         const n = Number(cleanVal);
         return isNaN(n) ? val : n; 
@@ -893,14 +835,11 @@
 
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(separator);
-        
-        // On accepte la ligne même s'il manque une colonne vide à la fin
         if (cols.length < headers.length - 1) continue;
 
         const row = {};
         headers.forEach((header, index) => {
           const key = header.trim();
-          // Protection contre le décalage si la ligne est plus courte
           const rawVal = cols[index] !== undefined ? cols[index] : "";
           row[key] = parseValue(rawVal);
         });
@@ -912,7 +851,6 @@
         return;
       }
 
-      // Check doublons
       const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
       const existingSet = new Set(currentHistoryJSON);
       
@@ -954,20 +892,10 @@
     function confirmDelete() {
       if (pendingDeleteIndex === null) return;
 
-      // 1. On supprime la ligne
       allRows.splice(pendingDeleteIndex, 1);
-
-      // 2. On sauvegarde le nouvel état
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
-
-      // 3. On rafraîchit le tableau visuel
       applyFilters(); 
-
-      // 4. IMPORTANT : On actualise l'alerte jaune
-      // (C'est souvent cette ligne qui manque)
       updateExportWarning();
-
-      // 5. On ferme la popup
       closeDeletePopup();
     }
 
@@ -975,8 +903,6 @@
       try {
         const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
         const currentCount = allRows.length;
-        
-        // Si le nombre actuel est DIFFERENT du dernier nombre connu (en plus ou en moins)
         if (currentCount !== lastCount) {
           exportWarning.classList.remove("hidden");
         } else {
@@ -1060,7 +986,6 @@
 
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
-
     function pingRender() {
       try {
         fetch(RENDER_URL, {
@@ -1069,7 +994,6 @@
         }).catch(() => {});
       } catch (e) {}
     }
-
     pingRender();
     setInterval(pingRender, 5 * 60 * 1000);
   </script>
