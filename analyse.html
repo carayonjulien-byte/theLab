@@ -3,19 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ToDoGolf Lab – Analyse</title>
+  <title>ToDoGolf Lab – Statistiques</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
     :root {
       --gap: 16px;
       --primary: #00503a;
-      --primary-light: #00684b;
       --bg: #050608;
       --card: #0f1419;
       --border: #182028;
       --text: #e7e8ea;
       --muted: #9ca3af;
-      --accent: #fbbf24; /* Jaune/Or pour les points */
     }
     * { box-sizing: border-box; }
     body {
@@ -24,7 +23,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
       color: var(--text);
-      padding-bottom: 80px; /* Espace pour le scroll */
+      padding-bottom: 80px;
     }
     .hidden { display:none !important; }
 
@@ -48,14 +47,23 @@
       box-shadow:0 0 12px rgba(0,80,58,0.8);
     }
     .top-title { font-weight:700; font-size:16px; margin-left:10px; }
-    .btn-close {
-      text-decoration:none; color:var(--text); font-size:12px; 
-      background:#111827; padding:6px 12px; border-radius:99px; border:1px solid #374151;
+    
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 12px;
+      font-size:12px;
+      color:var(--text);
+      text-decoration:none;
+      white-space:nowrap;
+      display:flex; align-items:center; gap:4px;
     }
+    .btn-top:hover { background:#101822; }
 
     .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
 
-    /* --- KPIS (Haut de page) --- */
+    /* --- KPIS --- */
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -69,11 +77,10 @@
       padding: 10px;
       text-align: center;
     }
-    .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom:4px; }
+    .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom:4px; }
     .kpi-value { font-size: 18px; font-weight: 700; color: #fff; }
-    .kpi-sub { font-size: 10px; color: var(--primary); margin-top:2px; }
 
-    /* --- NAVIGATION ONGLETS (Segmented Control) --- */
+    /* --- TABS --- */
     .nav-tabs {
       display: flex;
       background: #0f1419;
@@ -81,7 +88,6 @@
       border-radius: 12px;
       border: 1px solid var(--border);
       margin-bottom: 20px;
-      position: relative;
     }
     .nav-tab {
       flex: 1;
@@ -91,25 +97,20 @@
       font-weight: 600;
       color: var(--muted);
       cursor: pointer;
-      z-index: 2;
-      transition: color 0.2s ease;
       border-radius: 8px;
+      transition: all 0.2s ease;
     }
     .nav-tab.active {
       color: #fff;
-      background: var(--border); /* Fallback */
       background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       border: 1px solid #374151;
     }
 
-    /* --- CONTENU DES ONGLETS --- */
-    .tab-content {
-      animation: fadeIn 0.3s ease-out;
-    }
+    .tab-content { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform:translateY(5px); } to { opacity: 1; transform:translateY(0); } }
 
-    /* CARD COMMUNE */
+    /* --- CARDS & FILTERS --- */
     .chart-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -119,74 +120,51 @@
       margin-bottom: 20px;
     }
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: 12px;
     }
-    .card-title { font-size: 15px; font-weight: 600; display:flex; align-items:center; gap:6px; }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    
+    /* Zone de filtres */
+    .filters-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .filters-row.full { grid-template-columns: 1fr; }
 
-    /* INPUTS & FILTERS */
-    select, input[type=number] {
+    select, input[type=date], input[type=number] {
       background: #05080c;
       color: #fff;
       border: 1px solid #374151;
       border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 8px 10px;
+      font-size: 12px;
+      width: 100%;
       outline: none;
     }
-    select:focus, input:focus { border-color: var(--primary); }
-
-    /* CHART CONTAINERS */
+    
     .chart-box {
       position: relative;
-      height: 320px;
+      height: 350px; /* Un peu plus haut pour le mapping */
       width: 100%;
     }
-    /* Pour le scroll horizontal du Bag Mapping */
-    .scroll-chart-box {
-      overflow-x: auto;
-      padding-bottom: 10px;
-    }
-    .scroll-chart-inner {
-      min-width: 600px; /* Force la largeur pour le scroll */
-      height: 300px;
-    }
 
-    /* --- CADDIE SPECIFIC --- */
-    .caddie-input-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+    /* --- CADDIE --- */
+    .caddie-input-row { display: flex; gap: 10px; margin-bottom: 20px; }
     .caddie-btn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
+      background: var(--primary); color: #fff; border: none;
+      padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
     }
     .caddie-result {
-      text-align: center;
-      padding: 20px;
+      text-align: center; padding: 20px;
       background: linear-gradient(180deg, rgba(0,80,58,0.1) 0%, rgba(0,0,0,0) 100%);
-      border-radius: 16px;
-      border: 1px solid var(--primary);
+      border-radius: 16px; border: 1px solid var(--primary);
     }
     .rec-club { font-size: 32px; font-weight: 800; color: #fff; margin: 10px 0; text-shadow: 0 0 20px rgba(0,80,58,0.6); }
-    .rec-meta { font-size: 12px; color: var(--muted); }
     .confidence-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-top: 8px;
+      display: inline-block; padding: 4px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 600; margin-top: 8px;
     }
     .conf-high { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #059669; }
     .conf-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid #b45309; }
@@ -201,14 +179,14 @@
       <div class="brand-dot"></div>
       <div class="top-title">ToDoGolf Lab</div>
     </div>
-    <a href="index.html" class="btn-close">Fermer</a>
+    <a href="index.html" class="btn-top">← Accueil</a>
   </header>
 
   <main class="wrap">
     
     <div class="kpi-row">
       <div class="kpi-card">
-        <div class="kpi-label">Total Coups</div>
+        <div class="kpi-label">Coups</div>
         <div class="kpi-value" id="kpiCount">-</div>
       </div>
       <div class="kpi-card">
@@ -216,7 +194,7 @@
         <div class="kpi-value" id="kpiSessions">-</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Club Favori</div>
+        <div class="kpi-label">Favori</div>
         <div class="kpi-value" id="kpiFav" style="font-size:14px;">-</div>
       </div>
     </div>
@@ -230,16 +208,29 @@
     <div id="viewRadar" class="tab-content">
       <div class="chart-card">
         <div class="card-header">
-          <div class="card-title">Dispersion & Heatmap</div>
-          <select id="radarClubSelect" onchange="updateRadarChart()">
-            <option value="all">Tous les clubs</option>
+          <div class="card-title">Dispersion & Précision</div>
+          
+          <div class="filters-row">
+            <input type="date" id="radarStart" onchange="updateRadarChart()">
+            <input type="date" id="radarEnd" onchange="updateRadarChart()">
+          </div>
+          <div class="filters-row">
+            <select id="radarContext" onchange="updateRadarChart()">
+              <option value="all">Toutes conditions</option>
+              <option value="practice">Practice</option>
+              <option value="parcours">Parcours</option>
             </select>
+            <select id="radarClubSelect" onchange="updateRadarChart()">
+              <option value="all">Tous les clubs</option>
+              </select>
+          </div>
         </div>
+
         <div class="chart-box">
           <canvas id="canvasRadar"></canvas>
         </div>
         <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Les points rouges = zones de forte densité.<br>Le centre (0,0) représente votre cible.
+          Centre (0,0) = Cible visée.<br>L'échelle s'adapte automatiquement aux données.
         </div>
       </div>
     </div>
@@ -247,15 +238,27 @@
     <div id="viewMapping" class="tab-content hidden">
       <div class="chart-card">
         <div class="card-header">
-          <div class="card-title">Étalonnage du sac</div>
-        </div>
-        <div class="scroll-chart-box">
-          <div class="scroll-chart-inner" id="mappingInner">
-            <canvas id="canvasMapping"></canvas>
+          <div class="card-title">Vue Aérienne (Trackman Style)</div>
+          <div class="filters-row">
+            <select id="mapContext" onchange="updateMappingChart()">
+              <option value="all">Tout (Practice & Parcours)</option>
+              <option value="practice">Seulement Practice</option>
+            </select>
+            <select id="mapType" onchange="updateMappingChart()">
+              <option value="all">Tous types de coups</option>
+              <option value="Normal">Normal</option>
+              <option value="Draw">Draw</option>
+              <option value="Fade">Fade</option>
+            </select>
           </div>
         </div>
+
+        <div class="chart-box">
+          <canvas id="canvasMapping"></canvas>
+        </div>
         <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Barre = Distance Min à Max. Point = Moyenne.<br>Défilez horizontalement pour voir tous les clubs.
+          Chaque couleur est un club différent.<br>
+          Axe vertical = Distance Totale. Axe horizontal = Dispersion.
         </div>
       </div>
     </div>
@@ -267,26 +270,27 @@
         </div>
         
         <div class="caddie-input-row">
-          <input type="number" id="caddieDist" placeholder="Dist. (m)" style="flex:1; padding:10px;" inputmode="numeric">
+          <input type="number" id="caddieDist" placeholder="Distance (m)" style="flex:1; padding:12px;" inputmode="numeric">
           <button class="caddie-btn" onclick="askCaddie()">Calculer</button>
         </div>
 
         <div id="caddieOutput" class="hidden">
           <div class="caddie-result">
             <div class="kpi-label">Conseil Lab</div>
-            <div class="rec-club" id="recClubName">Fer 7</div>
-            <div class="rec-meta">Moyenne : <span id="recClubAvg">135</span> m</div>
-            <div class="rec-meta" style="margin-top:4px">Dispersion latérale : <span id="recClubDisp">±5</span> m</div>
-            <div id="recConf" class="confidence-badge conf-high">Confiance : Élevée</div>
+            <div class="rec-club" id="recClubName">-</div>
+            <div style="font-size:12px; color:#9ca3af;">
+              Moyenne : <span id="recClubAvg" style="color:#fff; font-weight:600;">-</span> m<br>
+              Dispersion latérale : <span id="recClubDisp" style="color:#fff; font-weight:600;">-</span> m
+            </div>
+            <div id="recConf" class="confidence-badge conf-med">Confiance : -</div>
           </div>
-          <div style="margin-top:15px; font-size:12px; color:#9ca3af; line-height:1.4;">
-            Basé sur vos <strong><span id="recNbShots">0</span></strong> derniers coups avec ce club.<br>
-            <em>La data bat l'ego, jouez la sécurité !</em>
+          <div style="margin-top:15px; font-size:12px; color:#9ca3af; line-height:1.4; text-align:center;">
+            Basé sur vos <strong><span id="recNbShots">0</span></strong> derniers coups avec ce club.
           </div>
         </div>
         
-        <div id="caddieEmpty" style="text-align:center; padding:20px; color:#6b7280; font-size:13px;">
-          Entrez une distance pour obtenir une recommandation basée sur vos stats.
+        <div id="caddieEmpty" style="text-align:center; padding:40px 20px; color:#6b7280; font-size:13px;">
+          Entrez une distance à parcourir pour obtenir la meilleure recommandation.
         </div>
       </div>
     </div>
@@ -294,7 +298,7 @@
   </main>
 
   <script>
-    // --- CONFIGURATION CHART.JS ---
+    // --- CONFIG CHART.JS ---
     Chart.defaults.color = '#9ca3af';
     Chart.defaults.borderColor = '#1f2937';
     Chart.defaults.font.family = 'system-ui, sans-serif';
@@ -302,16 +306,13 @@
     const HISTORY_KEY = "todogolf_lab_history";
     let globalHistory = [];
 
-    // --- CHARGEMENT DES DONNEES ---
-    function loadData() {
-      try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if(!raw) return [];
-        return JSON.parse(raw);
-      } catch(e) { return []; }
-    }
+    // Palette de couleurs pour le Mapping (15 couleurs distinctes)
+    const CLUB_COLORS = [
+      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', // Rouges/Jaunes
+      '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', // Verts/Bleus
+      '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef'  // Bleus/Violets
+    ];
 
-    // Tri des clubs (ordre logique)
     const CLUB_ORDER = [
       "Putter", "Chipper", 
       "Wedge 64°", "Wedge 62°", "Wedge 60°", "Wedge 58°", "Wedge 56°", "Wedge 54°", "Wedge 52°", "Wedge 50°",
@@ -326,38 +327,48 @@
       return idx === -1 ? 999 : idx;
     };
 
+    // --- UTILS ---
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) { return []; }
+    }
+
+    function formatDate(dateStr) {
+      // Transforme YYYY-MM-DD ou DD/MM/YYYY en objet Date
+      if(!dateStr) return null;
+      if(dateStr.includes('-')) return new Date(dateStr); 
+      const parts = dateStr.split('/');
+      return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+
     // --- INIT ---
     document.addEventListener('DOMContentLoaded', () => {
       globalHistory = loadData();
       updateKPIs();
-      initRadar();
-      // Les autres inits se feront au clic onglet pour économiser les ressources
+      initRadar(); // Charge le graph 1 par défaut
     });
 
-    // --- GESTION ONGLETS ---
     function switchTab(tabName, btnEl) {
-      // Update boutons
       document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
       btnEl.classList.add('active');
 
-      // Hide all contents
       document.getElementById('viewRadar').classList.add('hidden');
       document.getElementById('viewMapping').classList.add('hidden');
       document.getElementById('viewCaddie').classList.add('hidden');
 
-      // Show selected
       if(tabName === 'radar') {
         document.getElementById('viewRadar').classList.remove('hidden');
-        updateRadarChart(); // Refresh
+        updateRadarChart();
       } else if(tabName === 'mapping') {
         document.getElementById('viewMapping').classList.remove('hidden');
-        initMapping(); // Build chart if needed
+        updateMappingChart();
       } else if(tabName === 'caddie') {
         document.getElementById('viewCaddie').classList.remove('hidden');
       }
     }
 
-    // --- 1. KPIs ---
     function updateKPIs() {
       const count = globalHistory.length;
       const sessions = new Set(globalHistory.map(x => x.session_id || x.date_text)).size;
@@ -371,8 +382,9 @@
       document.getElementById('kpiSessions').textContent = sessions;
       document.getElementById('kpiFav').textContent = fav;
 
-      // Populate Club Select for Radar
+      // Remplir le selecteur de club du radar
       const clubSelect = document.getElementById('radarClubSelect');
+      clubSelect.innerHTML = '<option value="all">Tous les clubs</option>';
       const uniqueClubs = Object.keys(counts).sort((a,b) => getClubRank(a) - getClubRank(b));
       uniqueClubs.forEach(c => {
         const opt = document.createElement('option');
@@ -380,36 +392,43 @@
         opt.textContent = c;
         clubSelect.appendChild(opt);
       });
-      // Select favorite by default if exists
-      if(fav !== "-") clubSelect.value = fav;
     }
 
-    // --- 2. RADAR CHART (Scatter) ---
+    // --- CHART 1 : RADAR (Dispersion) ---
     let radarChart = null;
 
-    function initRadar() {
-      // Juste prépare le canvas, updateRadarChart fera le reste
-      updateRadarChart();
-    }
+    function initRadar() { updateRadarChart(); }
 
     function updateRadarChart() {
-      const selectedClub = document.getElementById('radarClubSelect').value;
-      
-      // Filtrer les données
-      // On exclut Putter pour le radar car les échelles sont trop différentes
-      const dataPoints = globalHistory
-        .filter(r => {
-          if(r.club === 'Putter') return false;
-          if(selectedClub !== 'all' && r.club !== selectedClub) return false;
-          return (r.ecart_lateral_m != null && r.ecart_profondeur_m != null);
-        })
-        .map(r => ({
-          x: Number(r.ecart_lateral_m),
-          y: Number(r.ecart_profondeur_m)
-        }));
+      const sClub = document.getElementById('radarClubSelect').value;
+      const sContext = document.getElementById('radarContext').value;
+      const sDateStart = document.getElementById('radarStart').valueAsDate;
+      const sDateEnd = document.getElementById('radarEnd').valueAsDate;
+
+      // Filtrage
+      const filtered = globalHistory.filter(r => {
+        // Putter inclus maintenant !
+        if (!r.ecart_lateral_m || !r.ecart_profondeur_m) return false;
+        
+        if (sClub !== 'all' && r.club !== sClub) return false;
+        if (sContext !== 'all' && r.radar_usage !== sContext) return false;
+        
+        if (sDateStart || sDateEnd) {
+          const d = formatDate(r.date_text);
+          if (d) {
+            if (sDateStart && d < sDateStart) return false;
+            if (sDateEnd && d > sDateEnd) return false;
+          }
+        }
+        return true;
+      });
+
+      const dataPoints = filtered.map(r => ({
+        x: Number(r.ecart_lateral_m),
+        y: Number(r.ecart_profondeur_m)
+      }));
 
       const ctx = document.getElementById('canvasRadar').getContext('2d');
-
       if(radarChart) radarChart.destroy();
 
       radarChart = new Chart(ctx, {
@@ -418,222 +437,166 @@
           datasets: [{
             label: 'Impacts',
             data: dataPoints,
-            // Heatmap trick: Transparence + Couleur vive (Rouge/Orange)
-            // Quand ils se superposent, ça devient foncé
-            backgroundColor: 'rgba(251, 191, 36, 0.4)', 
-            borderColor: 'rgba(251, 191, 36, 0.8)',
+            backgroundColor: 'rgba(251, 191, 36, 0.5)', // Jaune transparent
+            borderColor: 'rgba(251, 191, 36, 1)',
             borderWidth: 1,
-            pointRadius: 6,
-            pointHoverRadius: 8
+            pointRadius: 5
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: { label: (c) => `Lat: ${c.parsed.x}m, Prof: ${c.parsed.y}m` }
-            }
-          },
           scales: {
             x: {
-              title: { display:true, text:'Gauche (-) / Droite (+)', color:'#6b7280', font:{size:10} },
-              grid: { color:'#374151', tickLength:5 },
-              ticks: { color:'#9ca3af' },
-              suggestedMin: -20, suggestedMax: 20
+              title: { display:true, text:'Gauche (-) / Droite (+)', color:'#6b7280' },
+              grid: { color:'#374151' },
+              // MODIF : Pas de min/max forcé, auto-scale
             },
             y: {
-              title: { display:true, text:'Court (-) / Long (+)', color:'#6b7280', font:{size:10} },
+              title: { display:true, text:'Court (-) / Long (+)', color:'#6b7280' },
               grid: { color:'#374151' },
-              ticks: { color:'#9ca3af' },
-              suggestedMin: -20, suggestedMax: 20
             }
-          }
+          },
+          plugins: { legend: { display:false } }
         }
       });
     }
 
-    // --- 3. MAPPING CHART (Floating Bars) ---
+    // --- CHART 2 : MAPPING (Vue Aérienne) ---
     let mappingChart = null;
 
-    function initMapping() {
-      if(mappingChart) return; // Déjà créé
+    function updateMappingChart() {
+      const sContext = document.getElementById('mapContext').value;
+      const sType = document.getElementById('mapType').value;
 
-      // 1. Calc stats per club
-      const stats = {};
-      globalHistory.forEach(r => {
-        if(!r.club || r.club === 'Putter') return;
-        const d = Number(r.distance_totale_m);
-        if(!d || d < 5) return; // Filter noise
-
-        if(!stats[r.club]) stats[r.club] = { min:9999, max:0, sum:0, count:0 };
-        if(d < stats[r.club].min) stats[r.club].min = d;
-        if(d > stats[r.club].max) stats[r.club].max = d;
-        stats[r.club].sum += d;
-        stats[r.club].count++;
-      });
-
-      // 2. Format for Chart.js
-      // Floating bar data format: [min, max]
-      const clubs = Object.keys(stats).sort((a,b) => getClubRank(a) - getClubRank(b));
+      // 1. Grouper par Club
+      const clubsData = {};
       
-      const dataBars = [];
-      const dataAvgs = [];
+      globalHistory.forEach(r => {
+        if(!r.club) return;
+        if(sContext !== 'all' && r.radar_usage !== sContext) return;
+        if(sType !== 'all' && r.shot_type !== sType) return;
+        
+        const dist = Number(r.distance_totale_m);
+        const lat = Number(r.ecart_lateral_m);
+        
+        // On a besoin de la distance totale pour ce graph
+        if(!dist) return; 
 
-      clubs.forEach(c => {
-        const s = stats[c];
-        const avg = s.sum / s.count;
-        dataBars.push([s.min, s.max]);
-        dataAvgs.push(avg); // For a line or dot
+        if(!clubsData[r.club]) clubsData[r.club] = [];
+        clubsData[r.club].push({ x: lat || 0, y: dist });
       });
 
-      // Ajuster la largeur du container pour le scroll
-      const box = document.getElementById('mappingInner');
-      // Environ 50px par club, min 100%
-      const width = Math.max(100, clubs.length * 50); 
-      box.style.width = width + '%';
-      if (clubs.length < 6) box.style.width = "100%"; // Pas de scroll si peu de clubs
+      // 2. Créer les datasets (1 par club pour avoir des couleurs)
+      const datasets = [];
+      const sortedClubs = Object.keys(clubsData).sort((a,b) => getClubRank(a) - getClubRank(b));
+
+      sortedClubs.forEach((clubName, index) => {
+        // Couleur cyclique
+        const color = CLUB_COLORS[index % CLUB_COLORS.length];
+        
+        datasets.push({
+          label: clubName,
+          data: clubsData[clubName],
+          backgroundColor: color,
+          borderColor: color,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        });
+      });
 
       const ctx = document.getElementById('canvasMapping').getContext('2d');
-      
+      if(mappingChart) mappingChart.destroy();
+
       mappingChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: clubs,
-          datasets: [
-            {
-              label: 'Plage (Min-Max)',
-              data: dataBars,
-              backgroundColor: 'rgba(0, 80, 58, 0.6)',
-              borderColor: '#00503a',
-              borderWidth: 1,
-              borderSkipped: false,
-              barPercentage: 0.6
-            },
-            {
-              type: 'scatter',
-              label: 'Moyenne',
-              data: dataAvgs,
-              backgroundColor: '#fbbf24',
-              borderColor: '#fff',
-              borderWidth: 1,
-              pointRadius: 5
-            }
-          ]
-        },
+        type: 'scatter',
+        data: { datasets: datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: { 
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 10, font: { size: 10 }, color: '#9ca3af' }
+            },
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  if (context.dataset.type === 'scatter') {
-                    return `Moyenne: ${Math.round(context.raw)} m`;
-                  }
-                  return `Plage: ${context.raw[0]}m - ${context.raw[1]}m`;
-                }
+                label: (c) => `${c.dataset.label}: ${c.parsed.y}m (Lat: ${c.parsed.x}m)`
               }
             }
           },
           scales: {
-            y: {
-              beginAtZero: true,
-              grid: { color: '#1f2937' },
-              title: { display:true, text:'Distance (m)' }
-            },
             x: {
-              grid: { display: false },
-              ticks: { font: { size: 11 } }
+              title: { display:true, text:'Dispersion Latérale (m)', color:'#6b7280' },
+              grid: { color:'#374151' },
+              suggestedMin: -30, suggestedMax: 30 // Garde une largeur cohérente pour le fairway
+            },
+            y: {
+              title: { display:true, text:'Distance Totale (m)', color:'#6b7280' },
+              grid: { color:'#374151' },
+              beginAtZero: true
             }
           }
         }
       });
     }
 
-    // --- 4. SMART CADDIE ---
+    // --- CHART 3 : CADDIE ---
     function askCaddie() {
-      const distInput = document.getElementById('caddieDist');
-      const target = Number(distInput.value);
+      const target = Number(document.getElementById('caddieDist').value);
+      if(!target) return;
 
-      if (!target || target <= 0) {
-        alert("Entrez une distance valide.");
-        return;
-      }
-
-      // 1. Calculate avg for all clubs
+      // Calcul stats
       const clubStats = {};
       globalHistory.forEach(r => {
         if(!r.club || r.club === 'Putter') return;
         const d = Number(r.distance_totale_m);
-        const lat = Math.abs(Number(r.ecart_lateral_m) || 0);
         if(!d || d < 5) return;
-
+        
         if(!clubStats[r.club]) clubStats[r.club] = { sum:0, count:0, sumLat:0 };
         clubStats[r.club].sum += d;
-        clubStats[r.club].sumLat += lat;
+        clubStats[r.club].sumLat += Math.abs(Number(r.ecart_lateral_m)||0);
         clubStats[r.club].count++;
       });
 
-      let bestClub = null;
+      let best = null;
       let minDiff = 9999;
 
-      Object.keys(clubStats).forEach(c => {
+      for(let c in clubStats) {
         const avg = clubStats[c].sum / clubStats[c].count;
         const diff = Math.abs(avg - target);
-        // On cherche le club le plus proche
-        if (diff < minDiff) {
-          minDiff = diff;
-          bestClub = c;
-        }
-      });
-
-      if (!bestClub) {
-        alert("Pas assez de données pour recommander un club.");
-        return;
+        if(diff < minDiff) { minDiff = diff; best = c; }
       }
 
-      const s = clubStats[bestClub];
-      const avgDist = Math.round(s.sum / s.count);
-      const avgLat = s.sumLat / s.count;
+      if(!best) { alert("Pas assez de données."); return; }
 
-      // Affichage
+      const s = clubStats[best];
+      const avgD = Math.round(s.sum/s.count);
+      const avgL = Math.round(s.sumLat/s.count);
+
       document.getElementById('caddieEmpty').classList.add('hidden');
       document.getElementById('caddieOutput').classList.remove('hidden');
-
-      document.getElementById('recClubName').textContent = bestClub;
-      document.getElementById('recClubAvg').textContent = avgDist;
-      document.getElementById('recClubDisp').textContent = "±" + Math.round(avgLat);
+      
+      document.getElementById('recClubName').textContent = best;
+      document.getElementById('recClubAvg').textContent = avgD;
+      document.getElementById('recClubDisp').textContent = "±" + avgL;
       document.getElementById('recNbShots').textContent = s.count;
 
-      // Indice confiance (basé sur dispersion latérale et nbr coups)
-      const confBadge = document.getElementById('recConf');
-      confBadge.className = "confidence-badge"; // reset
-      
-      let confidence = "Moyenne";
-      let cssClass = "conf-med";
-
-      // Logique arbitraire mais réaliste
-      if (s.count < 5) {
-        confidence = "Faible (peu de données)";
-        cssClass = "conf-low";
-      } else if (avgLat > 15) {
-        confidence = "Faible (dispersion haute)";
-        cssClass = "conf-low";
-      } else if (avgLat < 8 && minDiff < 10) {
-        confidence = "Élevée";
-        cssClass = "conf-high";
-      } else {
-        confidence = "Moyenne";
-        cssClass = "conf-med";
-      }
-
-      confBadge.textContent = "Confiance : " + confidence;
-      confBadge.classList.add(cssClass);
+      // Confiance
+      const badge = document.getElementById('recConf');
+      badge.className = "confidence-badge";
+      if(s.count < 5) { badge.textContent="Faible (Peu de données)"; badge.classList.add('conf-low'); }
+      else if(avgL > 15) { badge.textContent="Moyenne (Dispersion)"; badge.classList.add('conf-med'); }
+      else { badge.textContent="Élevée"; badge.classList.add('conf-high'); }
     }
 
+  </script>
+
+  <script>
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    function pingRender() { try { fetch(RENDER_URL, { method: "HEAD", mode: "no-cors" }).catch(() => {}); } catch (e) {} }
+    pingRender(); setInterval(pingRender, 5*60*1000);
   </script>
 </body>
 </html>
