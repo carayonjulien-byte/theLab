@@ -799,6 +799,12 @@
             <div class="result-summary-label">🎯 Distance cible</div>
             <div class="result-summary-value" id="rTarget">—</div>
           </div>
+          
+          <div class="result-summary-item">
+            <div class="result-summary-label">⛳ Type</div>
+            <div class="result-summary-value" id="rShotType">—</div>
+          </div>
+
           <div class="result-summary-item">
             <div class="result-summary-label">📍 Condition</div>
             <div class="result-summary-value" id="rRadar">—</div>
@@ -870,7 +876,7 @@
     };
     const NB_RINGS = 4;
 
-    function fetchWithTimeout(url, options = {}, timeout = 60000) { /* Timeout passé à 60s pour mobile */
+    function fetchWithTimeout(url, options = {}, timeout = 60000) {
       return Promise.race([
         fetch(url, options),
         new Promise((_, reject) =>
@@ -888,10 +894,11 @@
     const resultCard = $("resultCard");
     const shotsList  = $("shotsList");
 
-    const rDate   = $("rDate");
-    const rClub   = $("rClub");
-    const rTarget = $("rTarget");
-    const rRadar  = $("rRadar");
+    const rDate     = $("rDate");
+    const rClub     = $("rClub");
+    const rTarget   = $("rTarget");
+    const rRadar    = $("rRadar");
+    const rShotType = $("rShotType"); // Référence JS pour le résumé
 
     const dateText    = $("dateText");
     const club        = $("club");
@@ -899,7 +906,6 @@
     const targetDist  = $("targetDist");
     const targetRow   = $("targetRow");
     
-    /* AJOUT REFERENCE JS */
     const shotTypeRow = $("shotTypeRow");
     const shotType    = $("shotType");
 
@@ -970,8 +976,7 @@
       }, 10000);
     }
 
-    /* --- REDUCTION A 1024px POUR MOBILE --- */
-    function clampSize(w,h,max=1024){ 
+    function clampSize(w,h,max=1024){
       if(Math.max(w,h) <= max) return [w,h];
       const s = max / Math.max(w,h);
       return [Math.round(w*s), Math.round(h*s)];
@@ -1068,18 +1073,16 @@
 
     async function ensureJpegFile(fileOrBlob){
       if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-        /* On force quand même le redimensionnement si l'image brute dépasse 1024 */
-        /* Car sur mobile, même un "fichier jpeg" peut être énorme (12MB) */
       }
       try{
         const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
-        const [tw,th] = clampSize(bmp.width,bmp.height,1024); /* max 1024px */
+        const [tw,th] = clampSize(bmp.width,bmp.height,1024);
         const canvas = document.createElement('canvas');
         canvas.width = tw;
         canvas.height = th;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(bmp,0,0,tw,th);
-        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7)); /* Quality 0.7 */
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7));
         return new File([blob], 'capture.jpg', {type:'image/jpeg'});
       }catch{
         return await new Promise(async (resolve)=>{
@@ -1107,6 +1110,7 @@
       rClub.textContent   = "—";
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
+      if(rShotType) rShotType.textContent = "—"; // Reset type
     }
 
     function onPick(e){
@@ -1321,6 +1325,11 @@
         rDate.textContent   = dateText.value;
         rClub.textContent   = club.value || "—";
         rTarget.textContent = isPractice && targetDist.value ? (targetDist.value + " m") : "—";
+        
+        // MISE A JOUR DU CHAMP TYPE
+        if (rShotType) {
+          rShotType.textContent = (isPractice && shotType.value) ? shotType.value : "—";
+        }
 
         const radarInfo = getRadarInfoLabel(radarUsage, radarScaleKey);
         rRadar.textContent = radarInfo;
@@ -1427,7 +1436,6 @@
       const clubVal       = club.value;
       const cibleVal      = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
       
-      /* LOGIQUE STOCKAGE DU TYPE DE COUP */
       const shotTypeVal   = (radarUsage === "practice") ? (shotType.value || null) : null;
 
       const sessionId     = generateSessionId(radarUsage);
@@ -1442,10 +1450,7 @@
           radar_scale_m: radarScaleM,
           club: clubVal,
           distance_cible_m: cibleVal,
-          
-          /* AJOUT DU CHAMP DANS L'HISTORIQUE */
           shot_type: shotTypeVal,
-
           radar_info: radarInfo,
           distance_totale_m: c.distance_totale_m,
           ecart_lateral_m: c.ecart_lateral_m,
@@ -1526,7 +1531,7 @@
       renderClubList(e.target.value);
     });
 
-    /* Changement type radar : gestion champs Conditionnels (Distance Cible + Type de Coup) */
+    /* Changement type radar : gestion champs Conditionnels */
     radarUsageSel.addEventListener("change", () => {
       const usage = radarUsageSel.value;
       if (usage === "practice") {
@@ -1690,7 +1695,6 @@
         let blob;
 
         if (!cropRect || cropRect.w < 5 || cropRect.h < 5) {
-          // Pas de sélection : on utilise toute l’image
           const canvas = document.createElement("canvas");
           canvas.width = cropImg.naturalWidth;
           canvas.height = cropImg.naturalHeight;
@@ -1706,7 +1710,6 @@
 
           setStatus("Recadrage non dessiné : l’image entière sera utilisée.\nLancement de la détection des repères…", "info");
         } else {
-          // Utilisation de la zone sélectionnée
           const sx = cropRect.x / cropScaleX;
           const sy = cropRect.y / cropScaleY;
           const sw = cropRect.w / cropScaleX;
