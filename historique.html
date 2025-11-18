@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ToDoGolf Lab – Historique</title>
   <style>
-    /* --- CSS D'ORIGINE CONSERVÉ --- */
+    /* --- CSS D'ORIGINE --- */
     :root {
       --gap: 14px;
       --primary: #00503a;
@@ -191,23 +191,33 @@
       margin-top:8px;
     }
 
-    table {
-      width:100%;
-      border-collapse: collapse;
-      font-size:13px;
-      margin-top:8px;
+    /* --- MODIFICATION : TABLEAU PLEINE LARGEUR (SANS SCROLL) --- */
+    #rawTableContainer {
+      width: 100%;
+      margin-bottom: 10px;
+      /* Pas d'overflow ici, on laisse le tableau prendre toute la place */
     }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: auto; /* Laisse le navigateur ajuster les colonnes */
+      white-space: normal; /* Autorise le texte à passer à la ligne */
+    }
+
     thead {
       background:#05080c;
     }
     th, td {
-      padding:6px 8px;
-      border-bottom:1px solid #202833;
-      text-align:left;
-      vertical-align:middle;
+      padding: 6px 4px; /* Padding réduit pour gagner de la place */
+      border-bottom: 1px solid #202833;
+      text-align: left;
+      vertical-align: middle;
+      word-break: break-word; /* Coupe les mots trop longs si nécessaire */
     }
     th {
-      font-size:12px;
+      font-size:11px; /* Titres un peu plus petits */
       color:#9aa5b1;
       text-transform:uppercase;
       letter-spacing:0.04em;
@@ -227,17 +237,6 @@
       background:#0b1117;
     }
 
-    .tag {
-      display:inline-flex;
-      align-items:center;
-      border-radius:999px;
-      padding:2px 8px;
-      font-size:11px;
-      background:#071015;
-      border:1px solid #1c3b2f;
-      color:#d1fae5;
-    }
-
     .status-bar {
       font-size:12px;
       color:#9aa5b1;
@@ -250,29 +249,6 @@
       padding:8px 0;
     }
 
-    /* Tabs (brutes / heatmap) - GARDÉ pour l'apparence, même si vide dans le HTML */
-    .view-tabs {
-      display:inline-flex;
-      border-radius:999px;
-      background:#05080c;
-      border:1px solid #202533;
-      padding:2px;
-      margin-bottom:10px;
-    }
-    .view-tab {
-      border:none;
-      background:transparent;
-      padding:6px 12px;
-      font-size:12px;
-      border-radius:999px;
-      color:#9aa5b1;
-      cursor:pointer;
-    }
-    .view-tab--active {
-      background:#0f172a;
-      color:#e5f0ff;
-    }
-
     /* Bouton suppression */
     .delete-btn {
       border-radius:999px;
@@ -280,7 +256,7 @@
       background:#111827;
       color:#fca5a5;
       font-size:11px;
-      padding:3px 8px;
+      padding:3px 6px; /* Plus petit */
       cursor:pointer;
       line-height:1;
     }
@@ -352,36 +328,7 @@
     .btn-ghost:hover {
       background:#111827;
     }
-    
-    /* Styles liés au canvas (Gardés pour ne pas casser le CSS si jamais) */
-    #heatCanvas {
-      width:100%;
-      max-width:480px;
-      aspect-ratio:1/1;
-      border-radius:16px;
-      background:radial-gradient(circle at center, #020617 0, #020617 55%, #020308 100%);
-      border:1px solid #202833;
-      display:block;
-      margin-top:10px;
-    }
-    .heat-controls {
-      margin-top:8px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      font-size:12px;
-      color:#9aa5b1;
-    }
-    .heat-controls-row {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .heat-controls-row input[type=range] {
-      flex:1;
-    }
-
+     
     @media (max-width:900px){
       .layout {
         grid-template-columns:1fr;
@@ -398,6 +345,12 @@
         width:100%;
         justify-content:flex-start;
       }
+      
+      /* Ajustements spécifiques mobile pour le tableau */
+      th, td {
+        font-size: 11px; /* Texte plus petit */
+        padding: 4px 2px; /* Marges réduites au min */
+      }
     }
   </style>
 </head>
@@ -413,7 +366,7 @@
     <div class="top-actions">
       <a href="index.html" class="btn-top">← Accueil</a>
       <span id="exportWarning" class="export-warning hidden">
-        ⚠️ Des coups n’ont pas encore été exportés
+        ⚠️ Modifications non exportées
       </span>
       <button id="btnImport" class="btn-top">⬆️ Importer CSV</button>
       <button id="btnExport" class="btn-top">⬇️ Exporter CSV</button>
@@ -432,15 +385,12 @@
       <section class="card">
         <div class="card-title">Filtres</div>
         <div class="card-subtitle">
-          Commencez par choisir un type de radar, puis ajustez les autres critères et cliquez sur « Appliquer les filtres ».
+          Commencez par choisir un radar, puis ajustez les autres critères.
         </div>
 
-        <label for="fRadarType">Type de radar</label>
+        <label for="fRadarType">Radar utilisé</label>
         <select id="fRadarType">
-          <option value="all">— Tous les types —</option>
-          <option value="putting">Putting</option>
-          <option value="petit_jeu">Petit jeu</option>
-          <option value="long_jeu">Long jeu</option>
+          <option value="">— Tous les radars —</option>
         </select>
 
         <label for="fDateFrom">Date min</label>
@@ -482,7 +432,6 @@
                   <th data-sort="date">Date</th>
                   <th data-sort="club">Club</th>
                   <th data-sort="dist_cible">Dist. cible</th>
-                  <th data-sort="radar">Radar</th>
                   <th data-sort="dist_totale">Dist. totale</th>
                   <th data-sort="lat">Écart lat.</th>
                   <th data-sort="prof">Écart prof.</th>
@@ -490,7 +439,7 @@
                 </tr>
               </thead>
               <tbody id="rawBody">
-                <tr><td colspan="8" class="empty-state">Chargement…</td></tr>
+                <tr><td colspan="7" class="empty-state">Chargement…</td></tr>
               </tbody>
             </table>
           </div>
@@ -590,19 +539,11 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
-    function getRadarTypeKey(radarInfo) {
-      if (!radarInfo) return null;
-      const s = String(radarInfo).toLowerCase();
-      if (s.startsWith("putting")) return "putting";
-      if (s.startsWith("petit jeu")) return "petit_jeu";
-      if (s.startsWith("long jeu")) return "long_jeu";
-      return null;
-    }
-
     function loadHistory() {
       allRows = parseStoredHistory();
       populateClubFilter();
-      applyFilters(); // initial
+      populateRadarFilter(); 
+      applyFilters(); 
       updateExportWarning();
     }
 
@@ -621,6 +562,27 @@
       });
       if (current && clubs.has(current)) {
         fClub.value = current;
+      }
+    }
+
+    function populateRadarFilter() {
+      const radars = new Set();
+      allRows.forEach(r => {
+        if (r.radar_info) radars.add(String(r.radar_info));
+      });
+      
+      const current = fRadarType.value;
+      fRadarType.innerHTML = '<option value="">— Tous les radars —</option>';
+      
+      Array.from(radars).sort().forEach(info => {
+        const opt = document.createElement("option");
+        opt.value = info;
+        opt.textContent = info;
+        fRadarType.appendChild(opt);
+      });
+
+      if (current && radars.has(current)) {
+        fRadarType.value = current;
       }
     }
 
@@ -649,10 +611,7 @@
         if (distMin !== null && Number(r.distance_cible_m) < distMin) return false;
         if (distMax !== null && Number(r.distance_cible_m) > distMax) return false;
 
-        if (radarType && radarType !== "all") {
-          const key = getRadarTypeKey(r.radar_info);
-          if (key !== radarType) return false;
-        }
+        if (radarType && r.radar_info !== radarType) return false;
 
         return true;
       });
@@ -707,10 +666,7 @@
             v1 = Number(r1.distance_cible_m);
             v2 = Number(r2.distance_cible_m);
             break;
-          case "radar":
-            v1 = r1.radar_info || "";
-            v2 = r2.radar_info || "";
-            break;
+          /* CASE RADAR SUPPRIMÉ DU TRI */
           case "dist_totale":
             v1 = Number(r1.distance_totale_m);
             v2 = Number(r2.distance_totale_m);
@@ -735,7 +691,7 @@
       if (!filteredRows.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 8;
+        td.colSpan = 7; 
         td.className = "empty-state";
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
@@ -764,15 +720,7 @@
         const cDistCible = document.createElement("td");
         cDistCible.textContent = (r.distance_cible_m != null ? r.distance_cible_m + " m" : "—");
 
-        const cRadar = document.createElement("td");
-        if (r.radar_info) {
-          const span = document.createElement("span");
-          span.className = "tag";
-          span.textContent = r.radar_info;
-          cRadar.appendChild(span);
-        } else {
-          cRadar.textContent = "—";
-        }
+        // --- COLONNE RADAR SUPPRIMÉE ---
 
         const cDistTot = document.createElement("td");
         cDistTot.textContent = (r.distance_totale_m != null ? r.distance_totale_m + " m" : "—");
@@ -795,7 +743,7 @@
         tr.appendChild(cDate);
         tr.appendChild(cClub);
         tr.appendChild(cDistCible);
-        tr.appendChild(cRadar);
+        // tr.appendChild(cRadar); 
         tr.appendChild(cDistTot);
         tr.appendChild(cLat);
         tr.appendChild(cProf);
@@ -811,7 +759,7 @@
     }
 
     function resetFilters() {
-      fRadarType.value = "all";
+      fRadarType.value = ""; 
       fDateFrom.value = "";
       fDateTo.value   = "";
       fClub.value     = "";
@@ -832,31 +780,39 @@
       URL.revokeObjectURL(url);
     }
 
+    // --- EXPORT ---
     function exportHistory() {
       if (!allRows.length) {
         alert("Aucune donnée à exporter.");
         return;
       }
-      const headers = [
-        "session_id", "date_text", "club", "distance_cible_m",
-        "radar_info", "distance_totale_m", "ecart_lateral_m", "ecart_profondeur_m"
-      ];
 
-      const rows = [headers.join(",")];
-      allRows.forEach(r => {
-        const line = headers.map(h => {
-          const v = r[h] != null ? String(r[h]) : "";
-          return v.replace(/"/g,'""');
-        }).join(",");
-        rows.push(line);
+      const allKeys = new Set();
+      allRows.forEach(row => {
+        Object.keys(row).forEach(key => allKeys.add(key));
+      });
+      const headers = Array.from(allKeys);
+
+      const csvRows = [headers.join(";")];
+
+      allRows.forEach(row => {
+        const values = headers.map(header => {
+          const val = row[header];
+          if (val === null || val === undefined) return "";
+          let stringVal = String(val);
+          stringVal = stringVal.replace(/(\r\n|\n|\r)/gm, " ");
+          return stringVal.replace(/;/g, ","); 
+        });
+        csvRows.push(values.join(";"));
       });
 
-      const csv = rows.join("\n");
+      const csv = "\ufeff" + csvRows.join("\n");
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
-      downloadCSV(`todogolf-historique-${yyyy}-${mm}-${dd}.csv`, csv);
+      
+      downloadCSV(`todogolf-export-${yyyy}-${mm}-${dd}.csv`, csv);
 
       try {
         localStorage.setItem(LAST_EXPORT_COUNT_KEY, String(allRows.length));
@@ -864,108 +820,71 @@
       } catch(e) {}
     }
 
+    // --- IMPORT ---
     function importCSVText(text) {
       const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
       if (!lines.length) return;
-      
+
       const headerLine = lines[0];
-      const headers = headerLine.split(",");
+      const separator = headerLine.includes(";") ? ";" : ",";
+
+      const headers = headerLine.split(separator);
       
-      // On map les index des colonnes
-      const idx = {
-        session_id: headers.indexOf("session_id"),
-        date_text: headers.indexOf("date_text"),
-        club: headers.indexOf("club"),
-        distance_cible_m: headers.indexOf("distance_cible_m"),
-        radar_info: headers.indexOf("radar_info"),
-        distance_totale_m: headers.indexOf("distance_totale_m"),
-        ecart_lateral_m: headers.indexOf("ecart_lateral_m"),
-        ecart_profondeur_m: headers.indexOf("ecart_profondeur_m")
-      };
-
-      if (Object.values(idx).includes(-1)) {
-        alert("Le fichier CSV ne contient pas les colonnes attendues.");
-        return;
-      }
-
-      // Petite fonction pour éviter que "vide" devienne 0
-      const parseNum = (val) => {
-        if (!val || val.trim() === "") return null;
-        const n = Number(val);
-        return isNaN(n) ? null : n;
-      };
-
       const imported = [];
 
+      const parseValue = (val) => {
+        if (!val || val.trim() === "") return null;
+        const cleanVal = val.replace(",", "."); 
+        const n = Number(cleanVal);
+        return isNaN(n) ? val : n; 
+      };
+
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        // On gère les virgules dans les guillemets si besoin, mais ici split simple
-        const cols = line.split(",");
-        
-        // Si la ligne est vide ou mal formée, on saute
-        if (!cols.length || cols.every(c => !c.trim())) continue;
+        const cols = lines[i].split(separator);
+        if (cols.length < headers.length - 1) continue;
 
-        const row = {
-          session_id: cols[idx.session_id] || "",
-          date_text: cols[idx.date_text] || "",
-          club: cols[idx.club] || "",
-          // Utilisation de parseNum ici pour corriger le bug des doublons
-          distance_cible_m: idx.distance_cible_m >= 0 ? parseNum(cols[idx.distance_cible_m]) : null,
-          radar_info: idx.radar_info >= 0 ? (cols[idx.radar_info] || "") : "",
-          distance_totale_m: idx.distance_totale_m >= 0 ? parseNum(cols[idx.distance_totale_m]) : null,
-          ecart_lateral_m: idx.ecart_lateral_m >= 0 ? parseNum(cols[idx.ecart_lateral_m]) : null,
-          ecart_profondeur_m: idx.ecart_profondeur_m >= 0 ? parseNum(cols[idx.ecart_profondeur_m]) : null
-        };
-
-        // Création de la clé unique pour comparer
-        const uniqueKey = [
-          row.session_id, 
-          row.date_text, 
-          row.club, 
-          row.distance_cible_m,
-          row.radar_info, 
-          row.distance_totale_m, 
-          row.ecart_lateral_m, 
-          row.ecart_profondeur_m
-        ].join("|");
-
-        // Comparaison avec l'existant
-        const existing = parseStoredHistory();
-        const existingKeys = new Set(
-          existing.map(r => {
-            return [
-              r.session_id, 
-              r.date_text, 
-              r.club, 
-              r.distance_cible_m,
-              r.radar_info, 
-              r.distance_totale_m, 
-              r.ecart_lateral_m, 
-              r.ecart_profondeur_m
-            ].join("|");
-          })
-        );
-
-        if (!existingKeys.has(uniqueKey)) {
-          imported.push(row);
-        }
+        const row = {};
+        headers.forEach((header, index) => {
+          const key = header.trim();
+          const rawVal = cols[index] !== undefined ? cols[index] : "";
+          row[key] = parseValue(rawVal);
+        });
+        imported.push(row);
       }
 
       if (!imported.length) {
-        alert("Aucune nouvelle donnée détectée (les doublons sont ignorés).");
+        alert("Fichier vide ou illisible.");
         return;
       }
 
-      const existing = parseStoredHistory();
-      const merged = [...existing, ...imported];
+      const currentHistoryJSON = parseStoredHistory().map(r => JSON.stringify(r));
+      const existingSet = new Set(currentHistoryJSON);
+      
+      const newRows = [];
+      let duplicatesCount = 0;
 
+      imported.forEach(row => {
+        const rowStr = JSON.stringify(row);
+        if (!existingSet.has(rowStr)) {
+          newRows.push(row);
+          existingSet.add(rowStr); 
+        } else {
+          duplicatesCount++;
+        }
+      });
+
+      if (newRows.length === 0) {
+        alert("Aucune nouvelle donnée : tous les coups existent déjà.");
+        return;
+      }
+
+      const merged = [...parseStoredHistory(), ...newRows];
       localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      
       loadHistory();
-      alert(`${imported.length} ligne(s) ajoutée(s) à votre historique.`);
+      alert(`${newRows.length} coups importés.\n(${duplicatesCount} doublons ignorés).`);
     }
 
-    // Listeners
-    // 1. Gestion de la Popup de suppression
     function openDeletePopup(index) {
       pendingDeleteIndex = index;
       deletePopup.classList.remove("hidden");
@@ -979,27 +898,18 @@
     function confirmDelete() {
       if (pendingDeleteIndex === null) return;
 
-      // Suppression de la ligne dans le tableau en mémoire
       allRows.splice(pendingDeleteIndex, 1);
-
-      // Mise à jour du localStorage
       localStorage.setItem(HISTORY_KEY, JSON.stringify(allRows));
-
-      // Mise à jour de l'affichage
       applyFilters(); 
       updateExportWarning();
-
-      // Fermeture de la popup
       closeDeletePopup();
     }
 
-    // 2. Gestion de l'avertissement d'export (manquante aussi)
     function updateExportWarning() {
       try {
         const lastCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
         const currentCount = allRows.length;
-        // Si on a plus de lignes que lors du dernier export, on affiche l'alerte
-        if (currentCount > lastCount) {
+        if (currentCount !== lastCount) {
           exportWarning.classList.remove("hidden");
         } else {
           exportWarning.classList.add("hidden");
@@ -1009,7 +919,6 @@
       }
     }
 
-    // 3. Gestion des flèches de tri (manquante aussi)
     function updateSortHeaders() {
       document.querySelectorAll("thead th[data-sort]").forEach(th => {
         th.classList.remove("sort-asc", "sort-desc");
@@ -1019,6 +928,7 @@
         }
       });
     }
+
     btnApply.addEventListener("click", applyFilters);
     btnReset.addEventListener("click", resetFilters);
 
@@ -1082,7 +992,6 @@
 
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
-
     function pingRender() {
       try {
         fetch(RENDER_URL, {
@@ -1091,7 +1000,6 @@
         }).catch(() => {});
       } catch (e) {}
     }
-
     pingRender();
     setInterval(pingRender, 5 * 60 * 1000);
   </script>
