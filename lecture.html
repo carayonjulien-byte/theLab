@@ -471,7 +471,7 @@
     }
     .select-club-btn--filled { color:var(--text); }
 
-    /* Modal */
+    /* Modal Club */
     .modal-backdrop {
       position:fixed;
       inset:0;
@@ -528,6 +528,7 @@
       display:flex;
       flex-direction:column;
       gap:10px;
+      overflow:hidden;
     }
     .modal-search {
       width:100%;
@@ -601,13 +602,36 @@
       .primary,
       .ghost{width:100%}
       .btn-row-2{grid-template-columns:1fr}
-      .modal-club{ max-width:none; max-height:none; height:100%; border-radius:0; }
-      .modal-list{ max-height:none; flex:1; }
-      .modal-body{ flex:1; display:flex; flex-direction:column; }
+      
       .result-summary { grid-template-columns: 1fr; }
       .stepper { flex-direction: column; align-items: stretch; gap: 6px; }
       .step { width: 100%; justify-content: flex-start; }
       .step-texts { text-align: left; }
+
+      /* --- MODAL CLUB MOBILE OPTIMISÉ (BOTTOM SHEET) --- */
+      .modal-backdrop {
+        align-items: flex-end; /* Colle en bas */
+        padding: 0; 
+      }
+      .modal-club {
+        max-width: none;
+        width: 100%;
+        max-height: 85vh; /* max 85% hauteur */
+        height: auto;
+        border-radius: 18px 18px 0 0; /* Arrondi haut uniquement */
+        border-bottom: none;
+        animation: slideUp 0.25s ease-out;
+      }
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .modal-body {
+        padding-bottom: 30px; /* Espace safe area */
+      }
+      .modal-list {
+        max-height: 60vh; /* Scroll interne liste */
+      }
     }
   </style>
 </head>
@@ -729,6 +753,22 @@
             <input id="targetDist" type="number" step="1" min="0" value="100" required />
             <div class="hint">Utilisée uniquement en mode Practice.</div>
           </div>
+
+          <div class="row field-group hidden" id="shotTypeRow">
+            <label for="shotType">Type de coup</label>
+            <select id="shotType">
+              <option value="">— Sélectionner —</option>
+              <option value="Normal">Normal</option>
+              <option value="Draw">Draw</option>
+              <option value="Fade">Fade</option>
+              <option value="Balle basse">Balle basse</option>
+              <option value="Balle haute">Balle haute</option>
+              <option value="Approche roulée">Approche roulée</option>
+              <option value="Approche levée">Approche levée</option>
+              <option value="Approche lobée">Approche lobée</option>
+            </select>
+            <div class="hint">Information optionnelle pour le suivi.</div>
+          </div>
         </div>
 
         <div class="row">
@@ -759,6 +799,12 @@
             <div class="result-summary-label">🎯 Distance cible</div>
             <div class="result-summary-value" id="rTarget">—</div>
           </div>
+          
+          <div class="result-summary-item">
+            <div class="result-summary-label">⛳ Type</div>
+            <div class="result-summary-value" id="rShotType">—</div>
+          </div>
+
           <div class="result-summary-item">
             <div class="result-summary-label">📍 Condition</div>
             <div class="result-summary-value" id="rRadar">—</div>
@@ -830,7 +876,7 @@
     };
     const NB_RINGS = 4;
 
-    function fetchWithTimeout(url, options = {}, timeout = 20000) {
+    function fetchWithTimeout(url, options = {}, timeout = 60000) {
       return Promise.race([
         fetch(url, options),
         new Promise((_, reject) =>
@@ -848,16 +894,20 @@
     const resultCard = $("resultCard");
     const shotsList  = $("shotsList");
 
-    const rDate   = $("rDate");
-    const rClub   = $("rClub");
-    const rTarget = $("rTarget");
-    const rRadar  = $("rRadar");
+    const rDate     = $("rDate");
+    const rClub     = $("rClub");
+    const rTarget   = $("rTarget");
+    const rRadar    = $("rRadar");
+    const rShotType = $("rShotType"); // Référence JS pour le résumé
 
     const dateText    = $("dateText");
     const club        = $("club");
     const clubDisplay = $("clubDisplay");
     const targetDist  = $("targetDist");
     const targetRow   = $("targetRow");
+    
+    const shotTypeRow = $("shotTypeRow");
+    const shotType    = $("shotType");
 
     const radarUsageSel = $("radarUsage");
     const radarScaleSel = $("radarScale");
@@ -926,7 +976,7 @@
       }, 10000);
     }
 
-    function clampSize(w,h,max=1600){
+    function clampSize(w,h,max=1024){
       if(Math.max(w,h) <= max) return [w,h];
       const s = max / Math.max(w,h);
       return [Math.round(w*s), Math.round(h*s)];
@@ -1023,30 +1073,29 @@
 
     async function ensureJpegFile(fileOrBlob){
       if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-        return fileOrBlob;
       }
       try{
         const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
-        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
+        const [tw,th] = clampSize(bmp.width,bmp.height,1024);
         const canvas = document.createElement('canvas');
         canvas.width = tw;
         canvas.height = th;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(bmp,0,0,tw,th);
-        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7));
         return new File([blob], 'capture.jpg', {type:'image/jpeg'});
       }catch{
         return await new Promise(async (resolve)=>{
           const img = new Image();
           img.src = URL.createObjectURL(fileOrBlob);
           await img.decode();
-          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
+          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1024);
           const canvas=document.createElement('canvas');
           canvas.width = tw;
           canvas.height= th;
           const ctx=canvas.getContext('2d');
           ctx.drawImage(img,0,0,tw,th);
-          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7));
           URL.revokeObjectURL(img.src);
           resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
         });
@@ -1061,6 +1110,7 @@
       rClub.textContent   = "—";
       rTarget.textContent = "—";
       rRadar.textContent  = "—";
+      if(rShotType) rShotType.textContent = "—"; // Reset type
     }
 
     function onPick(e){
@@ -1102,7 +1152,7 @@
 
       try{
         setLoading(true, "Détection des repères…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 60000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -1252,7 +1302,7 @@
 
       try{
         setLoading(true, "Analyse des coups…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 60000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -1275,6 +1325,11 @@
         rDate.textContent   = dateText.value;
         rClub.textContent   = club.value || "—";
         rTarget.textContent = isPractice && targetDist.value ? (targetDist.value + " m") : "—";
+        
+        // MISE A JOUR DU CHAMP TYPE
+        if (rShotType) {
+          rShotType.textContent = (isPractice && shotType.value) ? shotType.value : "—";
+        }
 
         const radarInfo = getRadarInfoLabel(radarUsage, radarScaleKey);
         rRadar.textContent = radarInfo;
@@ -1380,11 +1435,14 @@
       const dateVal       = dateText.value;
       const clubVal       = club.value;
       const cibleVal      = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
+      
+      const shotTypeVal   = (radarUsage === "practice") ? (shotType.value || null) : null;
+
       const sessionId     = generateSessionId(radarUsage);
 
       coups.forEach((c, index) => {
         history.push({
-          id: index + 1, // ID simple pour éviter les doublons de ligne exacte
+          id: index + 1,
           session_id: sessionId,
           date_text: dateVal,
           radar_usage: radarUsage,
@@ -1392,6 +1450,7 @@
           radar_scale_m: radarScaleM,
           club: clubVal,
           distance_cible_m: cibleVal,
+          shot_type: shotTypeVal,
           radar_info: radarInfo,
           distance_totale_m: c.distance_totale_m,
           ecart_lateral_m: c.ecart_lateral_m,
@@ -1472,13 +1531,15 @@
       renderClubList(e.target.value);
     });
 
-    /* Changement type radar : gestion du champ distance cible */
+    /* Changement type radar : gestion champs Conditionnels */
     radarUsageSel.addEventListener("change", () => {
       const usage = radarUsageSel.value;
       if (usage === "practice") {
         targetRow.classList.remove("hidden");
+        shotTypeRow.classList.remove("hidden");
       } else {
         targetRow.classList.add("hidden");
+        shotTypeRow.classList.add("hidden");
       }
     });
 
@@ -1634,7 +1695,6 @@
         let blob;
 
         if (!cropRect || cropRect.w < 5 || cropRect.h < 5) {
-          // Pas de sélection : on utilise toute l’image
           const canvas = document.createElement("canvas");
           canvas.width = cropImg.naturalWidth;
           canvas.height = cropImg.naturalHeight;
@@ -1645,12 +1705,11 @@
             canvas.toBlob(b=>{
               if (!b) reject(new Error("toBlob a échoué"));
               else resolve(b);
-            }, "image/jpeg", 0.9);
+            }, "image/jpeg", 0.7);
           });
 
           setStatus("Recadrage non dessiné : l’image entière sera utilisée.\nLancement de la détection des repères…", "info");
         } else {
-          // Utilisation de la zone sélectionnée
           const sx = cropRect.x / cropScaleX;
           const sy = cropRect.y / cropScaleY;
           const sw = cropRect.w / cropScaleX;
@@ -1673,7 +1732,7 @@
             canvas.toBlob(b=>{
               if (!b) reject(new Error("toBlob a échoué"));
               else resolve(b);
-            }, "image/jpeg", 0.9);
+            }, "image/jpeg", 0.7);
           });
 
           setStatus("Photo recadrée ✅\nLancement de la détection des repères…", "info");
