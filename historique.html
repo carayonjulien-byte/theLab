@@ -191,33 +191,33 @@
       margin-top:8px;
     }
 
-    /* --- AJOUT : GESTION RESPONSIVE DU TABLEAU --- */
+    /* --- MODIFICATION : TABLEAU PLEINE LARGEUR (SANS SCROLL) --- */
     #rawTableContainer {
-      display: block;
       width: 100%;
-      overflow-x: auto; /* Permet le scroll horizontal si besoin */
-      -webkit-overflow-scrolling: touch;
       margin-bottom: 10px;
+      /* Pas d'overflow ici, on laisse le tableau prendre toute la place */
     }
     
     table {
-      width:100%;
+      width: 100%;
       border-collapse: collapse;
-      font-size:13px;
-      /* Empêche le texte de se casser sur 2 lignes pour garder le tableau compact */
-      white-space: nowrap; 
+      font-size: 13px;
+      table-layout: auto; /* Laisse le navigateur ajuster les colonnes */
+      white-space: normal; /* Autorise le texte à passer à la ligne */
     }
+
     thead {
       background:#05080c;
     }
     th, td {
-      padding:6px 8px;
-      border-bottom:1px solid #202833;
-      text-align:left;
-      vertical-align:middle;
+      padding: 6px 4px; /* Padding réduit pour gagner de la place */
+      border-bottom: 1px solid #202833;
+      text-align: left;
+      vertical-align: middle;
+      word-break: break-word; /* Coupe les mots trop longs si nécessaire */
     }
     th {
-      font-size:12px;
+      font-size:11px; /* Titres un peu plus petits */
       color:#9aa5b1;
       text-transform:uppercase;
       letter-spacing:0.04em;
@@ -256,7 +256,7 @@
       background:#111827;
       color:#fca5a5;
       font-size:11px;
-      padding:3px 8px;
+      padding:3px 6px; /* Plus petit */
       cursor:pointer;
       line-height:1;
     }
@@ -344,6 +344,12 @@
       .top-actions {
         width:100%;
         justify-content:flex-start;
+      }
+      
+      /* Ajustements spécifiques mobile pour le tableau */
+      th, td {
+        font-size: 11px; /* Texte plus petit */
+        padding: 4px 2px; /* Marges réduites au min */
       }
     }
   </style>
@@ -685,7 +691,7 @@
       if (!filteredRows.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 7; // Ajusté de 8 à 7
+        td.colSpan = 7; 
         td.className = "empty-state";
         td.textContent = "Aucun coup ne correspond aux filtres actuels.";
         tr.appendChild(td);
@@ -714,7 +720,7 @@
         const cDistCible = document.createElement("td");
         cDistCible.textContent = (r.distance_cible_m != null ? r.distance_cible_m + " m" : "—");
 
-        // --- COLONNE RADAR SUPPRIMÉE ICI ---
+        // --- COLONNE RADAR SUPPRIMÉE ---
 
         const cDistTot = document.createElement("td");
         cDistTot.textContent = (r.distance_totale_m != null ? r.distance_totale_m + " m" : "—");
@@ -737,7 +743,7 @@
         tr.appendChild(cDate);
         tr.appendChild(cClub);
         tr.appendChild(cDistCible);
-        // tr.appendChild(cRadar); // Supprimé
+        // tr.appendChild(cRadar); 
         tr.appendChild(cDistTot);
         tr.appendChild(cLat);
         tr.appendChild(cProf);
