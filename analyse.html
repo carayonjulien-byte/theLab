@@ -142,15 +142,18 @@
       outline: none;
     }
     
-    /* Conteneurs graphiques */
+    /* --- CONTENEURS GRAPHIQUES --- */
+    
+    /* Radar : On retire la hauteur fixe pour laisser le ratio 1:1 agir */
     .chart-box-radar {
       position: relative;
-      /* On laisse la hauteur libre, gérée par l'aspect ratio 1:1 */
       width: 100%;
-      max-width: 500px; /* Evite que ce soit trop géant sur desktop */
-      margin: 0 auto;
+      max-width: 500px; /* Max largeur pour desktop */
+      margin: 0 auto;   /* Centré */
+      /* height: auto;  <-- Laisser auto pour que l'aspectRatio gère la hauteur */
     }
     
+    /* Mapping : Hauteur fixe nécessaire pour l'effet piste */
     .chart-box-tall {
       position: relative;
       height: 600px;
@@ -234,7 +237,7 @@
             </select>
             <select id="radarClubSelect" onchange="updateRadarChart()">
               <option value="all">Tous les clubs</option>
-              </select>
+            </select>
           </div>
         </div>
 
@@ -318,15 +321,27 @@
     const HISTORY_KEY = "todogolf_lab_history";
     let globalHistory = [];
 
-    // Couleurs vives (HEX) pour le mapping
+    // Couleurs vives (HEX)
     const CLUB_COLORS = [
       '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', 
       '#22d3ee', '#818cf8', '#c084fc', '#f472b6'
     ];
 
-    // Helper : Hex to RGBA
+    // Helper : Hex to RGBA (Robuste)
     function hexToRgba(hex, alpha) {
-      hex = hex.replace('#', '');
+      if (!hex) return `rgba(255,255,255,${alpha})`;
+      // Nettoyage
+      hex = hex.trim();
+      if (hex.startsWith('#')) hex = hex.slice(1);
+      
+      // Gestion short hex #FFF
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      
+      // Fallback si pas valide
+      if (hex.length !== 6) return `rgba(100,100,100,${alpha})`;
+
       const r = parseInt(hex.substring(0,2), 16);
       const g = parseInt(hex.substring(2,4), 16);
       const b = parseInt(hex.substring(4,6), 16);
@@ -362,7 +377,6 @@
       return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
     }
 
-    // Exclure les 10% extrêmes pour le mapping
     function getSmartBounds(values) {
       if (values.length < 5) return { min: Math.min(...values), max: Math.max(...values) };
       const sorted = [...values].sort((a,b) => a - b);
@@ -388,7 +402,7 @@
 
       if(tabName === 'radar') {
         document.getElementById('viewRadar').classList.remove('hidden');
-        updateRadarChart();
+        updateRadarChart(); // Redessine pour que la taille s'ajuste
       } else if(tabName === 'mapping') {
         document.getElementById('viewMapping').classList.remove('hidden');
         updateMappingChart();
@@ -433,11 +447,20 @@
         const cy = yAxis.getPixelForValue(0);
         const stepMeters = options.step || 5; 
         
-        // Rayon en px pour 1 step
         const pxPerMeter = Math.abs(xAxis.getPixelForValue(stepMeters) - cx) / stepMeters;
         const rings = [1, 2, 3, 4];
 
         ctx.save();
+        
+        // Croix
+        ctx.beginPath();
+        ctx.moveTo(xAxis.left, cy); ctx.lineTo(xAxis.right, cy);
+        ctx.moveTo(cx, yAxis.top); ctx.lineTo(cx, yAxis.bottom);
+        ctx.strokeStyle = 'rgba(55, 65, 81, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Cercles
         rings.forEach(r => {
           ctx.beginPath();
           ctx.arc(cx, cy, r * stepMeters * pxPerMeter, 0, 2 * Math.PI);
@@ -451,7 +474,7 @@
           }
         });
         
-        // Croix
+        // Croix centrale jaune
         ctx.beginPath();
         ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
         ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
@@ -500,12 +523,10 @@
       const ctx = document.getElementById('canvasRadar').getContext('2d');
       if(radarChart) radarChart.destroy();
 
-      // Calcul de la limite pour que le 4ème cercle soit visible
       let maxData = 0;
       dataPoints.forEach(p => { maxData = Math.max(maxData, Math.abs(p.x), Math.abs(p.y)); });
       
       const maxRingDistance = ringStep * 4;
-      // On force le graph à montrer au moins le 4eme cercle + 20% de marge
       let boundary = Math.max(maxData, maxRingDistance) * 1.2; 
 
       radarChart = new Chart(ctx, {
@@ -522,8 +543,9 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true, // Important pour que les cercles soient ronds
-          aspectRatio: 1, // Carré parfait
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          layout: { padding: 0 },
           scales: {
             x: {
               display: false, 
@@ -543,6 +565,7 @@
       });
     }
 
+
     // --- CHART 2 : MAPPING (Smart Zones) ---
     let mappingChart = null;
 
@@ -559,7 +582,6 @@
           
           const xValues = dataset.data.map(d => d.x);
           const yValues = dataset.data.map(d => d.y);
-          
           if (xValues.length === 0) return;
 
           const xBounds = getSmartBounds(xValues);
@@ -574,14 +596,14 @@
           const height = bottom - top; 
 
           ctx.save();
-          // FIX OPACITE : on utilise la fonction hexToRgba pour mettre 10% d'opacité
-          ctx.fillStyle = hexToRgba(dataset.borderColor, 0.1); 
+          // FIX: Transparence 0.05 (5%)
+          ctx.fillStyle = hexToRgba(dataset.borderColor, 0.05); 
           ctx.strokeStyle = dataset.borderColor;
-          ctx.lineWidth = 3; // Contour épais
+          ctx.lineWidth = 3; 
           
           if (ctx.roundRect) {
              ctx.beginPath();
-             ctx.roundRect(left, top, width, height, 8); // Arrondi doux
+             ctx.roundRect(left, top, width, height, 8); 
              ctx.fill();
              ctx.stroke();
           } else {
@@ -589,7 +611,6 @@
              ctx.strokeRect(left, top, width, height);
           }
           
-          // Label
           ctx.fillStyle = dataset.borderColor;
           ctx.font = "bold 11px system-ui";
           ctx.textAlign = "center";
@@ -651,12 +672,12 @@
           scales: {
             x: {
               title: { display:true, text:'Dispersion Latérale (m)', color:'#6b7280' },
-              grid: { color:'#374151' },
+              grid: { color:'rgba(55, 65, 81, 0.4)' },
               min: -35, max: 35, 
             },
             y: {
               title: { display:true, text:'Distance Totale (m)', color:'#6b7280' },
-              grid: { color:'#374151' },
+              grid: { color:'rgba(55, 65, 81, 0.4)' },
               beginAtZero: true,
               suggestedMax: 250
             }
