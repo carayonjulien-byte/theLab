@@ -59,7 +59,6 @@
       white-space:nowrap;
       display:flex; align-items:center; gap:4px;
     }
-    .btn-top:hover { background:#101822; }
 
     .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
 
@@ -119,19 +118,15 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       margin-bottom: 20px;
     }
-    .card-header {
-      margin-bottom: 12px;
-    }
+    .card-header { margin-bottom: 12px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
     
-    /* Zone de filtres */
     .filters-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 10px;
     }
-    .filters-row.full { grid-template-columns: 1fr; }
 
     select, input[type=date], input[type=number] {
       background: #05080c;
@@ -146,7 +141,13 @@
     
     .chart-box {
       position: relative;
-      height: 350px; /* Un peu plus haut pour le mapping */
+      height: 350px;
+      width: 100%;
+    }
+    /* Mapping plus haut pour effet "Flight" */
+    .chart-box-tall {
+      position: relative;
+      height: 600px; /* Beaucoup plus haut */
       width: 100%;
     }
 
@@ -208,7 +209,7 @@
     <div id="viewRadar" class="tab-content">
       <div class="chart-card">
         <div class="card-header">
-          <div class="card-title">Dispersion & Précision</div>
+          <div class="card-title">Dispersion (Vue Cible)</div>
           
           <div class="filters-row">
             <input type="date" id="radarStart" onchange="updateRadarChart()">
@@ -217,7 +218,9 @@
           <div class="filters-row">
             <select id="radarContext" onchange="updateRadarChart()">
               <option value="all">Toutes conditions</option>
-              <option value="practice">Practice</option>
+              <option value="practice">Practice (Standard)</option>
+              <option value="petit-jeu">Petit Jeu (Approches)</option>
+              <option value="putting">Putting</option>
               <option value="parcours">Parcours</option>
             </select>
             <select id="radarClubSelect" onchange="updateRadarChart()">
@@ -229,8 +232,8 @@
         <div class="chart-box">
           <canvas id="canvasRadar"></canvas>
         </div>
-        <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Centre (0,0) = Cible visée.<br>L'échelle s'adapte automatiquement aux données.
+        <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;" id="radarLegend">
+          Les cercles représentent les anneaux de la cible (5m, 1m ou 0.3m selon contexte).
         </div>
       </div>
     </div>
@@ -238,8 +241,8 @@
     <div id="viewMapping" class="tab-content hidden">
       <div class="chart-card">
         <div class="card-header">
-          <div class="card-title">Vue Aérienne (Trackman Style)</div>
-          <div class="filters-row">
+          <div class="card-title">Vue Aérienne (Zones)</div>
+           <div class="filters-row">
             <select id="mapContext" onchange="updateMappingChart()">
               <option value="all">Tout (Practice & Parcours)</option>
               <option value="practice">Seulement Practice</option>
@@ -253,12 +256,12 @@
           </div>
         </div>
 
-        <div class="chart-box">
+        <div class="chart-box-tall">
           <canvas id="canvasMapping"></canvas>
         </div>
         <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Chaque couleur est un club différent.<br>
-          Axe vertical = Distance Totale. Axe horizontal = Dispersion.
+          Les rectangles indiquent la zone de retombée moyenne de chaque club.<br>
+          Axe vertical = Distance. Axe horizontal = Dispersion.
         </div>
       </div>
     </div>
@@ -300,17 +303,16 @@
   <script>
     // --- CONFIG CHART.JS ---
     Chart.defaults.color = '#9ca3af';
-    Chart.defaults.borderColor = '#1f2937';
+    Chart.defaults.borderColor = 'rgba(31, 41, 55, 0)'; // Pas de bordure par defaut
     Chart.defaults.font.family = 'system-ui, sans-serif';
 
     const HISTORY_KEY = "todogolf_lab_history";
     let globalHistory = [];
 
-    // Palette de couleurs pour le Mapping (15 couleurs distinctes)
+    // Couleurs vives pour le mapping (cycliques)
     const CLUB_COLORS = [
-      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', // Rouges/Jaunes
-      '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', // Verts/Bleus
-      '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef'  // Bleus/Violets
+      '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', 
+      '#22d3ee', '#818cf8', '#c084fc', '#f472b6'
     ];
 
     const CLUB_ORDER = [
@@ -336,7 +338,6 @@
     }
 
     function formatDate(dateStr) {
-      // Transforme YYYY-MM-DD ou DD/MM/YYYY en objet Date
       if(!dateStr) return null;
       if(dateStr.includes('-')) return new Date(dateStr); 
       const parts = dateStr.split('/');
@@ -347,7 +348,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       globalHistory = loadData();
       updateKPIs();
-      initRadar(); // Charge le graph 1 par défaut
+      initRadar();
     });
 
     function switchTab(tabName, btnEl) {
@@ -372,7 +373,6 @@
     function updateKPIs() {
       const count = globalHistory.length;
       const sessions = new Set(globalHistory.map(x => x.session_id || x.date_text)).size;
-      
       const counts = {};
       globalHistory.forEach(x => { if(x.club) counts[x.club] = (counts[x.club]||0)+1; });
       let fav = "-", max = 0;
@@ -394,8 +394,57 @@
       });
     }
 
-    // --- CHART 1 : RADAR (Dispersion) ---
+    // --- CHART 1 : RADAR (Cible Concentrique) ---
     let radarChart = null;
+
+    // Plugin pour dessiner les cercles concentriques
+    const circleBackgroundPlugin = {
+      id: 'circleBackground',
+      beforeDraw: (chart, args, options) => {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        
+        // Centre (0,0) en pixels
+        const cx = xAxis.getPixelForValue(0);
+        const cy = yAxis.getPixelForValue(0);
+        
+        // Récupérer le "Pas" (Step) depuis les options du plugin
+        const stepMeters = options.step || 5; 
+        
+        // Calculer rayon en pixels pour 1 step (distance entre 0 et step sur l'axe X)
+        // Attention: l'échelle peut ne pas être carrée, on prend la moyenne ou X
+        const pxPerMeter = Math.abs(xAxis.getPixelForValue(stepMeters) - cx) / stepMeters;
+        
+        const rings = [1, 2, 3, 4]; // 4 anneaux
+
+        ctx.save();
+        rings.forEach(r => {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * stepMeters * pxPerMeter, 0, 2 * Math.PI);
+          ctx.strokeStyle = 'rgba(55, 65, 81, 0.5)'; // Couleur cercles (#374151)
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          // Texte distance (optionnel)
+          if (r === 4) {
+             ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
+             ctx.font = '10px system-ui';
+             ctx.fillText((r * stepMeters) + 'm', cx + 2, cy - (r * stepMeters * pxPerMeter) + 10);
+          }
+        });
+        
+        // Croix centrale
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
+        ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    };
 
     function initRadar() { updateRadarChart(); }
 
@@ -405,13 +454,30 @@
       const sDateStart = document.getElementById('radarStart').valueAsDate;
       const sDateEnd = document.getElementById('radarEnd').valueAsDate;
 
+      // Détermination de l'échelle des cercles
+      let ringStep = 5; // Défaut
+      if (sContext === 'putting') ringStep = 0.3;
+      else if (sContext === 'petit-jeu') ringStep = 1;
+      else if (sContext === 'all') {
+        // Si tout est sélectionné, on essaie de deviner si c'est du putting majoritaire ? 
+        // Non, on reste sur 5m pour tout voir, sinon Driver explose le graph.
+        ringStep = 5;
+      }
+
       // Filtrage
       const filtered = globalHistory.filter(r => {
-        // Putter inclus maintenant !
-        if (!r.ecart_lateral_m || !r.ecart_profondeur_m) return false;
+        // Putter INCLUS
+        if (r.ecart_lateral_m == null || r.ecart_profondeur_m == null) return false;
         
         if (sClub !== 'all' && r.club !== sClub) return false;
-        if (sContext !== 'all' && r.radar_usage !== sContext) return false;
+        
+        // Filtre context intelligent
+        if (sContext !== 'all') {
+           // Si filtre strict "Practice", on ne prend que "practice"
+           // Mais on peut aussi vouloir filtrer par type de radar scale ? 
+           // Ici on fait simple sur le champ 'radar_usage' ou 'radar_scale_key'
+           if (r.radar_usage !== sContext && r.radar_scale_key !== sContext) return false;
+        }
         
         if (sDateStart || sDateEnd) {
           const d = formatDate(r.date_text);
@@ -431,16 +497,27 @@
       const ctx = document.getElementById('canvasRadar').getContext('2d');
       if(radarChart) radarChart.destroy();
 
+      // Calculer min/max pour centrer et avoir une échelle carrée (aspect ratio 1:1)
+      // On veut que 10m en X soit pareil que 10m en Y
+      // Chart.js ne fait pas ça nativement facilement, on va laisser l'auto-scale
+      // Mais on va suggérer un min/max symétrique
+      
+      let maxRange = ringStep * 4; // Minimo la cible
+      dataPoints.forEach(p => {
+         maxRange = Math.max(maxRange, Math.abs(p.x), Math.abs(p.y));
+      });
+      maxRange = maxRange * 1.1; // Marge
+
       radarChart = new Chart(ctx, {
         type: 'scatter',
         data: {
           datasets: [{
-            label: 'Impacts',
+            label: 'Coups',
             data: dataPoints,
-            backgroundColor: 'rgba(251, 191, 36, 0.5)', // Jaune transparent
+            backgroundColor: 'rgba(251, 191, 36, 0.6)', 
             borderColor: 'rgba(251, 191, 36, 1)',
             borderWidth: 1,
-            pointRadius: 5
+            pointRadius: 4
           }]
         },
         options: {
@@ -448,28 +525,89 @@
           maintainAspectRatio: false,
           scales: {
             x: {
-              title: { display:true, text:'Gauche (-) / Droite (+)', color:'#6b7280' },
-              grid: { color:'#374151' },
-              // MODIF : Pas de min/max forcé, auto-scale
+              display: false, // On cache les axes par défaut car on a les cercles
+              min: -maxRange, max: maxRange
             },
             y: {
-              title: { display:true, text:'Court (-) / Long (+)', color:'#6b7280' },
-              grid: { color:'#374151' },
+              display: false,
+              min: -maxRange, max: maxRange
             }
           },
-          plugins: { legend: { display:false } }
-        }
+          plugins: { 
+            legend: { display:false },
+            circleBackground: { step: ringStep } // Passer le step au plugin
+          }
+        },
+        plugins: [circleBackgroundPlugin] // Activer le plugin
       });
+      
+      document.getElementById('radarLegend').textContent = 
+        `Cercles : ${ringStep}m / ${ringStep*2}m / ${ringStep*3}m / ${ringStep*4}m`;
     }
 
-    // --- CHART 2 : MAPPING (Vue Aérienne) ---
+
+    // --- CHART 2 : MAPPING (Vue Aérienne avec Zones) ---
     let mappingChart = null;
+
+    // Plugin pour dessiner les rectangles (Zones)
+    const zonesPlugin = {
+      id: 'zonesPlugin',
+      beforeDatasetsDraw: (chart) => {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+
+        chart.data.datasets.forEach((dataset, i) => {
+          const meta = chart.getDatasetMeta(i);
+          if (meta.hidden) return;
+
+          // Calculer Min/Max X et Y des données brutes
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          dataset.data.forEach(p => {
+             if(p.x < minX) minX = p.x;
+             if(p.x > maxX) maxX = p.x;
+             if(p.y < minY) minY = p.y;
+             if(p.y > maxY) maxY = p.y;
+          });
+
+          if(minX === Infinity) return;
+
+          // Marge visuelle
+          const padX = 2; 
+          const padY = 5;
+
+          const left = xAxis.getPixelForValue(minX - padX);
+          const right = xAxis.getPixelForValue(maxX + padX);
+          const top = yAxis.getPixelForValue(maxY + padY);
+          const bottom = yAxis.getPixelForValue(minY - padY);
+          
+          const width = right - left;
+          const height = bottom - top;
+
+          ctx.save();
+          ctx.fillStyle = dataset.backgroundColor.replace('1)', '0.15').replace('0.8)', '0.15'); // Version très transparente
+          ctx.strokeStyle = dataset.borderColor;
+          ctx.lineWidth = 1;
+          // Optionnel : arrondi
+          // ctx.roundRect(...) si supporté, sinon rect
+          ctx.strokeRect(left, top, width, height);
+          ctx.fillRect(left, top, width, height);
+          
+          // Petit label du club au dessus de la zone
+          ctx.fillStyle = dataset.borderColor;
+          ctx.font = "bold 10px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText(dataset.label, left + width/2, top - 4);
+
+          ctx.restore();
+        });
+      }
+    };
 
     function updateMappingChart() {
       const sContext = document.getElementById('mapContext').value;
       const sType = document.getElementById('mapType').value;
 
-      // 1. Grouper par Club
       const clubsData = {};
       
       globalHistory.forEach(r => {
@@ -479,29 +617,24 @@
         
         const dist = Number(r.distance_totale_m);
         const lat = Number(r.ecart_lateral_m);
-        
-        // On a besoin de la distance totale pour ce graph
         if(!dist) return; 
 
         if(!clubsData[r.club]) clubsData[r.club] = [];
         clubsData[r.club].push({ x: lat || 0, y: dist });
       });
 
-      // 2. Créer les datasets (1 par club pour avoir des couleurs)
       const datasets = [];
       const sortedClubs = Object.keys(clubsData).sort((a,b) => getClubRank(a) - getClubRank(b));
 
       sortedClubs.forEach((clubName, index) => {
-        // Couleur cyclique
         const color = CLUB_COLORS[index % CLUB_COLORS.length];
-        
         datasets.push({
           label: clubName,
           data: clubsData[clubName],
-          backgroundColor: color,
+          backgroundColor: color, 
           borderColor: color,
-          pointRadius: 4,
-          pointHoverRadius: 6
+          pointRadius: 3,
+          pointHoverRadius: 5
         });
       });
 
@@ -515,30 +648,26 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { 
-              display: true,
-              position: 'bottom',
-              labels: { boxWidth: 10, font: { size: 10 }, color: '#9ca3af' }
-            },
+            legend: { display: false }, // On affiche les noms sur les zones directement
             tooltip: {
-              callbacks: {
-                label: (c) => `${c.dataset.label}: ${c.parsed.y}m (Lat: ${c.parsed.x}m)`
-              }
+              callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y}m` }
             }
           },
           scales: {
             x: {
               title: { display:true, text:'Dispersion Latérale (m)', color:'#6b7280' },
               grid: { color:'#374151' },
-              suggestedMin: -30, suggestedMax: 30 // Garde une largeur cohérente pour le fairway
+              min: -35, max: 35, // Largeur fixe "Fairway"
             },
             y: {
               title: { display:true, text:'Distance Totale (m)', color:'#6b7280' },
               grid: { color:'#374151' },
-              beginAtZero: true
+              beginAtZero: true,
+              suggestedMax: 250
             }
           }
-        }
+        },
+        plugins: [zonesPlugin] // Activer les rectangles
       });
     }
 
@@ -547,7 +676,6 @@
       const target = Number(document.getElementById('caddieDist').value);
       if(!target) return;
 
-      // Calcul stats
       const clubStats = {};
       globalHistory.forEach(r => {
         if(!r.club || r.club === 'Putter') return;
@@ -560,9 +688,7 @@
         clubStats[r.club].count++;
       });
 
-      let best = null;
-      let minDiff = 9999;
-
+      let best = null, minDiff = 9999;
       for(let c in clubStats) {
         const avg = clubStats[c].sum / clubStats[c].count;
         const diff = Math.abs(avg - target);
@@ -583,7 +709,6 @@
       document.getElementById('recClubDisp').textContent = "±" + avgL;
       document.getElementById('recNbShots').textContent = s.count;
 
-      // Confiance
       const badge = document.getElementById('recConf');
       badge.className = "confidence-badge";
       if(s.count < 5) { badge.textContent="Faible (Peu de données)"; badge.classList.add('conf-low'); }
