@@ -528,7 +528,7 @@
       display:flex;
       flex-direction:column;
       gap:10px;
-      overflow:hidden; /* Important pour le scroll interne */
+      overflow:hidden;
     }
     .modal-search {
       width:100%;
@@ -870,7 +870,7 @@
     };
     const NB_RINGS = 4;
 
-    function fetchWithTimeout(url, options = {}, timeout = 20000) {
+    function fetchWithTimeout(url, options = {}, timeout = 60000) { /* Timeout passé à 60s pour mobile */
       return Promise.race([
         fetch(url, options),
         new Promise((_, reject) =>
@@ -970,7 +970,8 @@
       }, 10000);
     }
 
-    function clampSize(w,h,max=1600){
+    /* --- REDUCTION A 1024px POUR MOBILE --- */
+    function clampSize(w,h,max=1024){ 
       if(Math.max(w,h) <= max) return [w,h];
       const s = max / Math.max(w,h);
       return [Math.round(w*s), Math.round(h*s)];
@@ -1067,30 +1068,31 @@
 
     async function ensureJpegFile(fileOrBlob){
       if(fileOrBlob && fileOrBlob.type === 'image/jpeg' && 'name' in fileOrBlob){
-        return fileOrBlob;
+        /* On force quand même le redimensionnement si l'image brute dépasse 1024 */
+        /* Car sur mobile, même un "fichier jpeg" peut être énorme (12MB) */
       }
       try{
         const bmp = await createImageBitmap(fileOrBlob, { imageOrientation: 'from-image' });
-        const [tw,th] = clampSize(bmp.width,bmp.height,1600);
+        const [tw,th] = clampSize(bmp.width,bmp.height,1024); /* max 1024px */
         const canvas = document.createElement('canvas');
         canvas.width = tw;
         canvas.height = th;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(bmp,0,0,tw,th);
-        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7)); /* Quality 0.7 */
         return new File([blob], 'capture.jpg', {type:'image/jpeg'});
       }catch{
         return await new Promise(async (resolve)=>{
           const img = new Image();
           img.src = URL.createObjectURL(fileOrBlob);
           await img.decode();
-          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1600);
+          const [tw,th] = clampSize(img.naturalWidth,img.naturalHeight,1024);
           const canvas=document.createElement('canvas');
           canvas.width = tw;
           canvas.height= th;
           const ctx=canvas.getContext('2d');
           ctx.drawImage(img,0,0,tw,th);
-          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+          const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.7));
           URL.revokeObjectURL(img.src);
           resolve(new File([blob],'capture.jpg',{type:'image/jpeg'}));
         });
@@ -1146,7 +1148,7 @@
 
       try{
         setLoading(true, "Détection des repères…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 60000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -1296,7 +1298,7 @@
 
       try{
         setLoading(true, "Analyse des coups…");
-        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 20000);
+        const res = await fetchWithTimeout(url,{method:'POST',body:fd}, 60000);
         if(!res.ok){
           let t='';
           try{ t = await res.text(); }catch(_){}
@@ -1441,7 +1443,7 @@
           club: clubVal,
           distance_cible_m: cibleVal,
           
-          /* AJOUT DU CHAMP */
+          /* AJOUT DU CHAMP DANS L'HISTORIQUE */
           shot_type: shotTypeVal,
 
           radar_info: radarInfo,
@@ -1699,7 +1701,7 @@
             canvas.toBlob(b=>{
               if (!b) reject(new Error("toBlob a échoué"));
               else resolve(b);
-            }, "image/jpeg", 0.9);
+            }, "image/jpeg", 0.7);
           });
 
           setStatus("Recadrage non dessiné : l’image entière sera utilisée.\nLancement de la détection des repères…", "info");
@@ -1727,7 +1729,7 @@
             canvas.toBlob(b=>{
               if (!b) reject(new Error("toBlob a échoué"));
               else resolve(b);
-            }, "image/jpeg", 0.9);
+            }, "image/jpeg", 0.7);
           });
 
           setStatus("Photo recadrée ✅\nLancement de la détection des repères…", "info");
