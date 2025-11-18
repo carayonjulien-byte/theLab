@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ToDoGolf Lab – Statistiques</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --gap: 16px;
+      --primary: #00503a;
+      --bg: #050608;
+      --card: #0f1419;
+      --border: #182028;
+      --text: #e7e8ea;
+      --muted: #9ca3af;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #06141a 0, #020309 55%, #000 100%);
+      color: var(--text);
+      padding-bottom: 40px;
+    }
+    .hidden { display:none !important; }
+
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.88));
+      border-bottom: 1px solid #10151e;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      backdrop-filter: blur(14px);
+      gap:10px;
+    }
+    .brand-dot {
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      background:var(--primary);
+      box-shadow:0 0 16px rgba(0,80,58,0.85);
+    }
+    .top-texts {
+      flex:1;
+    }
+    .top-title { font-weight:600; font-size:15px; }
+    .top-sub { font-size:11px; color:var(--muted); }
+
+    .btn-top {
+      border-radius:999px;
+      border:1px solid #26303b;
+      background:#0b1016;
+      padding:6px 12px;
+      font-size:12px;
+      color:var(--text);
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .btn-top:hover { background:#101822; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 16px;
+    }
+
+    .page-title {
+      font-size:22px;
+      font-weight:650;
+      margin: 10px 0 20px;
+    }
+
+    /* KPIs Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: var(--gap);
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: var(--gap);
+    }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 14px;
+      grid-column: 1 / -1;
+    }
+    
+    @media (max-width: 600px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-container { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand-dot"></div>
+    <div class="top-texts">
+      <div class="top-title">Analyse des données</div>
+      <div class="top-sub">Vos statistiques détaillées</div>
+    </div>
+    <a href="index.html" class="btn-top">← Accueil</a>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Performance globale</h1>
+
+    <div id="kpiArea" class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Coups</div>
+        <div class="kpi-value" id="kpiTotal">-</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Sessions</div>
+        <div class="kpi-value" id="kpiSessions">-</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Club favori</div>
+        <div class="kpi-value" id="kpiClub" style="font-size:18px; line-height:1.4;">-</div>
+      </div>
+    </div>
+
+    <div id="chartsArea" class="charts-grid">
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">📏 Distances Moyennes (m)</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartDistances"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">🎯 Dispersion (Latéral vs Profondeur)</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartScatter"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">🎨 Types de coups</div>
+        </div>
+        <div class="chart-container" style="height:220px;"> <canvas id="chartTypes"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="emptyMessage" class="empty-state hidden">
+      Aucune donnée trouvée.<br>
+      Commencez par importer un fichier CSV ou enregistrer des coups.
+    </div>
+
+  </main>
+
+  <script>
+    // --- CONFIG CHART.JS (Dark Theme) ---
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = '#1f2937';
+    Chart.defaults.font.family = 'system-ui, sans-serif';
+
+    const HISTORY_KEY = "todogolf_lab_history";
+
+    function getHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) { return []; }
+    }
+
+    // Ordre logique des clubs pour le tri
+    const CLUB_ORDER = [
+      "Putter", "Chipper", 
+      "Wedge 64°", "Wedge 62°", "Wedge 60°", "Wedge 58°", "Wedge 56°", "Wedge 54°", "Wedge 52°", "Wedge 50°",
+      "SW", "PW", "AW", 
+      "Fer 9", "Fer 8", "Fer 7", "Fer 6", "Fer 5", "Fer 4", "Fer 3", "Fer 2",
+      "Hybride 5", "Hybride 4", "Hybride 3", "Hybride 2",
+      "Bois 9", "Bois 7", "Bois 5", "Bois 3",
+      "Driver"
+    ];
+
+    function initDashboard() {
+      const data = getHistory();
+
+      if (!data || data.length === 0) {
+        document.getElementById("kpiArea").classList.add("hidden");
+        document.getElementById("chartsArea").classList.add("hidden");
+        document.getElementById("emptyMessage").classList.remove("hidden");
+        return;
+      }
+
+      // 1. CALCUL DES KPIs
+      const totalShots = data.length;
+      
+      // Sessions uniques (basé sur session_id ou date)
+      const sessions = new Set(data.map(r => r.session_id || r.date_text)).size;
+
+      // Club favori
+      const clubCounts = {};
+      data.forEach(r => { if(r.club) clubCounts[r.club] = (clubCounts[r.club] || 0) + 1; });
+      let favClub = "—";
+      let maxCount = 0;
+      for (const [c, count] of Object.entries(clubCounts)) {
+        if (count > maxCount) { maxCount = count; favClub = c; }
+      }
+
+      document.getElementById("kpiTotal").textContent = totalShots;
+      document.getElementById("kpiSessions").textContent = sessions;
+      document.getElementById("kpiClub").textContent = favClub;
+
+
+      // 2. PREPARATION DONNEES GRAPHIQUES
+
+      // --- A. Distances Moyennes par Club ---
+      // On groupe par club, on calcule la moyenne de distance_totale_m
+      // On exclut les coups < 10m (souvent du putting ou erreur) pour ce graph, ou on garde tout ?
+      // Gardons tout sauf Putter pour la distance "totale"
+      const clubDistances = {};
+      
+      data.forEach(r => {
+        if (!r.club || r.club === "Putter") return; // On ignore le putter pour la distance
+        if (!r.distance_totale_m) return;
+
+        if (!clubDistances[r.club]) clubDistances[r.club] = { sum: 0, count: 0 };
+        clubDistances[r.club].sum += Number(r.distance_totale_m);
+        clubDistances[r.club].count += 1;
+      });
+
+      const avgDistData = Object.keys(clubDistances).map(c => {
+        return {
+          club: c,
+          avg: Math.round(clubDistances[c].sum / clubDistances[c].count)
+        };
+      });
+
+      // Tri personnalisé des clubs
+      avgDistData.sort((a, b) => {
+        const idxA = CLUB_ORDER.indexOf(a.club);
+        const idxB = CLUB_ORDER.indexOf(b.club);
+        // Si un club n'est pas dans la liste, on le met à la fin
+        return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+      });
+
+      const labelsDist = avgDistData.map(d => d.club);
+      const valuesDist = avgDistData.map(d => d.avg);
+
+      // --- B. Scatter Plot (Dispersion) ---
+      // X = Ecart Latéral, Y = Ecart Profondeur (ou Distance Totale ?). 
+      // Pour la dispersion pure, Lateral vs Profondeur est top.
+      const scatterData = data
+        .filter(r => r.ecart_lateral_m != null && r.ecart_profondeur_m != null && r.club !== "Putter")
+        .map(r => ({
+          x: Number(r.ecart_lateral_m),
+          y: Number(r.ecart_profondeur_m)
+        }));
+
+      // --- C. Types de coups (Donut) ---
+      const typeCounts = {};
+      data.forEach(r => {
+        const t = r.shot_type || "Non défini";
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+      });
+      const labelsType = Object.keys(typeCounts);
+      const valuesType = Object.values(typeCounts);
+
+
+      // 3. GENERATION DES CHARTS
+
+      // Graph 1 : Bar Chart (Distances)
+      new Chart(document.getElementById('chartDistances'), {
+        type: 'bar',
+        data: {
+          labels: labelsDist,
+          datasets: [{
+            label: 'Distance Moyenne (m)',
+            data: valuesDist,
+            backgroundColor: '#00503a',
+            borderRadius: 4,
+            hoverBackgroundColor: '#046046'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#1f2937' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      // Graph 2 : Scatter (Dispersion)
+      new Chart(document.getElementById('chartScatter'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Impacts',
+            data: scatterData,
+            backgroundColor: 'rgba(251, 191, 36, 0.7)', // Jaune/Orange semi-transparent
+            borderColor: '#fbbf24',
+            borderWidth: 1,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return `Lat: ${ctx.parsed.x}m, Prof: ${ctx.parsed.y}m`;
+                }
+              }
+            },
+            annotation: {
+              // Optionnel : lignes centrales (nécessite plugin annotation, on fait simple sans pour l'instant)
+            }
+          },
+          scales: {
+            x: { 
+              title: { display: true, text: 'Gauche (-) / Droite (+)' },
+              grid: { color: '#374151' },
+              suggestedMin: -20, suggestedMax: 20
+            },
+            y: { 
+              title: { display: true, text: 'Court (-) / Long (+)' },
+              grid: { color: '#374151' },
+              suggestedMin: -20, suggestedMax: 20
+            }
+          }
+        }
+      });
+
+      // Graph 3 : Donut (Types)
+      new Chart(document.getElementById('chartTypes'), {
+        type: 'doughnut',
+        data: {
+          labels: labelsType,
+          datasets: [{
+            data: valuesType,
+            backgroundColor: [
+              '#00503a', '#059669', '#10b981', '#34d399', '#6ee7b7', '#9ca3af', '#4b5563'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              position: 'right',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          cutout: '65%' // Taille du trou
+        }
+      });
+
+    }
+
+    // Lancement
+    document.addEventListener('DOMContentLoaded', initDashboard);
+
+  </script>
+  
+  <script>
+    const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    function pingRender() {
+      try { fetch(RENDER_URL, { method: "HEAD", mode: "no-cors" }).catch(() => {}); } catch (e) {}
+    }
+    pingRender();
+    setInterval(pingRender, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
