@@ -142,14 +142,18 @@
       outline: none;
     }
     
-    .chart-box {
+    /* Conteneurs graphiques */
+    .chart-box-radar {
       position: relative;
-      height: 350px; /* Carré pour le Radar */
+      /* On laisse la hauteur libre, gérée par l'aspect ratio 1:1 */
       width: 100%;
+      max-width: 500px; /* Evite que ce soit trop géant sur desktop */
+      margin: 0 auto;
     }
+    
     .chart-box-tall {
       position: relative;
-      height: 600px; /* Très haut pour le Mapping */
+      height: 600px;
       width: 100%;
     }
 
@@ -234,8 +238,11 @@
           </div>
         </div>
 
-        <div class="chart-box">
+        <div class="chart-box-radar">
           <canvas id="canvasRadar"></canvas>
+        </div>
+        <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;" id="radarLegend">
+          Les cercles représentent les anneaux de la cible.
         </div>
       </div>
     </div>
@@ -262,7 +269,8 @@
           <canvas id="canvasMapping"></canvas>
         </div>
         <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Les cadres excluent les coups extrêmes (top 10% ratés) pour montrer votre zone réelle.
+          Les cadres excluent les coups extrêmes pour montrer votre zone réelle.<br>
+          Axe vertical = Distance. Axe horizontal = Dispersion.
         </div>
       </div>
     </div>
@@ -310,11 +318,20 @@
     const HISTORY_KEY = "todogolf_lab_history";
     let globalHistory = [];
 
-    // Couleurs vives pour le mapping (cycliques)
+    // Couleurs vives (HEX) pour le mapping
     const CLUB_COLORS = [
       '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', 
       '#22d3ee', '#818cf8', '#c084fc', '#f472b6'
     ];
+
+    // Helper : Hex to RGBA
+    function hexToRgba(hex, alpha) {
+      hex = hex.replace('#', '');
+      const r = parseInt(hex.substring(0,2), 16);
+      const g = parseInt(hex.substring(2,4), 16);
+      const b = parseInt(hex.substring(4,6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
 
     const CLUB_ORDER = [
       "Putter", "Chipper", 
@@ -345,12 +362,12 @@
       return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
     }
 
-    // Helper pour exclure les extremes (Top/Bottom 10%)
+    // Exclure les 10% extrêmes pour le mapping
     function getSmartBounds(values) {
       if (values.length < 5) return { min: Math.min(...values), max: Math.max(...values) };
       const sorted = [...values].sort((a,b) => a - b);
-      const lowIdx = Math.floor(values.length * 0.1); // Supprime le bottom 10%
-      const highIdx = Math.ceil(values.length * 0.9) - 1; // Supprime le top 10%
+      const lowIdx = Math.floor(values.length * 0.10); 
+      const highIdx = Math.ceil(values.length * 0.90) - 1; 
       return { min: sorted[lowIdx], max: sorted[highIdx] };
     }
 
@@ -416,7 +433,7 @@
         const cy = yAxis.getPixelForValue(0);
         const stepMeters = options.step || 5; 
         
-        // On calcule le rayon d'un step
+        // Rayon en px pour 1 step
         const pxPerMeter = Math.abs(xAxis.getPixelForValue(stepMeters) - cx) / stepMeters;
         const rings = [1, 2, 3, 4];
 
@@ -427,7 +444,6 @@
           ctx.strokeStyle = 'rgba(55, 65, 81, 0.5)';
           ctx.lineWidth = 1;
           ctx.stroke();
-          // Label cercle
           if (r===4) {
              ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
              ctx.font = '10px system-ui';
@@ -435,6 +451,7 @@
           }
         });
         
+        // Croix
         ctx.beginPath();
         ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
         ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
@@ -457,7 +474,6 @@
       if (sContext === 'putting') ringStep = 0.3;
       else if (sContext === 'petit-jeu') ringStep = 1;
       
-      // Update Badge
       document.getElementById('radarScaleLabel').textContent = `Échelle : ${ringStep}m / anneau`;
 
       const filtered = globalHistory.filter(r => {
@@ -484,14 +500,13 @@
       const ctx = document.getElementById('canvasRadar').getContext('2d');
       if(radarChart) radarChart.destroy();
 
-      // Calculer max range pour forcer l'affichage des cercles
+      // Calcul de la limite pour que le 4ème cercle soit visible
       let maxData = 0;
       dataPoints.forEach(p => { maxData = Math.max(maxData, Math.abs(p.x), Math.abs(p.y)); });
       
-      // Le graph doit montrer au moins les 4 cercles
       const maxRingDistance = ringStep * 4;
-      // On prend le max entre les données et le cercle extérieur pour être sur que tout rentre
-      let boundary = Math.max(maxData, maxRingDistance) * 1.1; // +10% padding
+      // On force le graph à montrer au moins le 4eme cercle + 20% de marge
+      let boundary = Math.max(maxData, maxRingDistance) * 1.2; 
 
       radarChart = new Chart(ctx, {
         type: 'scatter',
@@ -507,7 +522,8 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true, // Important pour que les cercles soient ronds
+          aspectRatio: 1, // Carré parfait
           scales: {
             x: {
               display: false, 
@@ -527,7 +543,6 @@
       });
     }
 
-
     // --- CHART 2 : MAPPING (Smart Zones) ---
     let mappingChart = null;
 
@@ -542,38 +557,31 @@
           const meta = chart.getDatasetMeta(i);
           if (meta.hidden) return;
           
-          // Extraction des valeurs X et Y séparées
           const xValues = dataset.data.map(d => d.x);
           const yValues = dataset.data.map(d => d.y);
           
           if (xValues.length === 0) return;
 
-          // Calcul des limites "Smart" (exclut les extrêmes)
           const xBounds = getSmartBounds(xValues);
           const yBounds = getSmartBounds(yValues);
 
           const left = xAxis.getPixelForValue(xBounds.min);
           const right = xAxis.getPixelForValue(xBounds.max);
-          const top = yAxis.getPixelForValue(yBounds.max); // Y monte vers le haut (valeur max = top visuel ?) ChartJS Y est inversé souvent
+          const top = yAxis.getPixelForValue(yBounds.max); 
           const bottom = yAxis.getPixelForValue(yBounds.min);
-          
-          // Attention: dans ChartJS, pixel 0 est en haut. Valeur Y élevée = pixel petit.
-          // Donc top (visuel) = pixel pour Y Max. Bottom (visuel) = pixel pour Y Min.
-          // Rectangle : x, y, w, h.
           
           const width = right - left;
           const height = bottom - top; 
 
           ctx.save();
-          // Remplissage très léger
-          ctx.fillStyle = dataset.borderColor.replace('1)', '0.05'); 
+          // FIX OPACITE : on utilise la fonction hexToRgba pour mettre 10% d'opacité
+          ctx.fillStyle = hexToRgba(dataset.borderColor, 0.1); 
           ctx.strokeStyle = dataset.borderColor;
-          ctx.lineWidth = 2; // Bordure plus épaisse
+          ctx.lineWidth = 3; // Contour épais
           
-          // Arrondi (si supporté)
           if (ctx.roundRect) {
              ctx.beginPath();
-             ctx.roundRect(left, top, width, height, 10);
+             ctx.roundRect(left, top, width, height, 8); // Arrondi doux
              ctx.fill();
              ctx.stroke();
           } else {
