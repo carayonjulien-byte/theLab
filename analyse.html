@@ -10,11 +10,13 @@
     :root {
       --gap: 16px;
       --primary: #00503a;
+      --primary-light: #047857; /* Vert un peu plus clair pour les hovers/gradients */
       --bg: #050608;
       --card: #0f1419;
-      --border: #182028;
+      --border: #1f2937;
       --text: #e7e8ea;
       --muted: #9ca3af;
+      --accent: #fbbf24; /* Jaune pour les points de données */
     }
     * { box-sizing: border-box; }
     body {
@@ -32,9 +34,9 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,0.9));
-      border-bottom: 1px solid #10151e;
-      padding: 10px 16px;
+      background: linear-gradient(to bottom, rgba(5,6,8,0.98), rgba(5,6,8,0.95));
+      border-bottom: 1px solid #1f2937;
+      padding: 12px 16px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -45,47 +47,58 @@
       border-radius:50%;
       background:var(--primary);
       box-shadow:0 0 12px rgba(0,80,58,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    .top-title { font-weight:700; font-size:16px; margin-left:10px; }
+    .top-title { font-weight:800; font-size:16px; margin-left:10px; letter-spacing: -0.02em; }
     
     .btn-top {
       border-radius:999px;
-      border:1px solid #26303b;
-      background:#0b1016;
+      border:1px solid #374151;
+      background:rgba(17, 24, 39, 0.8);
       padding:6px 12px;
       font-size:12px;
       color:var(--text);
       text-decoration:none;
       white-space:nowrap;
       display:flex; align-items:center; gap:4px;
+      transition: all 0.2s;
     }
-    .btn-top:hover { background:#101822; }
+    .btn-top:hover { background:#1f2937; border-color: var(--primary); }
 
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 16px; }
 
-    /* --- KPIS --- */
+    /* --- KPIS (DESIGN UPDATE) --- */
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
     .kpi-card {
-      background: var(--card);
+      background: linear-gradient(145deg, #0f1419 0%, #0a0d11 100%);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 16px;
+      padding: 12px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom:4px; }
-    .kpi-value { font-size: 18px; font-weight: 700; color: #fff; }
+    /* La touche verte subtile en bas */
+    .kpi-card::after {
+      content:""; position:absolute; bottom:0; left:0; right:0; height:3px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0.8;
+    }
+    .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom:4px; }
+    .kpi-value { font-size: 20px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 
-    /* --- TABS --- */
+    /* --- TABS (DESIGN UPDATE - GREEN ACTIVE) --- */
     .nav-tabs {
       display: flex;
-      background: #0f1419;
+      background: #0b0e11;
       padding: 4px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid var(--border);
       margin-bottom: 20px;
     }
@@ -95,90 +108,118 @@
       padding: 10px 0;
       font-size: 13px;
       font-weight: 600;
-      color: var(--muted);
+      color: #6b7280;
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: 10px;
       transition: all 0.2s ease;
     }
     .nav-tab.active {
       color: #fff;
-      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      border: 1px solid #374151;
+      background: var(--primary); /* Fond Vert */
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      box-shadow: 0 4px 12px rgba(0, 80, 58, 0.4); /* Glow Vert */
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
-    .tab-content { animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform:translateY(5px); } to { opacity: 1; transform:translateY(0); } }
+    .tab-content { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform:translateY(8px); } to { opacity: 1; transform:translateY(0); } }
 
     /* --- CARDS & FILTERS --- */
     .chart-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      margin-bottom: 20px;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      margin-bottom: 24px;
     }
-    .card-header { margin-bottom: 12px; }
-    .card-header-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-    .card-title { font-size: 15px; font-weight: 600; margin:0; }
-    .scale-badge { font-size:11px; background:#1f2937; padding:4px 8px; border-radius:6px; color:#fbbf24; border:1px solid #374151; }
+    .card-header { margin-bottom: 16px; }
+    .card-header-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .card-title { font-size: 16px; font-weight: 700; margin:0; color: #f3f4f6; }
+    .scale-badge { 
+      font-size:11px; font-weight:600; 
+      background: rgba(0, 80, 58, 0.2); 
+      padding:4px 10px; border-radius:99px; 
+      color: #34d399; /* Vert clair */
+      border:1px solid rgba(5, 150, 105, 0.3); 
+    }
 
     .filters-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 10px;
+    }
+    /* Pour le Radar, on a parfois 3 filtres maintenant */
+    .filters-row.three-cols {
+      grid-template-columns: 1fr 1fr 1fr;
     }
 
     select, input[type=date], input[type=number] {
       background: #05080c;
       color: #fff;
       border: 1px solid #374151;
-      border-radius: 8px;
-      padding: 8px 10px;
+      border-radius: 10px;
+      padding: 10px 12px;
       font-size: 12px;
       width: 100%;
       outline: none;
+      transition: border-color 0.2s;
+      appearance: none; /* Mobile look */
     }
-    
-    /* --- CONTENEURS GRAPHIQUES --- */
-    
-    /* Radar : On retire la hauteur fixe pour laisser le ratio 1:1 agir */
+    select:focus, input:focus { border-color: var(--primary-light); }
+
+    /* Graph Containers */
     .chart-box-radar {
       position: relative;
       width: 100%;
-      max-width: 500px; /* Max largeur pour desktop */
-      margin: 0 auto;   /* Centré */
-      /* height: auto;  <-- Laisser auto pour que l'aspectRatio gère la hauteur */
+      max-width: 500px; 
+      margin: 0 auto;
     }
     
-    /* Mapping : Hauteur fixe nécessaire pour l'effet piste */
     .chart-box-tall {
       position: relative;
       height: 600px;
       width: 100%;
     }
 
-    /* --- CADDIE --- */
+    /* --- CADDIE (DESIGN UPDATE) --- */
     .caddie-input-row { display: flex; gap: 10px; margin-bottom: 20px; }
     .caddie-btn {
-      background: var(--primary); color: #fff; border: none;
-      padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #fff; border: none;
+      padding: 0 24px; border-radius: 10px; 
+      font-weight: 700; font-size: 13px; 
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 80, 58, 0.4);
+      transition: transform 0.1s;
     }
+    .caddie-btn:active { transform: scale(0.96); }
+
     .caddie-result {
-      text-align: center; padding: 20px;
-      background: linear-gradient(180deg, rgba(0,80,58,0.1) 0%, rgba(0,0,0,0) 100%);
-      border-radius: 16px; border: 1px solid var(--primary);
+      text-align: center; padding: 24px;
+      background: linear-gradient(180deg, rgba(0,80,58,0.15) 0%, rgba(0,0,0,0) 100%);
+      border-radius: 18px; border: 1px solid rgba(0,80,58,0.4);
+      position: relative;
     }
-    .rec-club { font-size: 32px; font-weight: 800; color: #fff; margin: 10px 0; text-shadow: 0 0 20px rgba(0,80,58,0.6); }
+    .caddie-result::before {
+      content:"⛳"; font-size: 40px; opacity: 0.1;
+      position: absolute; top: 10px; right: 10px;
+    }
+
+    .rec-club { font-size: 36px; font-weight: 800; color: #fff; margin: 12px 0; letter-spacing: -1px; }
+    
     .confidence-badge {
-      display: inline-block; padding: 4px 10px; border-radius: 99px;
-      font-size: 11px; font-weight: 600; margin-top: 8px;
+      display: inline-block; padding: 6px 14px; border-radius: 99px;
+      font-size: 11px; font-weight: 700; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .conf-high { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #059669; }
-    .conf-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid #b45309; }
-    .conf-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #b91c1c; }
+    .conf-high { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.4); }
+    .conf-med { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(180, 83, 9, 0.4); }
+    .conf-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(185, 28, 28, 0.4); }
+    
+    @media (max-width: 600px) {
+        .filters-row.three-cols { grid-template-columns: 1fr; } /* Stack filters on mobile */
+    }
 
   </style>
 </head>
@@ -227,14 +268,25 @@
             <input type="date" id="radarStart" onchange="updateRadarChart()">
             <input type="date" id="radarEnd" onchange="updateRadarChart()">
           </div>
-          <div class="filters-row">
+          
+          <div class="filters-row three-cols">
             <select id="radarContext" onchange="updateRadarChart()">
-              <option value="all">Toutes conditions</option>
-              <option value="practice">Practice (Standard)</option>
-              <option value="petit-jeu">Petit Jeu (Approches)</option>
+              <option value="all">Tout Contexte</option>
+              <option value="practice">Practice</option>
+              <option value="petit-jeu">Petit Jeu</option>
               <option value="putting">Putting</option>
               <option value="parcours">Parcours</option>
             </select>
+            
+            <select id="radarType" onchange="updateRadarChart()">
+              <option value="all">Tout Type</option>
+              <option value="Normal">Normal</option>
+              <option value="Draw">Draw</option>
+              <option value="Fade">Fade</option>
+              <option value="Balle basse">Balle basse</option>
+              <option value="Balle haute">Balle haute</option>
+            </select>
+
             <select id="radarClubSelect" onchange="updateRadarChart()">
               <option value="all">Tous les clubs</option>
             </select>
@@ -244,8 +296,8 @@
         <div class="chart-box-radar">
           <canvas id="canvasRadar"></canvas>
         </div>
-        <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;" id="radarLegend">
-          Les cercles représentent les anneaux de la cible.
+        <div style="margin-top:12px; font-size:11px; color:#6b7280; text-align:center;" id="radarLegend">
+          Cercles concentriques (Cible).
         </div>
       </div>
     </div>
@@ -272,8 +324,8 @@
           <canvas id="canvasMapping"></canvas>
         </div>
         <div style="margin-top:10px; font-size:11px; color:#6b7280; text-align:center;">
-          Les cadres excluent les coups extrêmes pour montrer votre zone réelle.<br>
-          Axe vertical = Distance. Axe horizontal = Dispersion.
+          Zones de retombée (hors coups extrêmes).<br>
+          Axe Y = Distance. Axe X = Dispersion.
         </div>
       </div>
     </div>
@@ -285,27 +337,30 @@
         </div>
         
         <div class="caddie-input-row">
-          <input type="number" id="caddieDist" placeholder="Distance (m)" style="flex:1; padding:12px;" inputmode="numeric">
-          <button class="caddie-btn" onclick="askCaddie()">Calculer</button>
+          <input type="number" id="caddieDist" placeholder="Distance à faire (m)" style="flex:1; padding:14px; font-size:15px;" inputmode="numeric">
+          <button class="caddie-btn" onclick="askCaddie()">CALCULER</button>
         </div>
 
         <div id="caddieOutput" class="hidden">
           <div class="caddie-result">
-            <div class="kpi-label">Conseil Lab</div>
+            <div class="kpi-label">Club Recommandé</div>
             <div class="rec-club" id="recClubName">-</div>
+            <div style="font-size:13px; color:#cbd5e1; margin-bottom:8px;">
+              Moyenne : <span id="recClubAvg" style="color:#fff; font-weight:700;">-</span> m
+            </div>
             <div style="font-size:12px; color:#9ca3af;">
-              Moyenne : <span id="recClubAvg" style="color:#fff; font-weight:600;">-</span> m<br>
-              Dispersion latérale : <span id="recClubDisp" style="color:#fff; font-weight:600;">-</span> m
+              Dispersion latérale : ±<span id="recClubDisp">-</span> m
             </div>
             <div id="recConf" class="confidence-badge conf-med">Confiance : -</div>
           </div>
-          <div style="margin-top:15px; font-size:12px; color:#9ca3af; line-height:1.4; text-align:center;">
-            Basé sur vos <strong><span id="recNbShots">0</span></strong> derniers coups avec ce club.
+          <div style="margin-top:16px; font-size:12px; color:#6b7280; line-height:1.5; text-align:center;">
+            Calculé sur vos <strong><span id="recNbShots">0</span></strong> derniers coups au practice.<br>
+            <span style="font-style:italic;">"Jouez le pourcentage, pas le coup héroïque."</span>
           </div>
         </div>
         
         <div id="caddieEmpty" style="text-align:center; padding:40px 20px; color:#6b7280; font-size:13px;">
-          Entrez une distance à parcourir pour obtenir la meilleure recommandation.
+          Entrez une distance pour obtenir le meilleur club selon vos statistiques.
         </div>
       </div>
     </div>
@@ -321,27 +376,16 @@
     const HISTORY_KEY = "todogolf_lab_history";
     let globalHistory = [];
 
-    // Couleurs vives (HEX)
     const CLUB_COLORS = [
       '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399', 
       '#22d3ee', '#818cf8', '#c084fc', '#f472b6'
     ];
 
-    // Helper : Hex to RGBA (Robuste)
     function hexToRgba(hex, alpha) {
       if (!hex) return `rgba(255,255,255,${alpha})`;
-      // Nettoyage
-      hex = hex.trim();
-      if (hex.startsWith('#')) hex = hex.slice(1);
-      
-      // Gestion short hex #FFF
-      if (hex.length === 3) {
-        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-      }
-      
-      // Fallback si pas valide
+      hex = hex.trim().replace('#', '');
+      if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
       if (hex.length !== 6) return `rgba(100,100,100,${alpha})`;
-
       const r = parseInt(hex.substring(0,2), 16);
       const g = parseInt(hex.substring(2,4), 16);
       const b = parseInt(hex.substring(4,6), 16);
@@ -362,7 +406,6 @@
       return idx === -1 ? 999 : idx;
     };
 
-    // --- UTILS ---
     function loadData() {
       try {
         const raw = localStorage.getItem(HISTORY_KEY);
@@ -385,7 +428,6 @@
       return { min: sorted[lowIdx], max: sorted[highIdx] };
     }
 
-    // --- INIT ---
     document.addEventListener('DOMContentLoaded', () => {
       globalHistory = loadData();
       updateKPIs();
@@ -402,7 +444,7 @@
 
       if(tabName === 'radar') {
         document.getElementById('viewRadar').classList.remove('hidden');
-        updateRadarChart(); // Redessine pour que la taille s'ajuste
+        updateRadarChart();
       } else if(tabName === 'mapping') {
         document.getElementById('viewMapping').classList.remove('hidden');
         updateMappingChart();
@@ -434,7 +476,7 @@
       });
     }
 
-    // --- CHART 1 : RADAR ---
+    // --- RADAR ---
     let radarChart = null;
 
     const circleBackgroundPlugin = {
@@ -446,17 +488,16 @@
         const cx = xAxis.getPixelForValue(0);
         const cy = yAxis.getPixelForValue(0);
         const stepMeters = options.step || 5; 
-        
         const pxPerMeter = Math.abs(xAxis.getPixelForValue(stepMeters) - cx) / stepMeters;
         const rings = [1, 2, 3, 4];
 
         ctx.save();
         
-        // Croix
+        // Croix (Lignes plus fines et vertes pour la cible)
         ctx.beginPath();
         ctx.moveTo(xAxis.left, cy); ctx.lineTo(xAxis.right, cy);
         ctx.moveTo(cx, yAxis.top); ctx.lineTo(cx, yAxis.bottom);
-        ctx.strokeStyle = 'rgba(55, 65, 81, 0.4)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; 
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -464,21 +505,21 @@
         rings.forEach(r => {
           ctx.beginPath();
           ctx.arc(cx, cy, r * stepMeters * pxPerMeter, 0, 2 * Math.PI);
-          ctx.strokeStyle = 'rgba(55, 65, 81, 0.5)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
           ctx.lineWidth = 1;
           ctx.stroke();
           if (r===4) {
              ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
              ctx.font = '10px system-ui';
-             ctx.fillText((r * stepMeters) + 'm', cx + 2, cy - (r * stepMeters * pxPerMeter) + 10);
+             ctx.fillText((r * stepMeters) + 'm', cx + 4, cy - (r * stepMeters * pxPerMeter) + 12);
           }
         });
         
-        // Croix centrale jaune
+        // Croix centrale VERTE (#00503a plus clair)
         ctx.beginPath();
-        ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy);
-        ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
-        ctx.strokeStyle = '#fbbf24';
+        ctx.moveTo(cx - 6, cy); ctx.lineTo(cx + 6, cy);
+        ctx.moveTo(cx, cy - 6); ctx.lineTo(cx, cy + 6);
+        ctx.strokeStyle = '#34d399'; // Vert clair
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
@@ -490,6 +531,7 @@
     function updateRadarChart() {
       const sClub = document.getElementById('radarClubSelect').value;
       const sContext = document.getElementById('radarContext').value;
+      const sType = document.getElementById('radarType').value;
       const sDateStart = document.getElementById('radarStart').valueAsDate;
       const sDateEnd = document.getElementById('radarEnd').valueAsDate;
 
@@ -505,6 +547,8 @@
         if (sContext !== 'all') {
            if (r.radar_usage !== sContext && r.radar_scale_key !== sContext) return false;
         }
+        if (sType !== 'all' && r.shot_type !== sType) return false;
+        
         if (sDateStart || sDateEnd) {
           const d = formatDate(r.date_text);
           if (d) {
@@ -525,7 +569,6 @@
 
       let maxData = 0;
       dataPoints.forEach(p => { maxData = Math.max(maxData, Math.abs(p.x), Math.abs(p.y)); });
-      
       const maxRingDistance = ringStep * 4;
       let boundary = Math.max(maxData, maxRingDistance) * 1.2; 
 
@@ -543,18 +586,11 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
-          aspectRatio: 1,
-          layout: { padding: 0 },
+          maintainAspectRatio: true, 
+          aspectRatio: 1, 
           scales: {
-            x: {
-              display: false, 
-              min: -boundary, max: boundary
-            },
-            y: {
-              display: false,
-              min: -boundary, max: boundary
-            }
+            x: { display: false, min: -boundary, max: boundary },
+            y: { display: false, min: -boundary, max: boundary }
           },
           plugins: { 
             legend: { display:false },
@@ -565,8 +601,7 @@
       });
     }
 
-
-    // --- CHART 2 : MAPPING (Smart Zones) ---
+    // --- MAPPING ---
     let mappingChart = null;
 
     const zonesPlugin = {
@@ -596,11 +631,9 @@
           const height = bottom - top; 
 
           ctx.save();
-          // FIX: Transparence 0.05 (5%)
           ctx.fillStyle = hexToRgba(dataset.borderColor, 0.05); 
           ctx.strokeStyle = dataset.borderColor;
           ctx.lineWidth = 3; 
-          
           if (ctx.roundRect) {
              ctx.beginPath();
              ctx.roundRect(left, top, width, height, 8); 
@@ -610,12 +643,10 @@
              ctx.fillRect(left, top, width, height);
              ctx.strokeRect(left, top, width, height);
           }
-          
           ctx.fillStyle = dataset.borderColor;
           ctx.font = "bold 11px system-ui";
           ctx.textAlign = "center";
           ctx.fillText(dataset.label, left + width/2, top - 6);
-
           ctx.restore();
         });
       }
@@ -687,13 +718,16 @@
       });
     }
 
-    // --- CHART 3 : CADDIE ---
+    // --- CADDIE ---
     function askCaddie() {
       const target = Number(document.getElementById('caddieDist').value);
       if(!target) return;
 
       const clubStats = {};
       globalHistory.forEach(r => {
+        // EXCLURE PARCOURS ! (On ne veut que des données fiables de practice pour la décision)
+        if (r.radar_usage !== 'practice' && r.radar_usage !== 'petit-jeu') return; 
+        
         if(!r.club || r.club === 'Putter') return;
         const d = Number(r.distance_totale_m);
         if(!d || d < 5) return;
@@ -711,7 +745,7 @@
         if(diff < minDiff) { minDiff = diff; best = c; }
       }
 
-      if(!best) { alert("Pas assez de données."); return; }
+      if(!best) { alert("Pas assez de données de Practice pour recommander un club."); return; }
 
       const s = clubStats[best];
       const avgD = Math.round(s.sum/s.count);
