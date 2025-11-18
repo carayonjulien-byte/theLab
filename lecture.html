@@ -471,7 +471,7 @@
     }
     .select-club-btn--filled { color:var(--text); }
 
-    /* Modal */
+    /* Modal Club */
     .modal-backdrop {
       position:fixed;
       inset:0;
@@ -528,6 +528,7 @@
       display:flex;
       flex-direction:column;
       gap:10px;
+      overflow:hidden; /* Important pour le scroll interne */
     }
     .modal-search {
       width:100%;
@@ -601,13 +602,36 @@
       .primary,
       .ghost{width:100%}
       .btn-row-2{grid-template-columns:1fr}
-      .modal-club{ max-width:none; max-height:none; height:100%; border-radius:0; }
-      .modal-list{ max-height:none; flex:1; }
-      .modal-body{ flex:1; display:flex; flex-direction:column; }
+      
       .result-summary { grid-template-columns: 1fr; }
       .stepper { flex-direction: column; align-items: stretch; gap: 6px; }
       .step { width: 100%; justify-content: flex-start; }
       .step-texts { text-align: left; }
+
+      /* --- MODAL CLUB MOBILE OPTIMISÉ (BOTTOM SHEET) --- */
+      .modal-backdrop {
+        align-items: flex-end; /* Colle en bas */
+        padding: 0; 
+      }
+      .modal-club {
+        max-width: none;
+        width: 100%;
+        max-height: 85vh; /* max 85% hauteur */
+        height: auto;
+        border-radius: 18px 18px 0 0; /* Arrondi haut uniquement */
+        border-bottom: none;
+        animation: slideUp 0.25s ease-out;
+      }
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .modal-body {
+        padding-bottom: 30px; /* Espace safe area */
+      }
+      .modal-list {
+        max-height: 60vh; /* Scroll interne liste */
+      }
     }
   </style>
 </head>
@@ -728,6 +752,22 @@
             <label for="targetDist">Distance cible (m)</label>
             <input id="targetDist" type="number" step="1" min="0" value="100" required />
             <div class="hint">Utilisée uniquement en mode Practice.</div>
+          </div>
+
+          <div class="row field-group hidden" id="shotTypeRow">
+            <label for="shotType">Type de coup</label>
+            <select id="shotType">
+              <option value="">— Sélectionner —</option>
+              <option value="Normal">Normal</option>
+              <option value="Draw">Draw</option>
+              <option value="Fade">Fade</option>
+              <option value="Balle basse">Balle basse</option>
+              <option value="Balle haute">Balle haute</option>
+              <option value="Approche roulée">Approche roulée</option>
+              <option value="Approche levée">Approche levée</option>
+              <option value="Approche lobée">Approche lobée</option>
+            </select>
+            <div class="hint">Information optionnelle pour le suivi.</div>
           </div>
         </div>
 
@@ -858,6 +898,10 @@
     const clubDisplay = $("clubDisplay");
     const targetDist  = $("targetDist");
     const targetRow   = $("targetRow");
+    
+    /* AJOUT REFERENCE JS */
+    const shotTypeRow = $("shotTypeRow");
+    const shotType    = $("shotType");
 
     const radarUsageSel = $("radarUsage");
     const radarScaleSel = $("radarScale");
@@ -1380,11 +1424,15 @@
       const dateVal       = dateText.value;
       const clubVal       = club.value;
       const cibleVal      = (radarUsage === "practice") ? (Number(targetDist.value) || null) : null;
+      
+      /* LOGIQUE STOCKAGE DU TYPE DE COUP */
+      const shotTypeVal   = (radarUsage === "practice") ? (shotType.value || null) : null;
+
       const sessionId     = generateSessionId(radarUsage);
 
       coups.forEach((c, index) => {
         history.push({
-          id: index + 1, // ID simple pour éviter les doublons de ligne exacte
+          id: index + 1,
           session_id: sessionId,
           date_text: dateVal,
           radar_usage: radarUsage,
@@ -1392,6 +1440,10 @@
           radar_scale_m: radarScaleM,
           club: clubVal,
           distance_cible_m: cibleVal,
+          
+          /* AJOUT DU CHAMP */
+          shot_type: shotTypeVal,
+
           radar_info: radarInfo,
           distance_totale_m: c.distance_totale_m,
           ecart_lateral_m: c.ecart_lateral_m,
@@ -1472,13 +1524,15 @@
       renderClubList(e.target.value);
     });
 
-    /* Changement type radar : gestion du champ distance cible */
+    /* Changement type radar : gestion champs Conditionnels (Distance Cible + Type de Coup) */
     radarUsageSel.addEventListener("change", () => {
       const usage = radarUsageSel.value;
       if (usage === "practice") {
         targetRow.classList.remove("hidden");
+        shotTypeRow.classList.remove("hidden");
       } else {
         targetRow.classList.add("hidden");
+        shotTypeRow.classList.add("hidden");
       }
     });
 
