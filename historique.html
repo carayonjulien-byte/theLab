@@ -289,7 +289,20 @@
       border-color:#fca5a5;
       color:#fee2e2;
     }
+    
+    /* --- AJOUT : Scroll horizontal pour le tableau sur mobile --- */
+    #rawTableContainer {
+      display: block;
+      width: 100%;
+      overflow-x: auto; /* Active le scroll horizontal si ça dépasse */
+      -webkit-overflow-scrolling: touch; /* Scroll fluide sur iPhone */
+      margin-bottom: 10px;
+    }
 
+    /* Optionnel : Empêche les cellules de se tasser/revenir à la ligne */
+    #rawTableContainer table {
+      white-space: nowrap; 
+    }
     /* Pagination */
     .pagination {
       margin-top:8px;
