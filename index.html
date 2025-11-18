@@ -13,6 +13,7 @@
       --border: #182028;
       --text: #e7e8ea;
       --muted: #b8c0cc;
+      --warning: #fbbf24; /* Jaune pour l'alerte */
     }
     * { box-sizing: border-box; }
     body {
@@ -101,7 +102,9 @@
       padding:18px 16px 16px;
       box-shadow:0 24px 40px rgba(0,0,0,0.45);
       overflow:hidden;
-      cursor:pointer; /* bloc cliquable */
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
       transition:
         background 0.16s ease-out,
         border-color 0.16s ease-out,
@@ -149,53 +152,38 @@
       color:#a0aec0;
       margin-bottom:12px;
       line-height:1.5;
+      flex-grow: 1; /* Pousse le footer vers le bas */
     }
 
     .card-meta {
       font-size:11px;
       color:#6b7280;
-      margin-bottom:12px;
+      margin-top: auto; /* Colle en bas */
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
     }
     .card-meta span {
       display:inline-flex;
       align-items:center;
       gap:4px;
-      margin-right:10px;
-      margin-bottom:4px;
     }
 
-    /* on garde card-footer si besoin plus tard, mais vide ici */
-    .card-footer {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-top:14px;
-      flex-wrap:wrap;
-    }
-
-    .btn-main {
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      border-radius:999px;
-      padding:9px 14px;
-      font-size:13px;
-      font-weight:600;
-      border:1px solid var(--primary);
-      background:var(--primary);
-      color:#ffffff;
-      cursor:pointer;
-      text-decoration:none;
-      white-space:nowrap;
-      box-shadow:none; /* halo retiré */
-    }
-    .btn-main span.icon {
-      font-size:14px;
-    }
-    .btn-main:hover {
-      background:#046046;
+    /* Style spécifique pour l'alerte de sauvegarde */
+    .unsaved-btn {
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--warning);
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
     }
 
     .info-card {
@@ -233,7 +221,6 @@
   </style>
 </head>
 <body>
-  <!-- Topbar -->
   <header class="topbar">
     <div class="top-left">
       <div class="brand-dot"></div>
@@ -252,7 +239,6 @@
     </p>
 
     <section class="modules">
-      <!-- Module 1 : Lecture radar -->
       <article class="card" onclick="location.href='lecture.html'">
         <div class="card-label">
           <span class="label-icon">🟢</span>
@@ -266,11 +252,10 @@
 
         <div class="card-meta">
           <span>📷 Photo ou image existante</span>
-          <span>🧠 Détection automatique des points</span>
+          <span>🧠 Détection automatique</span>
         </div>
       </article>
 
-      <!-- Module 2 : Historique -->
       <article class="card" onclick="location.href='historique.html'">
         <div class="card-label">
           <span class="label-icon">🔵</span>
@@ -279,17 +264,21 @@
 
         <h2 class="card-title">Mon historique</h2>
         <p class="card-subtitle">
-          Accédez à votre historique et vos analyses&nbsp;: filtrez par date, club, distance ou type de radar,
-          visualisez les coups en tableau détaillé.
+          Accédez à votre historique et vos analyses : filtrez par date, club, distance ou type de radar.
         </p>
 
-        <div class="card-meta">
-          <span>📊 Tableau des coups</span>
+        <div id="unsavedBox" class="hidden">
+           <div class="unsaved-btn">
+             ⚠️ <span id="unsavedText">Données non sauvegardées</span>
+           </div>
+        </div>
+
+        <div class="card-meta" style="margin-top:12px;">
+          <span id="historyCountBadge" style="color:var(--primary); font-weight:600;">📊 Chargement...</span>
           <span>↕️ Import / export CSV</span>
         </div>
       </article>
 
-      <!-- Module 3 : Analyse des données -->
       <article class="card" onclick="location.href='analyse.html'">
         <div class="card-label">
           <span class="label-icon">📈</span>
@@ -298,7 +287,7 @@
 
         <h2 class="card-title">Analyser vos données</h2>
         <p class="card-subtitle">
-          Explorez vos données d'analyse, obtenez des statistiques détaillées et découvrez les tendances de vos performances.
+          Explorez vos données d'analyse, obtenez des statistiques détaillées et découvrez les tendances.
         </p>
 
         <div class="card-meta">
@@ -308,24 +297,25 @@
       </article>
     </section>
 
-    <!-- Bloc info plein largeur -->
     <section class="info-card">
       <div class="info-title">Informations & centre d’aide</div>
       <p class="info-text">
         <strong>Important :</strong> toutes les données sont stockées dans le <strong>localStorage</strong> de votre navigateur.
         Si vous changez d’appareil ou videz vos données de navigation, pensez à
-        <strong>exporter votre historique au format CSV</strong> depuis le module «&nbsp;Mes statistiques&nbsp;».
+        <strong>exporter votre historique au format CSV</strong> depuis le module « Mes statistiques ».
       </p>
       <p class="info-sub">
-        Prochainement : documentation détaillée, astuces d’utilisation et lien de contact directement depuis cet espace.
+        Prochainement : documentation détaillée, astuces d’utilisation et lien de contact.
       </p>
     </section>
   </main>
 
-  <!-- Script keep-alive Render -->
   <script>
     const RENDER_URL = "https://todogolf-analyse.onrender.com/";
+    const HISTORY_KEY = "todogolf_lab_history";
+    const LAST_EXPORT_COUNT_KEY = "todogolf_lab_last_export_count";
 
+    // Script pour le Ping (Keep-Alive)
     function pingRender() {
       try {
         fetch(RENDER_URL, {
@@ -335,8 +325,45 @@
       } catch (e) {}
     }
 
+    // Script pour mettre à jour les badges de l'historique
+    function updateHistoryStatus() {
+      try {
+        const rawHistory = localStorage.getItem(HISTORY_KEY);
+        const history = rawHistory ? JSON.parse(rawHistory) : [];
+        const count = history.length;
+
+        const countBadge = document.getElementById("historyCountBadge");
+        
+        if (count === 0) {
+          countBadge.textContent = "📊 Aucun coup enregistré";
+          countBadge.style.color = "#6b7280";
+        } else {
+          countBadge.textContent = `📊 ${count} coup${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''}`;
+          countBadge.style.color = "var(--primary)";
+        }
+
+        // Vérification des données non sauvegardées (Export CSV)
+        const lastExportCount = parseInt(localStorage.getItem(LAST_EXPORT_COUNT_KEY) || "0", 10);
+        const unsavedBox = document.getElementById("unsavedBox");
+        const unsavedText = document.getElementById("unsavedText");
+
+        if (count !== lastExportCount) {
+          const diff = Math.abs(count - lastExportCount);
+          unsavedText.textContent = `${diff} modification${diff > 1 ? 's' : ''} non exportée${diff > 1 ? 's' : ''}`;
+          unsavedBox.classList.remove("hidden");
+        } else {
+          unsavedBox.classList.add("hidden");
+        }
+
+      } catch (e) {
+        console.error("Erreur lecture localStorage", e);
+      }
+    }
+
+    // Init
     pingRender();
     setInterval(pingRender, 5 * 60 * 1000);
+    updateHistoryStatus();
   </script>
 </body>
 </html>
